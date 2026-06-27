@@ -68,14 +68,11 @@ describe('SSE Utils', () => {
 
   describe('processSSEBuffer', () => {
     it('should process complete SSE messages', () => {
-      // Test the actual behavior: processSSEBuffer splits on \n\n but parseSSEEvents
-      // expects events to be terminated by empty lines within the block
       const buffer: string = 'data: Hello\n\ndata: World\n\ndata: Incomplete';
       const result: SSEParseResult = processSSEBuffer(buffer);
 
-      // The current implementation has a design issue where parseSSEEvents expects
-      // empty lines within event blocks, but processSSEBuffer removes them
-      expect(result.events).toHaveLength(0);
+      expect(result.events).toHaveLength(2);
+      expect(result.events.map(event => event.data)).toEqual(['Hello', 'World']);
       expect(result.remainingBuffer).toBe('data: Incomplete');
     });
 

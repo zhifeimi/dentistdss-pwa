@@ -26,8 +26,8 @@ const isTest = import.meta.env.MODE === 'test';
 const isProduction = import.meta.env.PROD;
 
 // Default API settings
-const API_HOST = import.meta.env.VITE_API_HOST as string;
-const API_PORT = import.meta.env.VITE_API_PORT as string;
+const API_HOST = (import.meta.env.VITE_API_HOST as string | undefined)?.replace(/\/$/, '') || '';
+const API_PORT = (import.meta.env.VITE_API_PORT as string | undefined) || '8080';
 const API_ROOT_PATH = (import.meta.env.VITE_API_ROOT_PATH as string) || '';
 const API_AUTH_PATH = API_ROOT_PATH + ((import.meta.env.VITE_API_AUTH_PATH as string) || '/auth');
 const API_OAUTH_PATH = API_ROOT_PATH + ((import.meta.env.VITE_API_OAUTH_PATH as string) || '/oauth');

@@ -160,6 +160,11 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+Object.defineProperty(Element.prototype, 'scrollIntoView', {
+  configurable: true,
+  value: vi.fn(),
+});
+
 // Mock Google Maps API
 (global as any).google = {
   maps: {

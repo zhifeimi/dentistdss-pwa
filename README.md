@@ -85,6 +85,21 @@ const clinicalResponse = await api.chatbot.aidentist("Patient symptoms...", onSt
 
 All OpenAI communication flows through the Spring AI backend at `/api/genai/chatbot/*` endpoints.
 
+## Deployment
+
+The PWA is deployed by Vercel's native GitHub integration:
+
+- pull-request and feature branches create Vercel Preview deployments;
+- `main` creates the production deployment;
+- `dentist.mizhifei.press` is the production frontend domain;
+- `VITE_API_HOST` is configured in Vercel Production as
+  `https://api.mizhifei.press`.
+
+Preview deployments deliberately do not inherit the production API host. Add a
+branch-scoped preview variable only after a separate staging backend exists.
+GitHub Actions remains the code-quality gate for type-checking, tests, builds,
+CodeQL, and dependency updates; it does not duplicate Vercel's deployment job.
+
 ## Available Scripts
 
 In the project directory, you can run:
@@ -119,4 +134,3 @@ If you aren't satisfied with the build tool and configuration choices, you can `
 Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
 You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-

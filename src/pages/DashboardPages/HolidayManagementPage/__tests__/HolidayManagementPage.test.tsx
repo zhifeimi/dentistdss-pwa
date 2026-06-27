@@ -4,19 +4,25 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HolidayManagementPage from '../index';
-import { AuthProvider } from '../../../../context/auth';
+import { useAuth } from '../../../../context/auth';
 
 // Mock the API
-jest.mock('../../../../services', () => ({
-  clinic: {
-    getClinicHolidays: jest.fn().mockResolvedValue([]),
-    getUpcomingHolidays: jest.fn().mockResolvedValue([]),
-    createHoliday: jest.fn().mockResolvedValue({}),
+vi.mock('../../../../services', () => ({
+  default: {
+    clinic: {
+      getClinicHolidays: vi.fn().mockResolvedValue([]),
+      getUpcomingHolidays: vi.fn().mockResolvedValue([]),
+      createHoliday: vi.fn().mockResolvedValue({}),
+    },
   },
 }));
 
-// Mock the auth context
+vi.mock('../../../../context/auth', () => ({
+  useAuth: vi.fn(),
+}));
+
 const mockCurrentUser = {
   id: 1,
   email: 'admin@clinic.com',
@@ -26,24 +32,20 @@ const mockCurrentUser = {
   clinicId: 1,
 };
 
-const MockAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const mockAuthValue = {
-    currentUser: mockCurrentUser,
+const mockUseAuth = vi.mocked(useAuth);
+
+const createAuthValue = (currentUser = mockCurrentUser) => (
+  {
+    currentUser,
     isAuthenticated: true,
     loading: false,
-    login: jest.fn(),
-    signup: jest.fn(),
-    logout: jest.fn(),
-    googleIdLogin: jest.fn(),
-    processAuthToken: jest.fn(),
-  };
-
-  return (
-    <AuthProvider value={mockAuthValue as any}>
-      {children}
-    </AuthProvider>
-  );
-};
+    login: vi.fn(),
+    signup: vi.fn(),
+    logout: vi.fn(),
+    googleIdLogin: vi.fn(),
+    processAuthToken: vi.fn(),
+  } as any
+);
 
 const theme = createTheme();
 
@@ -52,9 +54,7 @@ const renderWithProviders = (component: React.ReactElement) => {
     <BrowserRouter>
       <ThemeProvider theme={theme}>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <MockAuthProvider>
-            {component}
-          </MockAuthProvider>
+          {component}
         </LocalizationProvider>
       </ThemeProvider>
     </BrowserRouter>
@@ -63,14 +63,15 @@ const renderWithProviders = (component: React.ReactElement) => {
 
 describe('HolidayManagementPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
+    mockUseAuth.mockReturnValue(createAuthValue());
   });
 
   it('renders holiday management page for clinic admin', async () => {
     renderWithProviders(<HolidayManagementPage />);
 
     // Check if the main heading is present
-    expect(screen.getByText('Holiday Management')).toBeInTheDocument();
+    expect(await screen.findByText('Holiday Management')).toBeInTheDocument();
 
     // Check if the add holiday button is present (on desktop)
     await waitFor(() => {
@@ -87,32 +88,13 @@ describe('HolidayManagementPage', () => {
       roles: ['PATIENT'],
     };
 
-    const MockNonAdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-      const mockAuthValue = {
-        currentUser: nonAdminUser,
-        isAuthenticated: true,
-        loading: false,
-        login: jest.fn(),
-        signup: jest.fn(),
-        logout: jest.fn(),
-        googleIdLogin: jest.fn(),
-        processAuthToken: jest.fn(),
-      };
-
-      return (
-        <AuthProvider value={mockAuthValue as any}>
-          {children}
-        </AuthProvider>
-      );
-    };
+    mockUseAuth.mockReturnValue(createAuthValue(nonAdminUser));
 
     render(
       <BrowserRouter>
         <ThemeProvider theme={theme}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <MockNonAdminAuthProvider>
-              <HolidayManagementPage />
-            </MockNonAdminAuthProvider>
+            <HolidayManagementPage />
           </LocalizationProvider>
         </ThemeProvider>
       </BrowserRouter>

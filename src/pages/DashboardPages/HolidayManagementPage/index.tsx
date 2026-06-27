@@ -131,7 +131,7 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
   // Access control check
   if (!hasAdminAccess) {
     return (
-      <Box sx={{ p: getResponsivePadding(isMobile, isSmallMobile) }}>
+      <Box sx={{ p: getResponsivePadding(isSmallMobile ? 'small' : 'medium') }}>
         <Alert severity="error">
           Access denied. Only clinic administrators can manage holidays.
         </Alert>
@@ -156,14 +156,14 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
   }
 
   return (
-    <Box sx={{ p: getResponsivePadding(isMobile, isSmallMobile) }}>
+    <Box sx={{ p: getResponsivePadding(isSmallMobile ? 'small' : isMobile ? 'medium' : 'large') }}>
       {/* Header */}
       <Box 
         sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          mb: getResponsiveMargin(isMobile, isSmallMobile),
+          mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
           flexDirection: isMobile ? 'column' : 'row',
           gap: isMobile ? 2 : 0
         }}
@@ -207,7 +207,7 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
       {error && (
         <Alert 
           severity="error" 
-          sx={{ mb: getResponsiveMargin(isMobile, isSmallMobile) }}
+          sx={{ mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium') }}
           onClose={() => setError('')}
         >
           {error}
@@ -218,7 +218,7 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
       {upcomingHolidays.length > 0 && (
         <Card 
           sx={{ 
-            mb: getResponsiveMargin(isMobile, isSmallMobile),
+            mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
             background: theme.palette.mode === 'dark' 
               ? 'linear-gradient(135deg, #1a237e 0%, #3949ab 100%)'
               : 'linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%)',
@@ -235,7 +235,7 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
             
             <Grid container spacing={1}>
               {upcomingHolidays.slice(0, 3).map((holiday) => (
-                <Grid item xs={12} sm={6} md={4} key={holiday.id}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={holiday.id}>
                   <Box 
                     sx={{ 
                       p: 1.5, 

@@ -138,7 +138,7 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
   // Access control check
   if (!hasAdminAccess) {
     return (
-      <Box sx={{ p: getResponsivePadding(isMobile, isSmallMobile) }}>
+      <Box sx={{ p: getResponsivePadding(isSmallMobile ? 'small' : 'medium') }}>
         <Alert severity="error">
           Access denied. Only clinic administrators can manage working hours.
         </Alert>
@@ -163,14 +163,14 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
   }
 
   return (
-    <Box sx={{ p: getResponsivePadding(isMobile, isSmallMobile) }}>
+    <Box sx={{ p: getResponsivePadding(isSmallMobile ? 'small' : isMobile ? 'medium' : 'large') }}>
       {/* Header */}
       <Box 
         sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          mb: getResponsiveMargin(isMobile, isSmallMobile),
+          mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
           flexDirection: isMobile ? 'column' : 'row',
           gap: isMobile ? 2 : 0
         }}
@@ -214,7 +214,7 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
       {error && (
         <Alert 
           severity="error" 
-          sx={{ mb: getResponsiveMargin(isMobile, isSmallMobile) }}
+          sx={{ mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium') }}
           onClose={() => setError('')}
         >
           {error}
@@ -224,7 +224,7 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
       {/* Summary Statistics */}
       <Card 
         sx={{ 
-          mb: getResponsiveMargin(isMobile, isSmallMobile),
+          mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
           background: theme.palette.mode === 'dark' 
             ? 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)'
             : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
@@ -240,7 +240,7 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
           </Box>
           
           <Grid container spacing={2}>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {stats.totalDays}
@@ -250,7 +250,7 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {stats.openDays}
@@ -260,7 +260,7 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {stats.emergencyHours}
@@ -270,7 +270,7 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {stats.withBreaks}

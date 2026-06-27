@@ -103,6 +103,8 @@ export const useChatAPI = (
    * Classify error type based on error characteristics
    */
   const classifyError = useCallback((error: any): ChatAPIErrorType => {
+    const errorMessage = String(error.message || '').toLowerCase();
+
     if (error.name === 'AbortError') {
       return ChatAPIErrorType.NETWORK_ERROR;
     }
@@ -111,11 +113,11 @@ export const useChatAPI = (
       return ChatAPIErrorType.TIMEOUT_ERROR;
     }
 
-    if (error.message?.includes('rate limit') || error.message?.includes('maximal inquiries')) {
+    if (errorMessage.includes('rate limit') || errorMessage.includes('maximal inquiries')) {
       return ChatAPIErrorType.RATE_LIMIT_ERROR;
     }
 
-    if (error.message?.includes('network') || error.message?.includes('fetch')) {
+    if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
       return ChatAPIErrorType.NETWORK_ERROR;
     }
 
@@ -217,6 +219,8 @@ export const useChatAPI = (
    * Send message to chat API
    */
   const sendMessage = useCallback(async (message: string): Promise<void> => {
+    let botMessage: ChatMessage | null = null;
+
     try {
       // Validate input
       validateMessage(message);
@@ -240,7 +244,7 @@ export const useChatAPI = (
       });
 
       // Add streaming bot message placeholder
-      const botMessage = messageActions.addMessage({
+      botMessage = messageActions.addMessage({
         sender: 'bot',
         text: '',
         isStreaming: true,
@@ -259,10 +263,8 @@ export const useChatAPI = (
       finalizeBotResponse(botMessage, finalResponse);
 
     } catch (error: any) {
-      // Find the last streaming message to handle error
-      const streamingMessage = chatState.messages.find(msg => msg.isStreaming);
-      if (streamingMessage) {
-        handleAPIError(error, streamingMessage);
+      if (botMessage) {
+        handleAPIError(error, botMessage);
       } else {
         // If no streaming message, just set error state
         const errorType = classifyError(error);

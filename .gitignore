@@ -17,6 +17,7 @@ debug-dashboard.png
 # production
 /build
 /certs
+.vercel
 
 # misc
 .DS_Store
@@ -31,5 +32,6 @@ yarn-error.log*
 
 .env
 .env.example
+!.env.example
 
 package-lock.json
