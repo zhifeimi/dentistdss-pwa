@@ -268,7 +268,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
 
           <Grid container spacing={3}>
             {/* Holiday Name */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Holiday Name"
@@ -282,7 +282,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             </Grid>
 
             {/* Holiday Date */}
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <DatePicker
                 label="Holiday Date"
                 value={formData.holidayDate}
@@ -299,7 +299,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             </Grid>
 
             {/* Holiday Type */}
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth required>
                 <InputLabel>Holiday Type</InputLabel>
                 <Select
@@ -318,7 +318,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             </Grid>
 
             {/* Description */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Description"
@@ -332,7 +332,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             </Grid>
 
             {/* Full Day Closure Switch */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <FormControlLabel
                 control={
                   <Switch
@@ -348,7 +348,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             {/* Special Hours (only if not full day closure) */}
             {!formData.isFullDayClosure && (
               <>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
                     label="Special Opening Time"
                     value={formData.specialOpeningTime}
@@ -363,7 +363,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
                     label="Special Closing Time"
                     value={formData.specialClosingTime}
@@ -381,7 +381,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             )}
 
             {/* Recurring Holiday Switch */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <FormControlLabel
                 control={
                   <Switch
@@ -395,7 +395,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             </Grid>
 
             {/* Emergency Contact */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Emergency Contact (Optional)"

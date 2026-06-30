@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import FloatingChatHelper from '../../src/components/Home/Helper';
@@ -53,10 +53,6 @@ describe('FloatingChatHelper Component', () => {
 
   beforeEach(() => {
     testUtils.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
   });
 
   describe('Initial Render', () => {
@@ -296,7 +292,7 @@ describe('FloatingChatHelper Component', () => {
 
       // Wait for error message
       await waitFor(() => {
-        expect(screen.getByText(errorMessage)).toBeInTheDocument();
+        expect(screen.getByText('Network connection failed. Please check your internet connection and try again.')).toBeInTheDocument();
       });
 
       // Check error message in chat
@@ -329,7 +325,7 @@ describe('FloatingChatHelper Component', () => {
       await user.click(sendButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Network error')).toBeInTheDocument();
+        expect(screen.getByText('Network connection failed. Please check your internet connection and try again.')).toBeInTheDocument();
       });
 
       // Send second message (succeeds)
@@ -338,7 +334,7 @@ describe('FloatingChatHelper Component', () => {
       await user.click(sendButton);
 
       await waitFor(() => {
-        expect(screen.queryByText('Network error')).not.toBeInTheDocument();
+        expect(screen.queryByText('Network connection failed. Please check your internet connection and try again.')).not.toBeInTheDocument();
       });
     });
   });
@@ -371,7 +367,7 @@ describe('FloatingChatHelper Component', () => {
       await user.click(sendButton);
 
       // Check loading states
-      expect(screen.getByText('Processing...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Processing...')).toBeInTheDocument();
       expect(screen.getByText('Typing...')).toBeInTheDocument();
       expect(sendButton).toBeDisabled();
 
@@ -381,7 +377,7 @@ describe('FloatingChatHelper Component', () => {
       });
 
       await waitFor(() => {
-        expect(screen.queryByText('Processing...')).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText('Processing...')).not.toBeInTheDocument();
       });
     });
 

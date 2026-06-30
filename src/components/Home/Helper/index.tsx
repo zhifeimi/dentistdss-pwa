@@ -75,7 +75,7 @@ const FloatingChatHelper: React.FC<FloatingChatHelperProps> = () => {
     return () => {
       chatAPI.cancelRequest();
     };
-  }, [chatAPI]);
+  }, [chatAPI.cancelRequest]);
 
 
   // Render the component using composition

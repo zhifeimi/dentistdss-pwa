@@ -273,7 +273,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
 
           <Grid container spacing={3}>
             {/* Day of Week */}
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth required>
                 <InputLabel>Day of Week</InputLabel>
                 <Select
@@ -292,7 +292,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
             </Grid>
 
             {/* Specific Date (Optional) */}
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <DatePicker
                 label="Specific Date (Optional)"
                 value={formData.specificDate}
@@ -308,7 +308,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
             </Grid>
 
             {/* Closed Switch */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <FormControlLabel
                 control={
                   <Switch
@@ -324,7 +324,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
             {/* Opening and Closing Times (only if not closed) */}
             {!formData.isClosed && (
               <>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
                     label="Opening Time"
                     value={formData.openingTime}
@@ -339,7 +339,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
                     label="Closing Time"
                     value={formData.closingTime}
@@ -355,7 +355,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
                 </Grid>
 
                 {/* Break Times */}
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
                     label="Break Start Time (Optional)"
                     value={formData.breakStartTime}
@@ -369,7 +369,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
                     label="Break End Time (Optional)"
                     value={formData.breakEndTime}
@@ -386,7 +386,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
             )}
 
             {/* Emergency Hours Switch */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <FormControlLabel
                 control={
                   <Switch
@@ -400,7 +400,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
             </Grid>
 
             {/* Notes */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Notes (Optional)"

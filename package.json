@@ -19,7 +19,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@toolpad/core": "^0.15.0",
+    "@toolpad/core": "0.16.0",
     "axios": "^1.12.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
@@ -34,7 +34,8 @@
   },
   "overrides": {
     "nth-check": "^2.1.1",
-    "postcss": "^8.4.31"
+    "postcss": "^8.5.10",
+    "yaml": "2.9.0"
   },
   "scripts": {
     "dev": "vite",
@@ -74,7 +75,7 @@
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
     "@vitejs/plugin-react": "^4.5.2",
-    "@vitest/ui": "^3.2.3",
+    "@vitest/ui": "4.1.9",
     "dotenv": "^16.5.0",
     "eslint": "^9.28.0",
     "eslint-plugin-react": "^7.37.5",
@@ -87,6 +88,6 @@
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-pwa": "^1.0.0",
-    "vitest": "^3.2.3"
+    "vitest": "4.1.9"
   }
 }
