@@ -197,10 +197,12 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Dialog
         open={open}
-        onClose={handleClose}
+        onClose={(_event, reason) => {
+          if (submitting && reason === 'escapeKeyDown') return;
+          handleClose();
+        }}
         maxWidth="md"
         fullWidth
-        disableEscapeKeyDown={submitting}
       >
         <DialogTitle>Add Availability Slot</DialogTitle>
 

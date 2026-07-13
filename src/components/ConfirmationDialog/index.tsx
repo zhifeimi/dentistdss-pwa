@@ -9,7 +9,7 @@ import {
   Slide,
   useTheme,
   Avatar,
-  DialogProps,
+  type DialogProps,
 } from '@mui/material';
 import { TransitionProps } from '@mui/material/transitions';
 import {
@@ -125,7 +125,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   const config = dialogTypeConfig[type] || dialogTypeConfig.info;
   const IconComponent = config.icon;
 
-  const handleDialogClose = (_: any, reason?: string) => {
+  const handleDialogClose: NonNullable<DialogProps['onClose']> = (_event, reason) => {
     if (hideBackdropClick && reason === 'backdropClick') {
       return;
     }
@@ -138,12 +138,11 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   return (
     <Dialog
       open={open}
-      TransitionComponent={TransitionComponent}
+      slots={{ transition: TransitionComponent }}
       keepMounted
       onClose={handleDialogClose}
       aria-labelledby="confirmation-dialog-title"
       aria-describedby="confirmation-dialog-description"
-      disableEscapeKeyDown={disableEscapeKeyDown}
       maxWidth={maxWidth}
       fullWidth
       slotProps={{

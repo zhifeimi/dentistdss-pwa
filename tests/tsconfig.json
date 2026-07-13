@@ -4,7 +4,7 @@
     "types": [
       "vitest/globals",
       "@testing-library/jest-dom",
-      "node"
+      "vite/client"
     ],
     "lib": [
       "ES2022",
@@ -19,7 +19,7 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noUnusedLocals": false,

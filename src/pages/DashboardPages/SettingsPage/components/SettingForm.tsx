@@ -178,9 +178,11 @@ const SettingForm = memo(({
             size={isMobile ? 'small' : 'medium'}
             placeholder="e.g., app.theme"
             aria-label="Setting key"
-            inputProps={{
-              pattern: '[a-zA-Z0-9_.-]+',
-              title: 'Only letters, numbers, underscores, dots, and hyphens are allowed',
+            slotProps={{
+              htmlInput: {
+                pattern: '[a-zA-Z0-9_.-]+',
+                title: 'Only letters, numbers, underscores, dots, and hyphens are allowed',
+              },
             }}
           />
           

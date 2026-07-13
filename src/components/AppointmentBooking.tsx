@@ -377,7 +377,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({ open, onClose, 
             </Box>
         );
 
-      case 3:
+      case 3: {
         const selectedServiceObj = services.find(s => s.id === selectedService);
         const selectedDentistObj = dentists.find(d => d.id === selectedDentist);
         const dentistName = selectedDentistObj?.name ||
@@ -405,6 +405,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({ open, onClose, 
               </FormControl>
             </Box>
         );
+      }
 
       default:
         return null;

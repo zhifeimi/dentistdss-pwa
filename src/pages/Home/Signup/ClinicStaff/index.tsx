@@ -300,12 +300,14 @@ const ClinicStaff: React.FC = () => {
                     autoComplete="first-name"
                     value={formData.firstName}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -320,12 +322,14 @@ const ClinicStaff: React.FC = () => {
                     autoComplete="last-name"
                     value={formData.lastName}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -343,12 +347,14 @@ const ClinicStaff: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('email')}
                     helperText={getFieldError('email')}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -364,13 +370,14 @@ const ClinicStaff: React.FC = () => {
                     autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
+                    slotProps={{
+                      input: {
+                        startAdornment: (
                           <InputAdornment position="start">
                             <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
                           </InputAdornment>
-                      ),
-                      endAdornment: (
+                        ),
+                        endAdornment: (
                           <InputAdornment position="end">
                             <IconButton
                                 aria-label="toggle password visibility"
@@ -381,7 +388,8 @@ const ClinicStaff: React.FC = () => {
                               {showPassword ? <VisibilityOff/> : <Visibility/>}
                             </IconButton>
                           </InputAdornment>
-                      ),
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -403,13 +411,14 @@ const ClinicStaff: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('confirmPassword')}
                     helperText={getFieldError('confirmPassword')}
-                    InputProps={{
-                      startAdornment: (
+                    slotProps={{
+                      input: {
+                        startAdornment: (
                           <InputAdornment position="start">
                             <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
                           </InputAdornment>
-                      ),
-                      endAdornment: (
+                        ),
+                        endAdornment: (
                           <InputAdornment position="end">
                             <IconButton
                                 aria-label="toggle confirm password visibility"
@@ -420,7 +429,8 @@ const ClinicStaff: React.FC = () => {
                               {showConfirmPassword ? <VisibilityOff/> : <Visibility/>}
                             </IconButton>
                           </InputAdornment>
-                      ),
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />

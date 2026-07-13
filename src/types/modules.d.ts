@@ -14,11 +14,6 @@ declare module './components/NotificationSystem' {
   export const NotificationProvider: React.ComponentType<{ children: React.ReactNode }>;
 }
 
-declare module './serviceWorkerRegistration' {
-  export function register(): void;
-  export function unregister(): void;
-}
-
 declare module '../pages/Dashboard/ChatBotDentist' {
   const ChatInterface: React.ComponentType<any>;
   export default ChatInterface;

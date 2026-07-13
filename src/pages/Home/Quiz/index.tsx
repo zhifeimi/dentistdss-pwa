@@ -163,10 +163,10 @@ const Quiz: React.FC = () => {
         <Paper elevation={3}
           sx={{ p: isMobile ? 2 : 4, borderRadius: 2, bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
           <Typography variant={isMobile ? "h5" : "h4"} component="h1" align="center" gutterBottom
-            color={isDarkMode ? theme.palette.primary.light : theme.palette.primary.main} mb={3}>
+            color={isDarkMode ? theme.palette.primary.light : theme.palette.primary.main} sx={{ mb: 3 }}>
             Quiz Results
           </Typography>
-          <Typography variant="h6" align="center" mb={3} color={isDarkMode ? 'grey.300' : 'text.secondary'}>
+          <Typography variant="h6" align="center" sx={{ mb: 3 }} color={isDarkMode ? 'grey.300' : 'text.secondary'}>
             Your Score: {score} out of {quizQuestions.length}
           </Typography>
           {quizQuestions.map(q => {
@@ -207,7 +207,7 @@ const Quiz: React.FC = () => {
               </Paper>
             );
           })}
-          <Box textAlign="center" mt={4}>
+          <Box sx={{ textAlign: 'center', mt: 4 }}>
             <Button variant="contained" color="primary" onClick={handleRetakeQuiz}>
               Retake Quiz
             </Button>
@@ -230,7 +230,7 @@ const Quiz: React.FC = () => {
       <Paper elevation={3}
         sx={{ p: isMobile ? 2 : 3, borderRadius: 2, bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
         <Typography variant={isMobile ? "h6" : "h5"} component="h1" align="center" gutterBottom
-          color={isDarkMode ? theme.palette.primary.light : theme.palette.primary.main} mb={1}>
+          color={isDarkMode ? theme.palette.primary.light : theme.palette.primary.main} sx={{ mb: 1 }}>
           Dental Hygiene Quiz
         </Typography>
         <Box sx={{ width: '100%', mb: 2 }}>

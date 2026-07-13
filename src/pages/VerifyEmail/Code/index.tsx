@@ -12,8 +12,8 @@ import {
   Stack
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import authAPI from '../../../services/auth';
 
 const MAX_RESEND_ATTEMPTS = 3;
@@ -308,7 +308,9 @@ const VerifyEmailWithCodePage: React.FC = () => {
             variant="outlined"
             value={verificationCode}
             onChange={handleCodeChange}
-            inputProps={{ maxLength: 6, style: { textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' } }}
+            slotProps={{
+              htmlInput: { maxLength: 6, style: { textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' } },
+            }}
             error={!!error}
             helperText={error}
             disabled={loadingVerify || loadingResend}

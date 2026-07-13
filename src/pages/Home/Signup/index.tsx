@@ -206,12 +206,14 @@ const Signup: React.FC = () => {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 disabled={loading}
-                InputProps={{
-                  startAdornment: (
-                      <InputAdornment position="start">
-                        <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                      </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                        <InputAdornment position="start">
+                          <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                        </InputAdornment>
+                    ),
+                  },
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -244,12 +246,14 @@ const Signup: React.FC = () => {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 disabled={loading}
-                InputProps={{
-                  startAdornment: (
-                      <InputAdornment position="start">
-                        <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                      </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                        <InputAdornment position="start">
+                          <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                        </InputAdornment>
+                    ),
+                  },
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -291,12 +295,14 @@ const Signup: React.FC = () => {
                 disabled={loading}
                 error={hasFieldError('email')}
                 helperText={getFieldError('email')}
-                InputProps={{
-                  startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                      </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                        </InputAdornment>
+                    ),
+                  },
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -337,13 +343,14 @@ const Signup: React.FC = () => {
                   handleFieldBlur('password', e.target.value, { email, password: e.target.value, confirmPassword });
                 }}
                 disabled={loading}
-                InputProps={{
-                  startAdornment: (
+                slotProps={{
+                  input: {
+                    startAdornment: (
                       <InputAdornment position="start">
                         <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
                       </InputAdornment>
-                  ),
-                  endAdornment: (
+                    ),
+                    endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
                             aria-label="toggle password visibility"
@@ -354,7 +361,8 @@ const Signup: React.FC = () => {
                           {showPassword ? <VisibilityOff/> : <Visibility/>}
                         </IconButton>
                       </InputAdornment>
-                  ),
+                    ),
+                  },
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -401,13 +409,14 @@ const Signup: React.FC = () => {
                 disabled={loading}
                 error={hasFieldError('confirmPassword')}
                 helperText={getFieldError('confirmPassword')}
-                InputProps={{
-                  startAdornment: (
+                slotProps={{
+                  input: {
+                    startAdornment: (
                       <InputAdornment position="start">
                         <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
                       </InputAdornment>
-                  ),
-                  endAdornment: (
+                    ),
+                    endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
                             aria-label="toggle password visibility"
@@ -418,7 +427,8 @@ const Signup: React.FC = () => {
                           {showConfirmPassword ? <VisibilityOff/> : <Visibility/>}
                         </IconButton>
                       </InputAdornment>
-                  ),
+                    ),
+                  },
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -504,7 +514,7 @@ const Signup: React.FC = () => {
               </Typography>
             </Divider>
 
-            <Grid container spacing={2} justifyContent="center">
+            <Grid container spacing={2} sx={{justifyContent: 'center'}}>
               <Grid size={{ xs: 12 }} sx={{display: 'flex', justifyContent: 'center'}}>
                 <Box
                     ref={containerRef}
@@ -537,7 +547,7 @@ const Signup: React.FC = () => {
               </Grid>
             </Grid>
 
-            <Grid container justifyContent="space-between" sx={{mt: 4}}>
+            <Grid container sx={{mt: 4, justifyContent: 'space-between'}}>
               <Grid size={{ xs: 'auto' }}>
                 <MuiLink
                     component={RouterLink}

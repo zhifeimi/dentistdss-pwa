@@ -12,8 +12,8 @@ import {
   Stack
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import authAPI from '../../../services/auth';
 
 type VerificationStatus = 'pending' | 'verifying' | 'success' | 'error';
@@ -184,10 +184,12 @@ const VerifyEmailPage: React.FC = () => {
               margin="normal"
               variant="outlined"
               placeholder="Enter 6-digit code"
-              inputProps={{
-                maxLength: 6,
-                inputMode: 'numeric',
-                pattern: '[0-9]*'
+              slotProps={{
+                htmlInput: {
+                  maxLength: 6,
+                  inputMode: 'numeric',
+                  pattern: '[0-9]*'
+                }
               }}
               error={!!errorMessage}
               helperText={errorMessage}

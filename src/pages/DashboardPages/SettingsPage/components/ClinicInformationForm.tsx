@@ -293,7 +293,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+          <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200}}>
             <CircularProgress />
           </Box>
         </CardContent>

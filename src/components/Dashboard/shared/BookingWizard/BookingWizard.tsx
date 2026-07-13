@@ -78,10 +78,12 @@ const BookingWizard: React.FC<BookingWizardProps> = ({
       open={open}
       onClose={onClose}
       fullScreen
-      TransitionComponent={Transition}
-      PaperProps={{
-        sx: {
-          backgroundColor: theme.palette.background.default,
+      slots={{ transition: Transition }}
+      slotProps={{
+        paper: {
+          sx: {
+            backgroundColor: theme.palette.background.default,
+          },
         },
       }}
     >

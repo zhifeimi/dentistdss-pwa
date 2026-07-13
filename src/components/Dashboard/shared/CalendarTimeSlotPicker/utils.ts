@@ -57,7 +57,7 @@ export const convertToCalendarEvents = (availability: AvailabilitySlot[]): Calen
       return;
     }
 
-    let current = startTime.clone();
+    const current = startTime.clone();
     while (current.isBefore(endTime)) {
       const slotEnd = current.clone().add(30, 'minutes');
 

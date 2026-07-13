@@ -43,7 +43,7 @@ describe('React Components', () => {
       );
     }
     
-    render(<ConditionalComponent showMessage={true} />);
+    render(<ConditionalComponent showMessage />);
     expect(screen.getByText(/message is visible/i)).toBeInTheDocument();
     
     render(<ConditionalComponent showMessage={false} />);

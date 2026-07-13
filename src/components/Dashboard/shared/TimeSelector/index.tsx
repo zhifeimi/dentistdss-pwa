@@ -146,9 +146,11 @@ const TimeSelector: React.FC<TimeSelectorProps> = memo(({
         disabled={disabled}
         fullWidth={fullWidth}
         placeholder={placeholder}
-        InputProps={{
-          readOnly: true,
-          style: { cursor: disabled ? 'default' : 'pointer' },
+        slotProps={{
+          input: {
+            readOnly: true,
+            style: { cursor: disabled ? 'default' : 'pointer' },
+          },
         }}
       />
       

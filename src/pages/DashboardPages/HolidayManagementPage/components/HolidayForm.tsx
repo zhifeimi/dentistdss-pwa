@@ -247,9 +247,11 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
         maxWidth="md"
         fullWidth
         fullScreen={isMobile}
-        PaperProps={{
-          sx: {
-            minHeight: isMobile ? '100vh' : '600px',
+        slotProps={{
+          paper: {
+            sx: {
+              minHeight: isMobile ? '100vh' : '600px',
+            }
           }
         }}
       >

@@ -1,5 +1,7 @@
 version: 2
 updates:
+  # package.json is retained only as Deno's npm dependency manifest. npm and
+  # Node.js are not used by local development, CI, or deployment.
   - package-ecosystem: npm
     directory: /
     schedule:

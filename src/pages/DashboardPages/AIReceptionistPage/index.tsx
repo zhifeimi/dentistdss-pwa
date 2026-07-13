@@ -148,7 +148,7 @@ const AIReceptionistPage: React.FC = () => {
               )
             }
             onClear={clearConversation}
-            showClearButton={true}
+            showClearButton
             isMobile={isMobile}
           />
         </Box>

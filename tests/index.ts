@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { vi } from 'vitest';
 
 // Export test setup and utilities
 export * from './setup';
@@ -108,7 +109,8 @@ export interface TestConfig {
 // Re-export testing library utilities for convenience
 export { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 export { userEvent } from '@testing-library/user-event';
-export { vi, describe, it, test, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+export { vi };
+export { describe, it, test, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 
 // Test categories and their descriptions
 export const testCategories: Record<string, TestCategory> = {
@@ -351,7 +353,6 @@ export const testHelpers: TestHelpers = {
     const mockMethods: Record<string, any> = {};
 
     (['log', 'warn', 'error', 'info', 'debug'] as const).forEach(method => {
-      const { vi } = require('vitest');
       mockMethods[method] = vi.fn();
       (console as any)[method] = mockMethods[method];
     });

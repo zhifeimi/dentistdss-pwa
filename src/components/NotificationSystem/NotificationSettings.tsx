@@ -11,7 +11,7 @@ import {
 import {
   VolumeUp as VolumeUpIcon,
   VolumeOff as VolumeOffIcon,
-  MailOutline as MailOutlineIcon,
+  MailOutlined as MailOutlineIcon,
   Sms as SmsIcon,
   Event as EventIcon,
   MedicalServices as MedicalServicesIcon,
@@ -214,7 +214,7 @@ export const NotificationSettings: React.FC = () => {
                 value={settings.quietHours.start}
                 onChange={(e) => handleQuietHoursChange('start', e.target.value)}
                 size="small"
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
               <TextField
                 label="End time"
@@ -222,7 +222,7 @@ export const NotificationSettings: React.FC = () => {
                 value={settings.quietHours.end}
                 onChange={(e) => handleQuietHoursChange('end', e.target.value)}
                 size="small"
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Box>
           )}

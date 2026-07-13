@@ -1,29 +1,36 @@
-// Service worker registration for Vite PWA
-// This will be handled automatically by vite-plugin-pwa
-
-export function register(config) {
-  // Vite PWA plugin handles service worker registration automatically
-  // This function is kept for compatibility with existing code
-  if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-    console.log('PWA service worker will be registered automatically by Vite PWA plugin');
-
-    // Execute success callback if provided
-    if (config && config.onSuccess) {
-      navigator.serviceWorker.ready.then((registration) => {
-        config.onSuccess(registration);
-      });
-    }
-  }
+interface ServiceWorkerConfig {
+  onSuccess?: (registration: ServiceWorkerRegistration) => void;
+  onUpdate?: (registration: ServiceWorkerRegistration) => void;
 }
 
-export function unregister() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready
-        .then((registration) => {
-          registration.unregister();
-        })
-        .catch((error) => {
-          console.error(error.message);
+export function register(config: ServiceWorkerConfig = {}): void {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+      .then((registration) => {
+        registration.addEventListener('updatefound', () => {
+          const installingWorker = registration.installing;
+          if (!installingWorker) return;
+
+          installingWorker.addEventListener('statechange', () => {
+            if (installingWorker.state !== 'installed') return;
+            if (navigator.serviceWorker.controller) {
+              config.onUpdate?.(registration);
+            } else {
+              config.onSuccess?.(registration);
+            }
+          });
         });
-  }
+      })
+      .catch((error: unknown) => {
+        console.error('Service worker registration failed:', error);
+      });
+  });
+}
+
+export async function unregister(): Promise<void> {
+  if (!('serviceWorker' in navigator)) return;
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.unregister()));
 }

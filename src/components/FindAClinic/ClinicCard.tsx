@@ -118,8 +118,8 @@ const ClinicCard = React.memo<ClinicCardProps>(({
           <Typography 
             variant="subtitle1" 
             component="h3"
-            fontWeight="bold"
             sx={{ 
+              fontWeight: 'bold',
               fontSize: { xs: '1rem', sm: '1.1rem' },
               lineHeight: 1.3,
               flex: 1,

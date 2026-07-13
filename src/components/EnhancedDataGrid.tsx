@@ -234,12 +234,14 @@ const EnhancedDataGrid = <T = any,>({
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
+                  slotProps={{
+                    input: {
+                      startAdornment: (
                         <InputAdornment position="start">
                           <SearchIcon/>
                         </InputAdornment>
-                    ),
+                      ),
+                    },
                   }}
                   sx={{mr: 2, minWidth: 200}}
               />

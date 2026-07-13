@@ -106,10 +106,12 @@ const BlockSlotDialog: React.FC<BlockSlotDialogProps> = ({ open, onClose, onSubm
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={(_event, reason) => {
+        if (submitting && reason === 'escapeKeyDown') return;
+        handleClose();
+      }}
       maxWidth="sm"
       fullWidth
-      disableEscapeKeyDown={submitting}
     >
       <DialogTitle>Block Availability Slot</DialogTitle>
       

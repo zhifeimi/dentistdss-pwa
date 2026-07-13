@@ -5,6 +5,7 @@
 
 # dependencies
 /node_modules
+/.deno
 /.pnp
 .pnp.js
 

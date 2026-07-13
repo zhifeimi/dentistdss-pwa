@@ -89,8 +89,8 @@ const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: { minHeight: '500px' }
+      slotProps={{
+        paper: { sx: { minHeight: '500px' } }
       }}
     >
       <DialogTitle sx={{ 

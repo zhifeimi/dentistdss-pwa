@@ -14,7 +14,7 @@ export const SnackbarContainer: React.FC = () => {
       {snackbars.map((snackbar, index) => (
         <Snackbar
           key={snackbar.id}
-          open={true}
+          open
           autoHideDuration={snackbar.autoHideDuration}
           onClose={() => removeSnackbar(snackbar.id)}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
