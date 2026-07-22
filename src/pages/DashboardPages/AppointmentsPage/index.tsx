@@ -1,34 +1,39 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  Box,
   Alert,
-  Tabs,
-  Tab,
+  Box,
   Button,
-  useTheme,
-  useMediaQuery,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Tab,
+  Tabs,
+  TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
+  Add as AddIcon,
   CalendarToday as CalendarIcon,
   List as ListIcon,
-  Add as AddIcon,
 } from '@mui/icons-material';
 import '../Schedule/Schedule.scss';
 import { useAuth } from '../../../context/auth';
 import {
-  AppointmentCard,
   AppointmentCalendar,
-  BookingWizard,
+  AppointmentCard,
   AppointmentDialog,
-  SearchableList
+  BookingWizard,
+  SearchableList,
 } from '../../../components/Dashboard/shared';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';
 import useAppointments from '../../../hooks/appointment/useAppointments';
 import useAppointmentActions from '../../../hooks/appointment/useAppointmentActions';
 import useAppointmentBooking from '../../../hooks/appointment/useAppointmentBooking';
-import { UserRole, Appointment } from '../../../types';
-import type { SlotInfo as CalendarSlotInfo, NewAppointmentData } from '../../../components/Dashboard/shared/AppointmentCalendar/types';
+import { Appointment, UserRole } from '../../../types';
+import type { NewAppointmentData } from '../../../components/Dashboard/shared/AppointmentCalendar/types';
 import type { AvailableSlot } from '../../../components/Dashboard/shared/BookingWizard/types';
 
 interface AppointmentsPageProps {
@@ -54,10 +59,14 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [dialogMode, setDialogMode] = useState<DialogMode>('view');
   const [showBookingWizard, setShowBookingWizard] = useState<boolean>(false);
+  const [cancellationAppointment, setCancellationAppointment] = useState<Appointment | null>(null);
+  const [cancellationReason, setCancellationReason] = useState<string>('');
+  const [cancellationError, setCancellationError] = useState<string>('');
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { currentUser } = useAuth() || {};
+  const canBookAppointment = userRole === 'PATIENT';
 
   // Custom hooks
   const {
@@ -68,7 +77,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     refreshAppointments,
     updateAppointment,
     addAppointment,
-  } = useAppointments(selectedDate);
+  } = useAppointments(selectedDate, userRole);
 
   const appointmentActions = useAppointmentActions(updateAppointment);
 
@@ -98,34 +107,71 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     setDialogMode('view');
   }, []);
 
-  const handleViewModeChange = useCallback((_event: React.SyntheticEvent, newMode: ViewMode | null) => {
-    if (newMode !== null) {
-      setViewMode(newMode);
-    }
+  const handleCancelRequest = useCallback((appointment: Appointment) => {
+    setCancellationAppointment(appointment);
+    setCancellationReason('');
+    setCancellationError('');
   }, []);
+
+  const handleCloseCancellation = useCallback(() => {
+    setCancellationAppointment(null);
+    setCancellationReason('');
+    setCancellationError('');
+  }, []);
+
+  const handleConfirmCancellation = useCallback(async () => {
+    const normalizedReason = cancellationReason.trim();
+    if (!normalizedReason) {
+      setCancellationError('Cancellation reason is required.');
+      return;
+    }
+    if (normalizedReason.length > 1000) {
+      setCancellationError('Cancellation reason must not exceed 1000 characters.');
+      return;
+    }
+    if (!cancellationAppointment) {
+      return;
+    }
+
+    const cancelled = await appointmentActions.cancelAppointment(
+      cancellationAppointment,
+      normalizedReason,
+    );
+    if (cancelled) {
+      handleCloseCancellation();
+      handleCloseDialog();
+    }
+  }, [
+    appointmentActions,
+    cancellationAppointment,
+    cancellationReason,
+    handleCloseCancellation,
+    handleCloseDialog,
+  ]);
+
+  const handleViewModeChange = useCallback(
+    (_event: React.SyntheticEvent, newMode: ViewMode | null) => {
+      if (newMode !== null) {
+        setViewMode(newMode);
+      }
+    },
+    [],
+  );
 
   const handleDateChange = useCallback((date: Date) => {
     setSelectedDate(date);
   }, []);
 
-  const handleSlotSelect = useCallback((slotInfo: CalendarSlotInfo) => {
-    // Convert Date objects to strings for booking data
-    const date = slotInfo.start.toISOString().split('T')[0]; // YYYY-MM-DD
-    const startTime = slotInfo.start.toTimeString().split(' ')[0]; // HH:mm:ss
-    const endTime = slotInfo.end.toTimeString().split(' ')[0]; // HH:mm:ss
-
-    bookingWizard.updateBookingData('date', date);
-    bookingWizard.updateBookingData('startTime', startTime);
-    bookingWizard.updateBookingData('endTime', endTime);
-    setShowBookingWizard(true);
+  const handleCloseBookingWizard = useCallback(() => {
+    bookingWizard.resetBooking();
+    setShowBookingWizard(false);
   }, [bookingWizard]);
 
-  const handleNewAppointment = useCallback((data?: NewAppointmentData) => {
-    if (data) {
-      bookingWizard.updateBookingData('date', data.date);
-      bookingWizard.updateBookingData('startTime', data.startTime);
-      bookingWizard.updateBookingData('endTime', data.endTime);
-    }
+  const handleNewAppointment = useCallback((_data?: NewAppointmentData) => {
+    // Calendar ranges are not appointment-service availability evidence. Start
+    // every booking from a blank wizard so time can only be chosen from the
+    // service-specific slots returned by appointment-service.
+    bookingWizard.resetBooking();
     setShowBookingWizard(true);
   }, [bookingWizard]);
 
@@ -142,7 +188,10 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
   }, [refreshAppointments, addAppointment]);
 
   // Transform TimeSlot[] to AvailableSlot[] for BookingWizard
-  const transformedAvailableSlots: AvailableSlot[] = bookingWizard.availableSlots.map((slot, index) => ({
+  const transformedAvailableSlots: AvailableSlot[] = bookingWizard.availableSlots.map((
+    slot,
+    index,
+  ) => ({
     ...slot,
     id: `${slot.dentistId}-${slot.date}-${slot.startTime}-${index}`, // Generate unique ID
   }));
@@ -154,10 +203,9 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
       userRole={userRole}
       selectedDate={selectedDate}
       onSelectEvent={handleAppointmentClick}
-      onSelectSlot={handleSlotSelect}
       onNavigate={handleDateChange}
-      onNewAppointment={handleNewAppointment}
-      showAddButton={userRole === 'PATIENT' || userRole === 'RECEPTIONIST' || userRole === 'CLINIC_ADMIN'}
+      onNewAppointment={canBookAppointment ? handleNewAppointment : undefined}
+      showAddButton={canBookAppointment}
       height={isMobile ? 500 : 600}
     />
   );
@@ -190,7 +238,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
             userRole={userRole}
             onViewDetails={handleAppointmentClick}
             onReschedule={handleReschedule}
-            onCancel={appointmentActions.cancelAppointment}
+            onCancel={handleCancelRequest}
             onConfirm={appointmentActions.confirmAppointment}
             onMarkNoShow={appointmentActions.markNoShow}
             onComplete={appointmentActions.completeAppointment}
@@ -205,31 +253,34 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
   };
 
   if (loading) {
-    return <Alert severity="info">Loading appointments...</Alert>;
+    return <Alert severity='info'>Loading appointments...</Alert>;
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return <Alert severity='error'>{error}</Alert>;
   }
 
   return (
     <Box sx={{ pt: 2, height: '100%' }}>
       {/* Header with View Toggle and Actions */}
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        mb: 3,
-        flexWrap: 'wrap',
-        gap: 2,
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
         {/* Title and Today's Count */}
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 'medium', mb: 0.5 }}>
+          <Typography variant='h5' sx={{ fontWeight: 'medium', mb: 0.5 }}>
             {userRole === 'PATIENT' ? 'My Appointments' : 'Appointments'}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {todaysAppointments.length} appointment{todaysAppointments.length !== 1 ? 's' : ''} today
+          <Typography variant='body2' color='text.secondary'>
+            {todaysAppointments.length} appointment{todaysAppointments.length !== 1 ? 's' : ''}{' '}
+            today
           </Typography>
         </Box>
 
@@ -244,21 +295,21 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
             <Tab
               icon={<CalendarIcon />}
               label={!isMobile ? 'Calendar' : ''}
-              value="calendar"
+              value='calendar'
               sx={{ minHeight: 'auto', py: 1 }}
             />
             <Tab
               icon={<ListIcon />}
               label={!isMobile ? 'List' : ''}
-              value="list"
+              value='list'
               sx={{ minHeight: 'auto', py: 1 }}
             />
           </Tabs>
 
           {/* New Appointment Button */}
-          {(userRole === 'PATIENT' || userRole === 'RECEPTIONIST' || userRole === 'CLINIC_ADMIN') && (
+          {canBookAppointment && (
             <Button
-              variant="contained"
+              variant='contained'
               startIcon={<AddIcon />}
               onClick={() => handleNewAppointment()}
               size={isMobile ? 'small' : 'medium'}
@@ -282,22 +333,64 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
         mode={dialogMode}
         userRole={userRole}
         onReschedule={appointmentActions.rescheduleAppointment}
-        onCancel={appointmentActions.cancelAppointment}
+        onCancel={handleCancelRequest}
         onConfirm={appointmentActions.confirmAppointment}
         onMarkNoShow={appointmentActions.markNoShow}
         onComplete={appointmentActions.completeAppointment}
         loading={appointmentActions.loading}
       />
 
+      {/* Cancellation reason */}
+      <Dialog
+        open={!!cancellationAppointment}
+        onClose={handleCloseCancellation}
+        maxWidth='sm'
+        fullWidth
+      >
+        <DialogTitle>Cancel Appointment</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            multiline
+            minRows={3}
+            margin='dense'
+            label='Cancellation reason'
+            value={cancellationReason}
+            onChange={(event) => {
+              setCancellationReason(event.target.value);
+              setCancellationError('');
+            }}
+            error={!!cancellationError}
+            helperText={cancellationError || `${cancellationReason.length}/1000`}
+            slotProps={{ htmlInput: { maxLength: 1000 } }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCancellation} color='inherit'>
+            Keep Appointment
+          </Button>
+          <Button
+            onClick={handleConfirmCancellation}
+            color='error'
+            variant='contained'
+            disabled={appointmentActions.loading}
+          >
+            {appointmentActions.loading ? 'Cancelling...' : 'Cancel Appointment'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Booking Wizard */}
       <BookingWizard
         open={showBookingWizard}
-        onClose={() => setShowBookingWizard(false)}
+        onClose={handleCloseBookingWizard}
         currentStep={bookingWizard.currentStep}
         bookingData={bookingWizard.bookingData}
         patientData={bookingWizard.patientData}
         errors={bookingWizard.errors}
         clinics={bookingWizard.clinics}
+        dentists={bookingWizard.dentists}
         availableSlots={transformedAvailableSlots}
         serviceTypes={bookingWizard.serviceTypes}
         loading={bookingWizard.loading}

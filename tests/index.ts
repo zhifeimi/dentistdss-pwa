@@ -107,10 +107,10 @@ export interface TestConfig {
 }
 
 // Re-export testing library utilities for convenience
-export { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+export { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 export { userEvent } from '@testing-library/user-event';
 export { vi };
-export { describe, it, test, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+export { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, test } from 'vitest';
 
 // Test categories and their descriptions
 export const testCategories: Record<string, TestCategory> = {
@@ -191,10 +191,10 @@ export const testFixtures: TestFixtures = {
       appointmentDate: '2024-02-15',
       startTime: '10:00',
       endTime: '11:00',
-      status: 'scheduled',
+      status: 'REQUESTED',
       reasonForVisit: 'Regular checkup',
       symptoms: '',
-      urgencyLevel: 'low',
+      urgencyLevel: 'ROUTINE',
       notes: 'Routine cleaning and examination',
     },
     completed: {
@@ -205,10 +205,10 @@ export const testFixtures: TestFixtures = {
       appointmentDate: '2024-01-15',
       startTime: '14:00',
       endTime: '15:00',
-      status: 'completed',
+      status: 'COMPLETED',
       reasonForVisit: 'Tooth pain',
       symptoms: 'Sharp pain in upper left molar',
-      urgencyLevel: 'medium',
+      urgencyLevel: 'MODERATE',
       notes: 'Filled cavity in tooth #14',
     },
   },
@@ -240,13 +240,14 @@ export const testFixtures: TestFixtures = {
     aiMessage: {
       id: 2,
       type: 'ai',
-      content: 'Hello! I\'d be happy to help you with your appointment. What do you need assistance with?',
+      content:
+        "Hello! I'd be happy to help you with your appointment. What do you need assistance with?",
       timestamp: new Date('2024-01-15T10:00:05Z'),
     },
     streamingMessage: {
       id: 3,
       type: 'ai',
-      content: 'I\'m processing your request...',
+      content: "I'm processing your request...",
       timestamp: new Date('2024-01-15T10:00:10Z'),
       isStreaming: true,
     },
@@ -280,7 +281,7 @@ export const testHelpers: TestHelpers = {
     const MockComponent = (componentProps: any) => (
       React.createElement('div', {
         'data-testid': `mock-${name.toLowerCase()}`,
-        ...componentProps
+        ...componentProps,
       }, `${name} Component`)
     );
     MockComponent.displayName = `Mock${name}`;
@@ -322,7 +323,11 @@ export const testHelpers: TestHelpers = {
   },
 
   // Wait for element to appear
-  waitForElement: async (getByTestId: any, testId: string, timeout: number = 5000): Promise<Element> => {
+  waitForElement: async (
+    getByTestId: any,
+    testId: string,
+    timeout: number = 5000,
+  ): Promise<Element> => {
     const start = Date.now();
     while (Date.now() - start < timeout) {
       try {
@@ -331,7 +336,7 @@ export const testHelpers: TestHelpers = {
       } catch (error) {
         // Element not found yet, continue waiting
       }
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
     throw new Error(`Element with testId "${testId}" not found within ${timeout}ms`);
   },
@@ -343,7 +348,7 @@ export const testHelpers: TestHelpers = {
       fireEvent.change(element, {
         target: { value: element.value + char },
       });
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   },
 
@@ -352,7 +357,7 @@ export const testHelpers: TestHelpers = {
     const originalConsole = { ...console };
     const mockMethods: Record<string, any> = {};
 
-    (['log', 'warn', 'error', 'info', 'debug'] as const).forEach(method => {
+    (['log', 'warn', 'error', 'info', 'debug'] as const).forEach((method) => {
       mockMethods[method] = vi.fn();
       (console as any)[method] = mockMethods[method];
     });

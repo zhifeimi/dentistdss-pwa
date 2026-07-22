@@ -9,12 +9,15 @@ import {
   TextField,
   Button,
   CircularProgress,
-  Stack
+  Stack,
+  useTheme
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
+import PasswordStrengthIndicator from '../../../components/PasswordStrengthIndicator';
 import authAPI from '../../../services/auth';
+import { isPasswordStrong } from '../../../utils/passwordStrength';
 
 type VerificationStatus = 'pending' | 'verifying' | 'success' | 'error';
 
@@ -37,9 +40,13 @@ interface LocationState {
 const VerifyEmailPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { email, firstName } = (location.state as LocationState) || {};
+  const theme = useTheme();
+  const { email: initialEmail, firstName } = (location.state as LocationState) || {};
 
+  const [email, setEmail] = useState<string>(initialEmail || '');
   const [verificationCode, setVerificationCode] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('pending');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [countdown, setCountdown] = useState<number>(3);
@@ -57,6 +64,16 @@ const VerifyEmailPage: React.FC = () => {
       return;
     }
 
+    if (!isPasswordStrong(newPassword)) {
+      setErrorMessage('Choose a strong password with uppercase, lowercase, number, and special characters.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMessage('Passwords do not match.');
+      return;
+    }
+
     if (!email) {
       setErrorMessage('Email address is missing. Please try signing up again.');
       return;
@@ -66,7 +83,7 @@ const VerifyEmailPage: React.FC = () => {
 
     try {
       // Call API to verify the code
-      const response = await authAPI.verifySignupWithCode(email, verificationCode);
+      await authAPI.verifySignupWithCode(email, verificationCode, newPassword);
 
       setVerificationStatus('success');
       console.log('Verification successful');
@@ -88,25 +105,8 @@ const VerifyEmailPage: React.FC = () => {
       setErrorMessage(apiErrorMessage.includes('Invalid code') || apiErrorMessage.includes('expired')
         ? 'Verification failed: The code is invalid or has expired.'
         : apiErrorMessage);
-      console.error('Verification API error:', error);
     }
   };
-
-  if (!email || !firstName) {
-    // Fallback if state is not passed correctly
-    return (
-      <Container component="main" maxWidth="sm" sx={{ mt: 8 }}>
-        <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Typography variant="h5" component="h1" gutterBottom>
-            Verify Your Email
-          </Typography>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            Information missing. Please try signing up again.
-          </Alert>
-        </Paper>
-      </Container>
-    );
-  }
 
   if (verificationStatus === 'verifying') {
     return (
@@ -126,6 +126,9 @@ const VerifyEmailPage: React.FC = () => {
           <CheckCircleOutlineIcon sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
           <Typography variant="h4" component="h1" gutterBottom sx={{ color: 'success.dark' }}>
             Email Verified Successfully!
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Your email is verified. Staff and clinic administrator accounts remain pending until approved.
           </Typography>
           <Typography variant="h6" sx={{ mb: 2 }}>
             You will be redirected to the login page in {countdown} seconds...
@@ -167,15 +170,26 @@ const VerifyEmailPage: React.FC = () => {
         sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         <EmailIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
         <Typography variant="h4" component="h1" gutterBottom>
-          Almost there, {firstName}!
+          Almost there{firstName ? `, ${firstName}` : ''}!
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          We've sent a verification code to <strong>{email}</strong>.
-          Please enter the 6-digit code below to complete your registration.
+          Enter the email address used to sign up, your 6-digit code, and the password you want to use.
         </Typography>
 
         <Box component="form" sx={{ mt: 1, width: '100%', maxWidth: '360px' }}>
           <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label="Email Address"
+              type="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setErrorMessage('');
+              }}
+              autoComplete="email"
+            />
+
             <TextField
               fullWidth
               label="6-Digit Verification Code"
@@ -195,13 +209,46 @@ const VerifyEmailPage: React.FC = () => {
               helperText={errorMessage}
             />
 
+            <TextField
+              fullWidth
+              label="Choose Your Password"
+              type="password"
+              value={newPassword}
+              onChange={(event) => {
+                setNewPassword(event.target.value);
+                setErrorMessage('');
+              }}
+              autoComplete="new-password"
+              slotProps={{ htmlInput: { maxLength: 128 } }}
+            />
+
+            <PasswordStrengthIndicator password={newPassword} theme={theme} />
+
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => {
+                setConfirmPassword(event.target.value);
+                setErrorMessage('');
+              }}
+              autoComplete="new-password"
+              error={confirmPassword.length > 0 && newPassword !== confirmPassword}
+              slotProps={{ htmlInput: { maxLength: 128 } }}
+            />
+
             <Button
               fullWidth
               variant="contained"
               color="primary"
               size="large"
               onClick={handleVerify}
-              disabled={verificationCode.length !== 6}
+              disabled={
+                verificationCode.length !== 6 ||
+                !isPasswordStrong(newPassword) ||
+                newPassword !== confirmPassword
+              }
             >
               Verify Email
             </Button>

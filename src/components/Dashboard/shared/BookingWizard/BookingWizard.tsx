@@ -42,6 +42,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({
   patientData,
   errors,
   clinics,
+  dentists,
   availableSlots,
   serviceTypes,
   loading,
@@ -116,6 +117,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({
           patientData={patientData}
           errors={errors}
           clinics={clinics}
+          dentists={dentists}
           availableSlots={availableSlots}
           serviceTypes={serviceTypes}
           loading={loading}

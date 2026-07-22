@@ -97,8 +97,8 @@ const authAPI = {
 
   // ----- Verification helpers (unchanged) -----
   verifySignupToken: (vtoken: string): Promise<any> => api.get(`/api/auth/signup/verify?vtoken=${vtoken}`),
-  verifySignupWithCode: (email: string, code: string): Promise<any> => api.post('/api/auth/signup/verify/code', {email, code}),
-  resendVerificationCode: (email: string): Promise<any> => api.post(`/api/auth/signup/verify/code/resend?email=${email}`),
+  verifySignupWithCode: (email: string, code: string, newPassword: string): Promise<any> => api.post('/api/auth/signup/verify/code', {email, code, newPassword}),
+  resendVerificationCode: (email: string): Promise<any> => api.post(`/api/auth/signup/verify/code/resend?email=${encodeURIComponent(email)}`),
 
   async signupClinicAdmin(clinicAdminData: ClinicAdminSignupData): Promise<any> {
     // Registers a new dental clinic together with its administrator account.

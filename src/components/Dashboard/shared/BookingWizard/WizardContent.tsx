@@ -18,6 +18,7 @@ export const WizardContent: React.FC<WizardContentProps> = ({
   patientData,
   errors,
   clinics,
+  dentists,
   availableSlots,
   serviceTypes,
   loading,
@@ -46,6 +47,7 @@ export const WizardContent: React.FC<WizardContentProps> = ({
             selectedDate={bookingData.date}
             selectedTime={bookingData.startTime}
             selectedDentist={bookingData.dentistId}
+            dentists={dentists}
             availableSlots={availableSlots}
             onSelectDate={(date) => onUpdateBookingData('date', date)}
             onSelectTime={(startTime, endTime) => {

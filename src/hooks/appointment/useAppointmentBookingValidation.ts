@@ -1,4 +1,4 @@
-import type { BookingData, PatientData, BookingErrors } from './useAppointmentBooking';
+import type { BookingData, BookingErrors, PatientData } from './useAppointmentBooking';
 
 /**
  * Validation utilities for appointment booking
@@ -16,11 +16,11 @@ export interface ValidationContext {
  */
 export const validateClinicSelection = (bookingData: BookingData): BookingErrors => {
   const errors: BookingErrors = {};
-  
+
   if (!bookingData.clinicId) {
     errors.clinicId = 'Please select a clinic';
   }
-  
+
   return errors;
 };
 
@@ -29,7 +29,7 @@ export const validateClinicSelection = (bookingData: BookingData): BookingErrors
  */
 export const validateTimeSelection = (bookingData: BookingData): BookingErrors => {
   const errors: BookingErrors = {};
-  
+
   if (!bookingData.startTime) {
     errors.startTime = 'Please select a time slot';
   }
@@ -42,7 +42,7 @@ export const validateTimeSelection = (bookingData: BookingData): BookingErrors =
   if (!bookingData.dentistId) {
     errors.dentistId = 'Please select a dentist';
   }
-  
+
   return errors;
 };
 
@@ -51,14 +51,14 @@ export const validateTimeSelection = (bookingData: BookingData): BookingErrors =
  */
 export const validateServiceDetails = (bookingData: BookingData): BookingErrors => {
   const errors: BookingErrors = {};
-  
+
   if (!bookingData.serviceType) {
     errors.serviceType = 'Please select a service type';
   }
   if (!bookingData.reason.trim()) {
     errors.reason = 'Please provide a reason for the appointment';
   }
-  
+
   return errors;
 };
 
@@ -67,7 +67,7 @@ export const validateServiceDetails = (bookingData: BookingData): BookingErrors 
  */
 export const validatePatientInfo = (patientData: PatientData, currentUser: any): BookingErrors => {
   const errors: BookingErrors = {};
-  
+
   // Only validate if user is not logged in
   if (!currentUser) {
     if (!patientData.firstName.trim()) {
@@ -85,7 +85,7 @@ export const validatePatientInfo = (patientData: PatientData, currentUser: any):
       errors.phone = 'Phone number is required';
     }
   }
-  
+
   return errors;
 };
 
@@ -94,17 +94,17 @@ export const validatePatientInfo = (patientData: PatientData, currentUser: any):
  */
 export const validateBookingStep = (
   step: number,
-  context: ValidationContext
+  context: ValidationContext,
 ): BookingErrors => {
   const { currentUser, bookingData, patientData } = context;
-  
+
   switch (step) {
     case 0:
       return validateClinicSelection(bookingData);
     case 1:
-      return validateTimeSelection(bookingData);
-    case 2:
       return validateServiceDetails(bookingData);
+    case 2:
+      return validateTimeSelection(bookingData);
     case 3:
       return validatePatientInfo(patientData, currentUser);
     default:
@@ -116,24 +116,22 @@ export const validateBookingStep = (
  * Validate appointment data before submission
  */
 export const validateAppointmentData = (
-  appointmentData: any
+  appointmentData: any,
 ): { isValid: boolean; missingFields: string[] } => {
   const requiredFields = [
-    'patientId',
-    'dentistId', 
+    'dentistId',
     'clinicId',
-    'createdBy',
     'serviceId',
     'appointmentDate',
     'startTime',
     'endTime',
-    'reasonForVisit'
+    'reasonForVisit',
   ];
-  
-  const missingFields = requiredFields.filter(field => !appointmentData[field]);
-  
+
+  const missingFields = requiredFields.filter((field) => !appointmentData[field]);
+
   return {
     isValid: missingFields.length === 0,
-    missingFields
+    missingFields,
   };
 };

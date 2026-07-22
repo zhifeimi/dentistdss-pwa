@@ -63,18 +63,21 @@ export interface Country {
 // Theme mode
 export type ThemeMode = 'light' | 'dark';
 
-// Urgency levels
-export type UrgencyLevel = 'low' | 'medium' | 'high';
+// Urgency levels used by the appointment API
+export type UrgencyLevel =
+  | 'ROUTINE'
+  | 'MODERATE'
+  | 'URGENT'
+  | 'EMERGENCY';
 
-// Appointment status
-export type AppointmentStatus = 
-  | 'scheduled' 
-  | 'confirmed' 
-  | 'in_progress' 
-  | 'completed' 
-  | 'cancelled' 
-  | 'no_show' 
-  | 'rescheduled';
+// Appointment status used by the appointment API
+export type AppointmentStatus =
+  | 'REQUESTED'
+  | 'CONFIRMED'
+  | 'CANCELLED'
+  | 'COMPLETED'
+  | 'NO_SHOW'
+  | 'RESCHEDULED';
 
 // User roles - matching backend format (uppercase)
 export type UserRole =

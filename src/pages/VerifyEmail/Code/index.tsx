@@ -9,12 +9,14 @@ import {
   TextField,
   Button,
   CircularProgress,
-  Stack
+  Stack,
+  useTheme
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
+import PasswordStrengthIndicator from '../../../components/PasswordStrengthIndicator';
 import authAPI from '../../../services/auth';
+import { isPasswordStrong } from '../../../utils/passwordStrength';
 
 const MAX_RESEND_ATTEMPTS = 3;
 const RESEND_WINDOW_SECONDS = 90;
@@ -45,6 +47,7 @@ interface ResendStatus {
 const VerifyEmailWithCodePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
   const { email: initialEmail, firstName: initialFirstName } = (location.state as LocationState) || {};
 
   // Persist email and firstName in local state to survive potential state loss on refresh
@@ -52,6 +55,8 @@ const VerifyEmailWithCodePage: React.FC = () => {
   const [firstName, setFirstName] = useState<string | undefined>(initialFirstName);
 
   const [verificationCode, setVerificationCode] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [loadingVerify, setLoadingVerify] = useState<boolean>(false);
   const [loadingResend, setLoadingResend] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -141,6 +146,16 @@ const VerifyEmailWithCodePage: React.FC = () => {
       return;
     }
 
+    if (!isPasswordStrong(newPassword)) {
+      setError('Choose a strong password with uppercase, lowercase, number, and special characters.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     if (!email) {
       setError('Email address is missing. Please try signing up again.');
       return;
@@ -152,7 +167,7 @@ const VerifyEmailWithCodePage: React.FC = () => {
     setResendError('');
 
     try {
-      const response = await authAPI.verifySignupWithCode(email, verificationCode);
+      await authAPI.verifySignupWithCode(email, verificationCode, newPassword);
       localStorage.removeItem(LOCAL_STORAGE_RESEND_KEY); // Clear resend limit on successful verification
       setShowSuccessMessage(true);
       setCountdown(3); // Reset countdown
@@ -161,8 +176,7 @@ const VerifyEmailWithCodePage: React.FC = () => {
       setResendMessage('');
       setResendError('');
     } catch (err: any) {
-      console.error('Verification API error:', err);
-      setError(err.response?.message || 'An error occurred during verification.');
+      setError(err.response?.data?.message || err.message || 'An error occurred during verification.');
     }
     setLoadingVerify(false);
   };
@@ -214,7 +228,12 @@ const VerifyEmailWithCodePage: React.FC = () => {
         timestamp: newTimestamp
       }));
       
-      setResendMessage(response.dataObject || 'A new verification code has been sent to your email.');
+      setResendMessage(
+        typeof response === 'string'
+          ? response
+          : response?.dataObject ||
+            'If verification is available, use your current code or check your email for a code.'
+      );
       
       if (attempts >= MAX_RESEND_ATTEMPTS) {
         setResendError(`Max resend attempts reached. Try again in ${RESEND_WINDOW_SECONDS} seconds.`);
@@ -222,30 +241,10 @@ const VerifyEmailWithCodePage: React.FC = () => {
         setResendCooldown(RESEND_WINDOW_SECONDS);
       }
     } catch (err: any) {
-      console.error('Resend code API error:', err);
-      setResendError(err.response?.data?.message || 'An error occurred while resending the code.');
+      setResendError(err.response?.data?.message || err.message || 'An error occurred while resending the code.');
     }
     setLoadingResend(false);
   };
-
-  if (!email || !firstName) {
-    return (
-      <Container component="main" maxWidth="sm" sx={{ mt: 8 }}>
-        <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <ErrorOutlineIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
-          <Typography variant="h5" component="h1" gutterBottom>
-            Verification Error
-          </Typography>
-          <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
-            Your session information is missing. Please try signing up again.
-          </Alert>
-          <Button variant="contained" onClick={() => navigate('/signup')}>
-            Go to Sign Up
-          </Button>
-        </Paper>
-      </Container>
-    );
-  }
 
   if (showSuccessMessage) {
     return (
@@ -262,10 +261,10 @@ const VerifyEmailWithCodePage: React.FC = () => {
             Verification Successful!
           </Typography>
           <Typography variant="h6" component="p" sx={{ mb: 1 }}>
-            Welcome aboard, {firstName}!
+            Welcome aboard{firstName ? `, ${firstName}` : ''}!
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            You have successfully activated your Dentabot account.
+            Your email is verified. Staff and clinic administrator accounts remain pending until approved.
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Redirecting to login in {countdown} second{countdown !== 1 ? 's' : ''}...
@@ -287,19 +286,29 @@ const VerifyEmailWithCodePage: React.FC = () => {
       }}>
         <EmailIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
         <Typography variant="h4" component="h1" gutterBottom>
-          Verify Your Email, {firstName}!
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-          We've sent a 6-digit verification code to:
-        </Typography>
-        <Typography variant="h6" component="p" sx={{ mb: 3, color: 'primary.dark', fontWeight: 'bold' }}>
-          {email}
+          Verify Your Email{firstName ? `, ${firstName}` : ''}!
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          Please enter the code below to activate your account.
+          Enter the email address used to sign up, your 6-digit code, and the password you want to use.
         </Typography>
 
         <Box component="form" onSubmit={handleVerify} sx={{ width: '100%', maxWidth: '300px' }}>
+          <TextField
+            fullWidth
+            id="email"
+            name="email"
+            label="Email Address"
+            type="email"
+            value={email || ''}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError('');
+            }}
+            autoComplete="email"
+            disabled={loadingVerify || loadingResend}
+            sx={{ mb: 2 }}
+          />
+
           <TextField
             fullWidth
             id="verificationCode"
@@ -317,6 +326,43 @@ const VerifyEmailWithCodePage: React.FC = () => {
             sx={{ mb: 2 }}
           />
 
+          <TextField
+            fullWidth
+            id="newPassword"
+            name="newPassword"
+            label="Choose Your Password"
+            type="password"
+            value={newPassword}
+            onChange={(event) => {
+              setNewPassword(event.target.value);
+              setError('');
+            }}
+            autoComplete="new-password"
+            slotProps={{ htmlInput: { maxLength: 128 } }}
+            disabled={loadingVerify || loadingResend}
+            sx={{ mb: 1 }}
+          />
+
+          <PasswordStrengthIndicator password={newPassword} theme={theme} />
+
+          <TextField
+            fullWidth
+            id="confirmPassword"
+            name="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
+              setError('');
+            }}
+            autoComplete="new-password"
+            error={confirmPassword.length > 0 && newPassword !== confirmPassword}
+            slotProps={{ htmlInput: { maxLength: 128 } }}
+            disabled={loadingVerify || loadingResend}
+            sx={{ mb: 2 }}
+          />
+
           {resendMessage && <Alert severity="success" sx={{ mb: 2, width: '100%' }}>{resendMessage}</Alert>}
           {resendError && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{resendError}</Alert>}
 
@@ -325,7 +371,13 @@ const VerifyEmailWithCodePage: React.FC = () => {
             fullWidth
             variant="contained"
             color="primary"
-            disabled={loadingVerify || loadingResend || verificationCode.length !== 6}
+            disabled={
+              loadingVerify ||
+              loadingResend ||
+              verificationCode.length !== 6 ||
+              !isPasswordStrong(newPassword) ||
+              newPassword !== confirmPassword
+            }
             sx={{ mb: 2, py: 1.5 }}
           >
             {loadingVerify ? <CircularProgress size={24} color="inherit" /> : 'Verify Account'}

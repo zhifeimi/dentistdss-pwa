@@ -54,15 +54,23 @@ export const calculatePasswordStrength = (password: string): PasswordStrengthRes
   }
 
   // Special characters
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+  if (/[^A-Za-z0-9\s]/.test(password)) {
     score += 1;
   } else {
     feedback.push('Add special characters');
   }
 
-  // Determine strength level
+  if (/\s/.test(password)) {
+    feedback.push('Remove whitespace');
+  }
+
+  if (password.length > 128) {
+    feedback.push('Use no more than 128 characters');
+  }
+
+  // Only call a password strong when it satisfies the backend policy.
   let level = 'weak';
-  if (score >= 5) {
+  if (isPasswordStrong(password)) {
     level = 'strong';
   } else if (score >= 3) {
     level = 'medium';
@@ -84,7 +92,11 @@ export const getPasswordStrengthColor = (level: string, theme: Theme): string =>
   }
 };
 
-export const isPasswordStrong = (password: string): boolean => {
-  const {level} = calculatePasswordStrength(password);
-  return level === 'strong';
-}; 
+export const isPasswordStrong = (password: string): boolean =>
+  password.length >= 8 &&
+  password.length <= 128 &&
+  !/\s/.test(password) &&
+  /[a-z]/.test(password) &&
+  /[A-Z]/.test(password) &&
+  /\d/.test(password) &&
+  /[^A-Za-z0-9\s]/.test(password);

@@ -125,7 +125,8 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({ open, onClose, 
           Number(selectedDentist), // Convert to number
           currentUser?.clinicId || 0,
           dateString,
-          serviceDuration
+          Number(selectedService),
+          serviceDuration,
         );
         setAvailableSlots(slots || []); // API returns TimeSlot array
       } catch (err: any) {
@@ -159,18 +160,21 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({ open, onClose, 
   const handleBookAppointment = async (): Promise<void> => {
     setLoading(true);
     try {
+      if (!currentUser?.id || !currentUser.roles?.includes('PATIENT')) {
+        throw new Error('A signed-in patient account is required to book an appointment');
+      }
+
       const appointmentData = {
-        patientId: currentUser?.id || 0, // Assuming the current user is the patient booking
+        patientId: currentUser?.id,
         dentistId: Number(selectedDentist),
         clinicId: currentUser?.clinicId || 0,
-        createdBy: currentUser?.id || 0,
         serviceId: Number(selectedService),
         appointmentDate: selectedDate.toISOString().split('T')[0],
         startTime: selectedTime || '',
         endTime: '', // This will need to be calculated based on start time and service duration
         reasonForVisit: patientNotes,
         symptoms: '',
-        urgencyLevel: 'low' as const,
+        urgencyLevel: 'ROUTINE' as const,
         notes: patientNotes,
       };
 

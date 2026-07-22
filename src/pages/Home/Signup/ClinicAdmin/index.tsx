@@ -172,15 +172,14 @@ const ClinicAdmin: React.FC = () => {
         email: formData.email,
         password: formData.password,
         clinicName: formData.clinicName,
-        clinicAddress: formData.address,
-        clinicCity: formData.city,
-        clinicState: formData.state,
-        clinicZipCode: formData.zipCode,
-        clinicCountry: formData.country,
-        clinicPhone: formData.phoneNumber,
-        clinicEmail: formData.businessEmail,
-        clinicWebsite: formData.website,
-        licenseNumber: '', // Add this field to the form if needed
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        phoneNumber: formData.phoneNumber,
+        businessEmail: formData.businessEmail,
+        website: formData.website,
         role: 'CLINIC_ADMIN' as const,
       };
 
@@ -190,7 +189,6 @@ const ClinicAdmin: React.FC = () => {
       setDialogMessage('Signup request submitted! Please check your email for verification. Your clinic registration is pending approval by the DentistDSS team.');
       setOpenDialog(true);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || 'Failed to sign up. Please try again.');
     }
     setLoading(false);

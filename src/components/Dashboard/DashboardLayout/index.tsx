@@ -1,11 +1,6 @@
 import React from 'react';
-import {
-  Box,
-  useTheme,
-  useMediaQuery,
-  Alert,
-} from '@mui/material';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import { DashboardProvider } from '@/context/dashboard/DashboardContext';
 import { useDashboardNavigation } from '@/hooks/dashboard/useDashboardNavigation';
@@ -29,10 +24,10 @@ interface DashboardLayoutInternalProps {
  * Internal Dashboard Layout Component
  * Uses dashboard context and hooks for state management
  */
-const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({ 
-  darkMode, 
-  toggleDarkMode, 
-  logout 
+const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
+  darkMode,
+  toggleDarkMode,
+  logout,
 }) => {
   const theme = useTheme();
   const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
@@ -58,11 +53,11 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
 
   // Show loading or error states
   if (!currentUser) {
-    return <Alert severity="warning">Please log in to access the dashboard.</Alert>;
+    return <Alert severity='warning'>Please log in to access the dashboard.</Alert>;
   }
 
   if (rolesWithComponents.length === 0) {
-    return <Alert severity="info">No dashboard roles available for your account.</Alert>;
+    return <Alert severity='info'>No dashboard roles available for your account.</Alert>;
   }
 
   return (
@@ -102,11 +97,11 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
         <Routes>
           {/* Standalone routes accessible from any role */}
           <Route
-            path="/profile"
+            path='/profile'
             element={<UserProfilePage />}
           />
           <Route
-            path="/change-password"
+            path='/change-password'
             element={<ChangePasswordPage />}
           />
 
@@ -118,6 +113,7 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
               element={
                 <route.component
                   clinicId={currentUser?.clinicId}
+                  userRole={activeRoleKey as UserRole}
                 />
               }
             />
@@ -125,10 +121,10 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
 
           {/* Default redirect */}
           <Route
-            path="/dashboard"
+            path='/dashboard'
             element={
               <Navigate
-                to="/overview"
+                to='/overview'
                 replace
               />
             }
@@ -136,9 +132,9 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
 
           {/* 404 for invalid routes */}
           <Route
-            path="*"
+            path='*'
             element={
-              <Alert severity="error">
+              <Alert severity='error'>
                 Page not found. Please select a valid section from the sidebar.
               </Alert>
             }
@@ -158,9 +154,9 @@ interface DashboardLayoutProps extends DashboardLayoutInternalProps {
  * Main Dashboard Layout Component with Context Provider
  * Wraps the internal component with necessary providers
  */
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
-  roles = [], 
-  ...props 
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({
+  roles = [],
+  ...props
 }) => {
   return (
     <DashboardErrorBoundary>
