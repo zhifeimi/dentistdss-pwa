@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../src/services/config', () => ({
+  clearXsrfToken: vi.fn(),
   default: {
     post: mocks.post,
     get: mocks.get,
@@ -16,10 +17,7 @@ vi.mock('../../src/services/config', () => ({
 import authAPI from '../../src/services/auth';
 import clinicAPI from '../../src/services/clinic';
 import dictionary from '../../src/utils/dictionary';
-import {
-  calculatePasswordStrength,
-  isPasswordStrong,
-} from '../../src/utils/passwordStrength';
+import { calculatePasswordStrength, isPasswordStrong } from '../../src/utils/passwordStrength';
 
 describe('auth onboarding API contracts', () => {
   beforeEach(() => {
@@ -41,6 +39,17 @@ describe('auth onboarding API contracts', () => {
       code: '123456',
       newPassword: ['FinalStrong', '1!'].join(''),
     });
+  });
+
+  it('uses exact auth routes for XSRF bootstrap and refresh', async () => {
+    mocks.get.mockResolvedValue({});
+    mocks.post.mockResolvedValue({ accessToken: 'access-token', tokenType: 'Bearer' });
+
+    await authAPI.bootstrapXsrf();
+    await authAPI.refresh();
+
+    expect(mocks.get).toHaveBeenCalledWith('/api/auth/csrf');
+    expect(mocks.post).toHaveBeenCalledWith('/api/auth/refresh');
   });
 
   it('URL-encodes mailbox aliases when resending a code', async () => {
