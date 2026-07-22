@@ -1,4 +1,4 @@
-import api, { clearXsrfToken } from './config';
+import api, { clearXsrfToken, hasXsrfToken } from './config';
 import {
   AuthResponse,
   ClinicAdminSignupData,
@@ -19,6 +19,33 @@ const storeToken = (accessToken: string, tokenType: string = 'Bearer'): void => 
 const clearToken = (): void => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('tokenType');
+};
+
+const CSRF_BOOTSTRAP_PATH = '/api/auth/csrf';
+
+let xsrfBootstrapInFlight: Promise<void> | undefined;
+
+/**
+ * Ensures the in-memory XSRF token has been bootstrapped from the API origin
+ * (module state is lost on every page reload). Single-flight, so concurrent
+ * callers and React StrictMode double-effects share one request. Never
+ * rejects: a failed bootstrap is expected offline, and the subsequent
+ * cookie-session request fails closed on its own.
+ */
+const ensureXsrfBootstrapped = (): Promise<void> => {
+  if (hasXsrfToken()) {
+    return Promise.resolve();
+  }
+  if (!xsrfBootstrapInFlight) {
+    xsrfBootstrapInFlight = api
+      .get(CSRF_BOOTSTRAP_PATH)
+      .then((): void => undefined)
+      .catch((): void => undefined)
+      .finally(() => {
+        xsrfBootstrapInFlight = undefined;
+      });
+  }
+  return xsrfBootstrapInFlight;
 };
 
 const authAPI = {
@@ -59,13 +86,20 @@ const authAPI = {
    * in memory.
    */
   async bootstrapXsrf(): Promise<void> {
-    await api.get('/api/auth/csrf');
+    await api.get(CSRF_BOOTSTRAP_PATH);
   },
+
+  /**
+   * Best-effort, single-flight XSRF bootstrap; never rejects. Call before any
+   * cookie-session request that must survive a page reload.
+   */
+  ensureXsrfBootstrapped,
 
   /**
    * Rotates the HttpOnly refresh cookie and stores the resulting access token.
    */
   async refresh(): Promise<AuthResponse> {
+    await ensureXsrfBootstrapped();
     try {
       const authData = await api.post('/api/auth/refresh') as AuthResponse;
       storeToken(authData.accessToken, authData.tokenType);
@@ -83,6 +117,7 @@ const authAPI = {
    */
   async logout(): Promise<void> {
     try {
+      await ensureXsrfBootstrapped();
       await api.post('/api/auth/logout');
     } catch (_) {
       // ignore — server might reject due to already invalidated token

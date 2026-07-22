@@ -7,6 +7,15 @@ const XSRF_PROTECTED_AUTH_PATHS = new Set([
   '/api/auth/refresh',
   '/api/auth/logout',
 ]);
+// Requests that participate in the cookie session rather than bearer auth.
+// The public CSRF bootstrap must never carry a stale bearer, and bearer
+// omission on refresh is unconditional; logout keeps the bearer as a JWT
+// fallback only while no XSRF token is available.
+const COOKIE_SESSION_AUTH_REQUESTS = new Set([
+  'POST /api/auth/refresh',
+  'POST /api/auth/logout',
+  'GET /api/auth/csrf',
+]);
 const ABSOLUTE_URL = /^(?:[a-z][a-z\d+.-]*:)?\/\//i;
 
 type HeaderBag = Record<string, unknown> & {
@@ -28,22 +37,40 @@ const readHeader = (headers: unknown, name: string): string | undefined => {
   return typeof value === 'string' && value.trim() ? value : undefined;
 };
 
-const isXsrfProtectedAuthRequest = (request: InternalAxiosRequestConfig): boolean => {
-  if (request.method?.toUpperCase() !== 'POST' || !request.url) {
-    return false;
+const authEndpointPathname = (request: InternalAxiosRequestConfig): string | undefined => {
+  if (!request.url) {
+    return undefined;
   }
 
   try {
     const endpoint = new URL(request.url, baseURL || window.location.origin);
     if (ABSOLUTE_URL.test(request.url)) {
       if (!baseURL || endpoint.origin !== new URL(baseURL, window.location.origin).origin) {
-        return false;
+        return undefined;
       }
     }
-    return XSRF_PROTECTED_AUTH_PATHS.has(endpoint.pathname);
+    return endpoint.pathname;
   } catch (_) {
-    return XSRF_PROTECTED_AUTH_PATHS.has(request.url.split('?')[0]);
+    return request.url.split('?')[0];
   }
+};
+
+const isXsrfProtectedAuthRequest = (request: InternalAxiosRequestConfig): boolean => {
+  if (request.method?.toUpperCase() !== 'POST') {
+    return false;
+  }
+  const pathname = authEndpointPathname(request);
+  return pathname !== undefined && XSRF_PROTECTED_AUTH_PATHS.has(pathname);
+};
+
+const isCookieSessionAuthRequest = (request: InternalAxiosRequestConfig): boolean => {
+  const method = request.method?.toUpperCase();
+  if (!method) {
+    return false;
+  }
+  const pathname = authEndpointPathname(request);
+  return pathname !== undefined &&
+    COOKIE_SESSION_AUTH_REQUESTS.has(`${method} ${pathname}`);
 };
 
 const removeXsrfHeader = (headers: HeaderBag): void => {
@@ -62,6 +89,8 @@ export const clearXsrfToken = (): void => {
   xsrfToken = undefined;
 };
 
+export const hasXsrfToken = (): boolean => xsrfToken !== undefined;
+
 // Create an instance of axios with custom configuration
 const api: AxiosInstance = axios.create({
   baseURL,
@@ -74,17 +103,19 @@ api.interceptors.request.use(
     const token = localStorage.getItem('authToken');
     const tokenType = localStorage.getItem('tokenType');
     const headers = request.headers as unknown as HeaderBag;
-    const cookieSessionRequest = isXsrfProtectedAuthRequest(request);
+    const cookieSessionRequest = isCookieSessionAuthRequest(request);
     const refreshRequest = request.url?.split('?')[0] === '/api/auth/refresh';
+    const csrfBootstrapRequest = request.method?.toUpperCase() === 'GET' &&
+      authEndpointPathname(request) === '/api/auth/csrf';
 
-    if (cookieSessionRequest && (refreshRequest || xsrfToken)) {
+    if (cookieSessionRequest && (refreshRequest || csrfBootstrapRequest || xsrfToken)) {
       removeAuthorizationHeader(headers);
     } else if (token) {
       request.headers.Authorization = `${tokenType} ${token}`;
     }
 
     removeXsrfHeader(headers);
-    if (xsrfToken && cookieSessionRequest) {
+    if (xsrfToken && isXsrfProtectedAuthRequest(request)) {
       if (headers.set) {
         headers.set(XSRF_HEADER, xsrfToken);
       } else {

@@ -132,4 +132,41 @@ describe('XSRF transport', () => {
     expect(rotated.headers['X-XSRF-TOKEN']).toBe('rotated-token');
     expect(cleared.headers['X-XSRF-TOKEN']).toBeUndefined();
   });
+
+  it('omits bearer tokens from the public CSRF bootstrap request', async () => {
+    localStorage.setItem('authToken', 'stale-access-token');
+    localStorage.setItem('tokenType', 'Bearer');
+    await interceptors.responseFulfilled({
+      headers: { 'X-XSRF-TOKEN': 'csrf-token' },
+      data: {},
+    });
+
+    const csrfBootstrap = interceptors.requestFulfilled({
+      url: '/api/auth/csrf',
+      method: 'get',
+      headers: { Authorization: 'caller-supplied' },
+    });
+
+    expect(csrfBootstrap.headers.Authorization).toBeUndefined();
+    expect(csrfBootstrap.headers['X-XSRF-TOKEN']).toBeUndefined();
+  });
+
+  it('keeps unrelated and external requests outside the cookie session', () => {
+    localStorage.setItem('authToken', 'access-token');
+    localStorage.setItem('tokenType', 'Bearer');
+
+    const unrelated = interceptors.requestFulfilled({
+      url: '/api/appointment/list',
+      method: 'get',
+      headers: {},
+    });
+    const external = interceptors.requestFulfilled({
+      url: 'https://attacker.example/api/auth/csrf',
+      method: 'get',
+      headers: {},
+    });
+
+    expect(unrelated.headers.Authorization).toBe('Bearer access-token');
+    expect(external.headers.Authorization).toBe('Bearer access-token');
+  });
 });

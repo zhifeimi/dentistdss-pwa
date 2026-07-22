@@ -150,6 +150,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
       const token = localStorage.getItem('authToken');
       // const tokenType = localStorage.getItem('tokenType') || 'Bearer'; // Not used
       if (token) {
+        // Prewarm the in-memory XSRF token so cookie-backed refresh and logout
+        // keep working after a page reload wiped module state. Single-flight
+        // in the auth service (StrictMode-safe) and never rejects.
+        void api.auth.ensureXsrfBootstrapped();
         try {
           // Note: Authorization header is set by the axios interceptor
           const userData = await api.auth.me();

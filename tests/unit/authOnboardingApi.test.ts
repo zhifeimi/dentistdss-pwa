@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../src/services/config', () => ({
   clearXsrfToken: vi.fn(),
+  hasXsrfToken: vi.fn(() => true),
   default: {
     post: mocks.post,
     get: mocks.get,
