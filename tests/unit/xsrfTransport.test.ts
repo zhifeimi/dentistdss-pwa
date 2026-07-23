@@ -24,11 +24,12 @@ vi.mock('axios', () => ({
   },
 }));
 
-import { clearXsrfToken } from '../../src/services/config';
+import { clearBearerSession, clearXsrfToken, setBearerSession } from '../../src/services/config';
 
 describe('XSRF transport', () => {
   beforeEach(() => {
     clearXsrfToken();
+    clearBearerSession();
     localStorage.clear();
   });
 
@@ -83,8 +84,7 @@ describe('XSRF transport', () => {
   });
 
   it('omits bearer tokens from cookie-backed refresh and logout requests', async () => {
-    localStorage.setItem('authToken', 'expired-access-token');
-    localStorage.setItem('tokenType', 'Bearer');
+    setBearerSession('expired-access-token', 'Bearer');
     await interceptors.responseFulfilled({
       headers: { 'X-XSRF-TOKEN': 'csrf-token' },
       data: {},
@@ -134,8 +134,7 @@ describe('XSRF transport', () => {
   });
 
   it('omits bearer tokens from the public CSRF bootstrap request', async () => {
-    localStorage.setItem('authToken', 'stale-access-token');
-    localStorage.setItem('tokenType', 'Bearer');
+    setBearerSession('stale-access-token', 'Bearer');
     await interceptors.responseFulfilled({
       headers: { 'X-XSRF-TOKEN': 'csrf-token' },
       data: {},
@@ -151,9 +150,8 @@ describe('XSRF transport', () => {
     expect(csrfBootstrap.headers['X-XSRF-TOKEN']).toBeUndefined();
   });
 
-  it('keeps unrelated and external requests outside the cookie session', () => {
-    localStorage.setItem('authToken', 'access-token');
-    localStorage.setItem('tokenType', 'Bearer');
+  it('attaches the in-memory bearer to same-origin requests only', () => {
+    setBearerSession('access-token', 'Bearer');
 
     const unrelated = interceptors.requestFulfilled({
       url: '/api/appointment/list',
@@ -165,8 +163,16 @@ describe('XSRF transport', () => {
       method: 'get',
       headers: {},
     });
+    const externalWithCallerAuth = interceptors.requestFulfilled({
+      url: 'https://attacker.example/api/appointment/list',
+      method: 'get',
+      headers: { Authorization: 'Bearer caller-supplied' },
+    });
 
     expect(unrelated.headers.Authorization).toBe('Bearer access-token');
-    expect(external.headers.Authorization).toBe('Bearer access-token');
+    // The bearer is for this API origin only: it (and any caller-supplied
+    // Authorization header) must never leak to a foreign origin.
+    expect(external.headers.Authorization).toBeUndefined();
+    expect(externalWithCallerAuth.headers.Authorization).toBeUndefined();
   });
 });

@@ -26,7 +26,13 @@ vi.mock('axios', () => ({
   },
 }));
 
-import { clearXsrfToken } from '../../src/services/config';
+import {
+  clearBearerSession,
+  clearXsrfToken,
+  getBearerSession,
+  hasBearerSession,
+  setBearerSession,
+} from '../../src/services/config';
 
 const HOME_URL = 'http://localhost:3000/';
 
@@ -46,12 +52,13 @@ describe('401 refresh-retry transport', () => {
     axiosMocks.instance.post.mockReset();
     axiosMocks.instance.mockReset();
     clearXsrfToken();
+    clearBearerSession();
     localStorage.clear();
     window.location.href = HOME_URL;
   });
 
   it('refreshes once and replays the failed request with the rotated token', async () => {
-    localStorage.setItem('authToken', 'expired-token');
+    setBearerSession('expired-token', 'Bearer');
     axiosMocks.instance.get.mockResolvedValue({});
     axiosMocks.instance.post.mockResolvedValue({
       accessToken: 'rotated-token',
@@ -61,25 +68,28 @@ describe('401 refresh-retry transport', () => {
 
     const result = await axiosMocks.interceptors.responseRejected(make401());
 
-    expect(axiosMocks.instance.post).toHaveBeenCalledWith('/api/auth/refresh');
+    expect(axiosMocks.instance.post).toHaveBeenCalledWith('/api/auth/refresh', undefined, {
+      suppressErrorSnackbar: true,
+    });
     expect(axiosMocks.instance).toHaveBeenCalledTimes(1);
     expect(axiosMocks.instance.mock.calls[0][0]._retry).toBe(true);
     expect(result).toEqual({ id: 'replayed' });
-    expect(localStorage.getItem('authToken')).toBe('rotated-token');
+    expect(getBearerSession()).toEqual({ accessToken: 'rotated-token', tokenType: 'Bearer' });
+    expect(localStorage.getItem('authToken')).toBeNull();
     expect(window.location.href).toBe(HOME_URL);
   });
 
   it('never replays cookie-session or credential routes', async () => {
     const ineligible = [
-      { url: '/api/auth/refresh', method: 'post' },
-      { url: '/api/auth/logout', method: 'post' },
-      { url: '/api/auth/csrf', method: 'get' },
-      { url: '/api/auth/login', method: 'post' },
-      { url: '/oauth2/token', method: 'post' },
+      { url: '/api/auth/refresh', method: 'post', redirects: false },
+      { url: '/api/auth/logout', method: 'post', redirects: false },
+      { url: '/api/auth/csrf', method: 'get', redirects: false },
+      { url: '/api/auth/login', method: 'post', redirects: true },
+      { url: '/oauth2/token', method: 'post', redirects: true },
     ];
 
     for (const route of ineligible) {
-      localStorage.setItem('authToken', 'expired-token');
+      setBearerSession('expired-token', 'Bearer');
       window.location.href = HOME_URL;
 
       await expect(
@@ -88,13 +98,15 @@ describe('401 refresh-retry transport', () => {
 
       expect(axiosMocks.instance.post).not.toHaveBeenCalled();
       expect(axiosMocks.instance).not.toHaveBeenCalled();
-      expect(localStorage.getItem('authToken')).toBeNull();
-      expect(window.location.href).toBe('/login');
+      expect(hasBearerSession()).toBe(false);
+      // Cookie-session endpoints own their failure handling; credential
+      // endpoints end the session and redirect.
+      expect(window.location.href).toBe(route.redirects ? '/login' : HOME_URL);
     }
   });
 
   it('redirects to login when the refresh itself fails', async () => {
-    localStorage.setItem('authToken', 'expired-token');
+    setBearerSession('expired-token', 'Bearer');
     axiosMocks.instance.get.mockResolvedValue({});
     axiosMocks.instance.post.mockRejectedValue(new Error('refresh dead'));
 
@@ -103,12 +115,12 @@ describe('401 refresh-retry transport', () => {
     ).rejects.toBeDefined();
 
     expect(axiosMocks.instance).not.toHaveBeenCalled();
-    expect(localStorage.getItem('authToken')).toBeNull();
+    expect(hasBearerSession()).toBe(false);
     expect(window.location.href).toBe('/login');
   });
 
   it('shares a single refresh across concurrent 401 retries', async () => {
-    localStorage.setItem('authToken', 'expired-token');
+    setBearerSession('expired-token', 'Bearer');
     let resolveRefresh: (value: unknown) => void = () => {};
     axiosMocks.instance.get.mockResolvedValue({});
     axiosMocks.instance.post.mockImplementation(
@@ -136,7 +148,7 @@ describe('401 refresh-retry transport', () => {
   });
 
   it('does not retry a request that already retried', async () => {
-    localStorage.setItem('authToken', 'expired-token');
+    setBearerSession('expired-token', 'Bearer');
     const error = make401();
     error.config._retry = true;
 
@@ -145,12 +157,12 @@ describe('401 refresh-retry transport', () => {
     ).rejects.toBeDefined();
 
     expect(axiosMocks.instance.post).not.toHaveBeenCalled();
-    expect(localStorage.getItem('authToken')).toBeNull();
+    expect(hasBearerSession()).toBe(false);
     expect(window.location.href).toBe('/login');
   });
 
   it('does not refresh or redirect on non-401 failures', async () => {
-    localStorage.setItem('authToken', 'valid-token');
+    setBearerSession('valid-token', 'Bearer');
 
     await expect(
       axiosMocks.interceptors.responseRejected({
@@ -160,7 +172,22 @@ describe('401 refresh-retry transport', () => {
     ).rejects.toBeDefined();
 
     expect(axiosMocks.instance.post).not.toHaveBeenCalled();
-    expect(localStorage.getItem('authToken')).toBe('valid-token');
+    expect(getBearerSession()).toEqual({ accessToken: 'valid-token', tokenType: 'Bearer' });
+    expect(window.location.href).toBe(HOME_URL);
+  });
+
+  it('clears state without redirecting when an anonymous call gets a 401', async () => {
+    axiosMocks.instance.get.mockRejectedValue(new Error('no cookie session'));
+    axiosMocks.instance.post.mockRejectedValue(new Error('no cookie session'));
+
+    await expect(
+      axiosMocks.interceptors.responseRejected(make401()),
+    ).rejects.toBeDefined();
+
+    // The refresh is attempted once (the call is retry-eligible) but no
+    // redirect or broadcast follows its failure: there was no session.
+    expect(axiosMocks.instance.post).toHaveBeenCalledTimes(1);
+    expect(hasBearerSession()).toBe(false);
     expect(window.location.href).toBe(HOME_URL);
   });
 });

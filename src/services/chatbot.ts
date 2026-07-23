@@ -1,4 +1,12 @@
 import config from '../config';
+import {
+  broadcastSessionEnded,
+  clearBearerSession,
+  clearXsrfToken,
+  getBearerSession,
+  redirectToLogin,
+  refreshSession,
+} from './config';
 import { createEnhancedSSEReader, formatSSEError, TokenCallback } from '../utils/sseUtils';
 
 /**
@@ -26,36 +34,22 @@ interface AuthStatus {
   tokenType?: string;
   tokenLength?: number;
   tokenPreview?: string | null;
-  localStorage: {
-    authToken: boolean;
-    tokenType: string | null;
-  };
+  storage: 'memory';
 }
 
 // TokenCallback is now imported from sseUtils
 
 /**
- * Gets authentication token from localStorage with validation
+ * Reads the in-memory bearer session shared with the axios transport.
  * @returns Object with token and tokenType, or null if not available
  */
 function getAuthToken(): AuthData | null {
-  const token = localStorage.getItem('authToken');
-  const tokenType = localStorage.getItem('tokenType') || 'Bearer';
-
-  if (!token) {
-    console.warn('No authentication token found in localStorage');
+  const session = getBearerSession();
+  if (!session) {
     return null;
   }
 
-  // Basic token validation - check if it's not empty and looks like a JWT
-  if (token.trim().length === 0) {
-    console.warn('Empty authentication token found');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('tokenType');
-    return null;
-  }
-
-  return { token, tokenType };
+  return { token: session.accessToken, tokenType: session.tokenType || 'Bearer' };
 }
 
 
@@ -112,13 +106,30 @@ async function streamApiCall(endpoint: string, prompt: string, onTokenReceived?:
 
       // Handle authentication errors following established pattern
       if (response.status === 401) {
-        console.error('Authentication failed - clearing stored tokens');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('tokenType');
+        let sessionEnded = authData !== null;
+        if (sessionEnded) {
+          // The bearer may simply have expired: attempt one shared,
+          // cookie-backed refresh before giving up on the session.
+          try {
+            await refreshSession();
+            sessionEnded = false;
+          } catch (_) {
+            sessionEnded = true;
+          }
+        }
 
-        // Provide more specific error message based on context
-        const authErrorMessage = authData
+        if (sessionEnded) {
+          console.error('Authentication failed - clearing the in-memory session');
+          clearBearerSession();
+          clearXsrfToken();
+          broadcastSessionEnded();
+        }
+
+        // Provide a specific error message based on context
+        const authErrorMessage = sessionEnded
           ? 'Your session has expired. Please log in again.'
+          : authData
+          ? 'Your session was refreshed. Please send your message again.'
           : 'Authentication required. Please log in to access this feature.';
 
         // Dispatch error event following established pattern
@@ -130,12 +141,14 @@ async function streamApiCall(endpoint: string, prompt: string, onTokenReceived?:
         });
         window.dispatchEvent(event);
 
-        // Also redirect to login after a short delay to allow user to see the message
-        setTimeout(() => {
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-        }, 2000);
+        // Only a user who actually had a session is sent back to login, after
+        // a short delay to allow the message to be seen. Anonymous visitors
+        // stay on the current page.
+        if (sessionEnded) {
+          setTimeout(() => {
+            redirectToLogin();
+          }, 2000);
+        }
       }
 
       // Pass error to callback
@@ -351,10 +364,7 @@ const chatbotAPI = {
       tokenLength: authData?.token?.length,
       // Don't log the actual token for security
       tokenPreview: authData?.token ? `${authData.token.substring(0, 10)}...` : null,
-      localStorage: {
-        authToken: !!localStorage.getItem('authToken'),
-        tokenType: localStorage.getItem('tokenType')
-      }
+      storage: 'memory',
     };
   }
 };

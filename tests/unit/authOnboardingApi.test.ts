@@ -6,13 +6,19 @@ const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   refreshSession: vi.fn(),
   ensureXsrfBootstrapped: vi.fn(() => Promise.resolve()),
+  setBearerSession: vi.fn(),
+  clearBearerSession: vi.fn(),
+  broadcastSessionEnded: vi.fn(),
 }));
 
 vi.mock('../../src/services/config', () => ({
+  broadcastSessionEnded: mocks.broadcastSessionEnded,
+  clearBearerSession: mocks.clearBearerSession,
   clearXsrfToken: vi.fn(),
   CSRF_BOOTSTRAP_PATH: '/api/auth/csrf',
   ensureXsrfBootstrapped: mocks.ensureXsrfBootstrapped,
   refreshSession: mocks.refreshSession,
+  setBearerSession: mocks.setBearerSession,
   default: {
     post: mocks.post,
     get: mocks.get,
@@ -29,6 +35,9 @@ describe('auth onboarding API contracts', () => {
     mocks.post.mockReset();
     mocks.get.mockReset();
     mocks.refreshSession.mockReset();
+    mocks.setBearerSession.mockReset();
+    mocks.clearBearerSession.mockReset();
+    mocks.broadcastSessionEnded.mockReset();
   });
 
   it('sends the mailbox-selected password with code verification', async () => {
@@ -89,6 +98,29 @@ describe('auth onboarding API contracts', () => {
   it('keeps both verification routes public', () => {
     expect(dictionary.locations.public).toContain('/verify-email-code');
     expect(dictionary.locations.public).toContain('/signup/verify');
+  });
+
+  it('keeps the bearer in module memory across login and logout', async () => {
+    mocks.post.mockResolvedValueOnce({
+      accessToken: 'login-token',
+      tokenType: 'Bearer',
+      user: { id: 1, email: 'patient@example.com' },
+    });
+
+    await authAPI.login('patient@example.com', ['FinalStrong', '1!'].join(''));
+
+    expect(mocks.setBearerSession).toHaveBeenCalledWith('login-token', 'Bearer');
+    expect(localStorage.getItem('authToken')).toBeNull();
+    expect(localStorage.getItem('tokenType')).toBeNull();
+
+    mocks.post.mockResolvedValueOnce({});
+    await authAPI.logout();
+
+    expect(mocks.post).toHaveBeenCalledWith('/api/auth/logout', undefined, {
+      suppressErrorSnackbar: true,
+    });
+    expect(mocks.clearBearerSession).toHaveBeenCalledTimes(1);
+    expect(mocks.broadcastSessionEnded).toHaveBeenCalledTimes(1);
   });
 
   it('loads the public clinic list from the gateway route', async () => {

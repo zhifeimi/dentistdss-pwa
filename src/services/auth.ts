@@ -1,8 +1,11 @@
 import api, {
+  broadcastSessionEnded,
+  clearBearerSession,
   clearXsrfToken,
   CSRF_BOOTSTRAP_PATH,
   ensureXsrfBootstrapped,
   refreshSession,
+  setBearerSession,
 } from './config';
 import {
   AuthResponse,
@@ -12,19 +15,9 @@ import {
   User,
 } from '../types';
 
-// Helpers to manage auth tokens in localStorage. The request interceptor in
-// api/config.js automatically injects these tokens on every request, so all we
-// need to do is persist / clear them here.
-const storeToken = (accessToken: string, tokenType: string = 'Bearer'): void => {
-  if (!accessToken) return;
-  localStorage.setItem('authToken', accessToken);
-  localStorage.setItem('tokenType', tokenType);
-};
-
-const clearToken = (): void => {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('tokenType');
-};
+// The bearer session lives only in the config transport's module memory. The
+// request interceptor there attaches it to same-origin API calls, so all we
+// need to do here is set / clear it.
 
 const authAPI = {
   /**
@@ -36,7 +29,7 @@ const authAPI = {
 
     // The interceptor unwraps successful responses to `response.message`,
     // so `authData` should already be that object.
-    storeToken(authData.accessToken, authData.tokenType);
+    setBearerSession(authData.accessToken, authData.tokenType);
 
     return authData; // caller can extract user etc.
   },
@@ -85,18 +78,19 @@ const authAPI = {
   },
 
   /**
-   * Backend logout + local cleanup. Always clears local tokens and the
-   * in-memory XSRF token, even if the network request fails.
+   * Backend logout + local cleanup. Always clears the in-memory bearer and
+   * XSRF token and notifies other tabs, even if the network request fails.
    */
   async logout(): Promise<void> {
     try {
       await ensureXsrfBootstrapped();
-      await api.post('/api/auth/logout');
+      await api.post('/api/auth/logout', undefined, { suppressErrorSnackbar: true });
     } catch (_) {
       // ignore — server might reject due to already invalidated token
     } finally {
-      clearToken();
+      clearBearerSession();
       clearXsrfToken();
+      broadcastSessionEnded();
     }
   },
 
@@ -121,9 +115,9 @@ const authAPI = {
     // const authData = await api.post('/login/oauth2/code/google', { idToken });
     const authData = await api.post('/oauth2/token', { idToken }) as AuthResponse;
     // console.log('authData', authData);
-    // Persist token locally for future API calls – mirrors the behaviour of
-    // the email/password login helper.
-    storeToken(authData.accessToken, authData.tokenType);
+    // Persist the bearer in memory for future API calls – mirrors the behaviour
+    // of the email/password login helper.
+    setBearerSession(authData.accessToken, authData.tokenType);
 
     return authData;
   },

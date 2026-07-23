@@ -1,5 +1,10 @@
 import React, {createContext, useState, useContext, useEffect, useCallback, ReactNode} from 'react';
 import api from '../../services';
+import {
+  clearBearerSession,
+  hasBearerSession,
+  setBearerSession,
+} from '../../services/config';
 import { AuthContextValue, User, UserRole } from '../../types';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -23,15 +28,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   // Function to process a received token (from OAuth or direct login)
   const processAuthToken = useCallback(async (token: string, tokenType: string = 'Bearer'): Promise<User> => {
     try {
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('tokenType', tokenType);
-      // Set Authorization header on the axios instance
-      try {
-        // Note: api is our service object, not axios instance
-        // The actual axios configuration is handled in config.ts
-      } catch (error) {
-        console.warn("Could not set Authorization header:", error);
-      }
+      // The bearer lives only in module memory; the axios interceptor in
+      // config.ts attaches it to same-origin API calls.
+      setBearerSession(token, tokenType);
 
       const userData = await api.auth.me(); // Fetch user details using the new token
       if (userData) {
@@ -43,9 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
       }
     } catch (error) {
       console.error('Failed to process auth token or fetch user:', error);
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('tokenType');
-      // Note: Authorization header cleanup is handled by the axios interceptor
+      clearBearerSession();
       setCurrentUser(null);
       throw error;
     }
@@ -111,9 +108,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     } catch (error) {
       console.error('Backend logout error (will proceed with client-side logout):', error);
     } finally {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('tokenType');
-      // Note: Authorization header cleanup is handled by the axios interceptor
+      // The auth service already cleared the in-memory bearer/XSRF state and
+      // broadcast the session end to other tabs.
       setCurrentUser(null);
     }
   }, []);
@@ -147,15 +143,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   useEffect(() => {
     const checkAuth = async () => {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
-      // const tokenType = localStorage.getItem('tokenType') || 'Bearer'; // Not used
-      if (token) {
-        // Prewarm the in-memory XSRF token so cookie-backed refresh and logout
-        // keep working after a page reload wiped module state. Single-flight
-        // in the auth service (StrictMode-safe) and never rejects.
-        void api.auth.ensureXsrfBootstrapped();
+      // Prewarm the in-memory XSRF token so cookie-backed refresh and logout
+      // keep working after a page reload wiped module state. Single-flight
+      // in the auth service (StrictMode-safe) and never rejects.
+      void api.auth.ensureXsrfBootstrapped();
+
+      // A page reload wipes the in-memory bearer: restore the session from
+      // the HttpOnly refresh cookie when one exists. A failed restore just
+      // means the visitor is anonymous — no logout, no redirect.
+      let sessionAvailable = hasBearerSession();
+      if (!sessionAvailable) {
         try {
-          // Note: Authorization header is set by the axios interceptor
+          await api.auth.refresh();
+          sessionAvailable = hasBearerSession();
+        } catch (_) {
+          sessionAvailable = false;
+        }
+      }
+
+      if (sessionAvailable) {
+        try {
           const userData = await api.auth.me();
           if (userData) {
             setCurrentUser(userData);
@@ -163,11 +170,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
             throw new Error("User data not found during initial auth check");
           }
         } catch (error) {
-          console.error('Token verification failed during initial load:', error);
+          console.error('Session verification failed during initial load:', error);
           await logout();
         }
-      } else {
-        console.log('No token found during initial load.');
       }
       setLoading(false);
     };

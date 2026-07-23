@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import chatbotAPI from '../../src/services/chatbot';
+import { clearBearerSession, setBearerSession } from '../../src/services/config';
 import type { TokenCallback } from '../../src/utils/sseUtils';
 
 // Type definitions for mocks
@@ -40,12 +41,15 @@ Object.defineProperty(window, 'dispatchEvent', {
 describe('Chatbot API Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
+    // Reset the in-memory bearer session
+    clearBearerSession();
+
     // Reset localStorage mocks
     localStorageMock.getItem.mockReturnValue(null);
     localStorageMock.setItem.mockImplementation(() => {});
     localStorageMock.removeItem.mockImplementation(() => {});
-    
+
     // Reset fetch mock
     (fetch as MockedFunction<typeof fetch>).mockClear();
   });
@@ -106,12 +110,8 @@ describe('Chatbot API Integration', () => {
 
   describe('authenticated endpoints', () => {
     beforeEach(() => {
-      // Mock authentication data
-      localStorageMock.getItem.mockImplementation((key: string): string | null => {
-        if (key === 'authToken') return 'mock-jwt-token';
-        if (key === 'tokenType') return 'Bearer';
-        return null;
-      });
+      // Seed the in-memory bearer session shared with the axios transport
+      setBearerSession('mock-jwt-token', 'Bearer');
     });
 
     describe('aidentist endpoint', () => {
@@ -144,7 +144,7 @@ describe('Chatbot API Integration', () => {
       });
 
       it('should reject aidentist request without authentication', async () => {
-        localStorageMock.getItem.mockReturnValue(null);
+        clearBearerSession();
 
         const callback: MockedFunction<TokenCallback> = vi.fn();
         
@@ -261,11 +261,7 @@ describe('Chatbot API Integration', () => {
     });
 
     it('should support botDentist legacy method', async () => {
-      localStorageMock.getItem.mockImplementation((key) => {
-        if (key === 'authToken') return 'mock-jwt-token';
-        if (key === 'tokenType') return 'Bearer';
-        return null;
-      });
+      setBearerSession('mock-jwt-token', 'Bearer');
 
       const mockResponse = new Response('data: Clinical response\n\n', {
         status: 200,

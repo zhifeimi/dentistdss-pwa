@@ -27,10 +27,14 @@ vi.mock('axios', () => ({
 }));
 
 import {
+  clearBearerSession,
   clearXsrfToken,
   ensureXsrfBootstrapped,
+  getBearerSession,
+  hasBearerSession,
   hasXsrfToken,
   refreshSession,
+  setBearerSession,
 } from '../../src/services/config';
 
 const seedXsrfToken = async (token: string): Promise<void> => {
@@ -46,6 +50,7 @@ describe('XSRF bootstrap and session refresh transport', () => {
     axiosMocks.instance.post.mockReset();
     axiosMocks.instance.mockReset();
     clearXsrfToken();
+    clearBearerSession();
     localStorage.clear();
   });
 
@@ -54,7 +59,9 @@ describe('XSRF bootstrap and session refresh transport', () => {
 
     await ensureXsrfBootstrapped();
 
-    expect(axiosMocks.instance.get).toHaveBeenCalledWith('/api/auth/csrf');
+    expect(axiosMocks.instance.get).toHaveBeenCalledWith('/api/auth/csrf', {
+      suppressErrorSnackbar: true,
+    });
   });
 
   it('skips the bootstrap fetch when a token is already held', async () => {
@@ -93,7 +100,7 @@ describe('XSRF bootstrap and session refresh transport', () => {
     expect(axiosMocks.instance.get).toHaveBeenCalledTimes(2);
   });
 
-  it('bootstraps before the refresh request and stores the rotated token', async () => {
+  it('bootstraps before the refresh request and stores the rotated token in memory', async () => {
     const order: string[] = [];
     axiosMocks.instance.get.mockImplementation(async () => {
       order.push('csrf');
@@ -107,22 +114,24 @@ describe('XSRF bootstrap and session refresh transport', () => {
     const result = await refreshSession();
 
     expect(order).toEqual(['csrf', 'refresh']);
-    expect(axiosMocks.instance.post).toHaveBeenCalledWith('/api/auth/refresh');
+    expect(axiosMocks.instance.post).toHaveBeenCalledWith('/api/auth/refresh', undefined, {
+      suppressErrorSnackbar: true,
+    });
     expect(result.accessToken).toBe('rotated-token');
-    expect(localStorage.getItem('authToken')).toBe('rotated-token');
-    expect(localStorage.getItem('tokenType')).toBe('Bearer');
+    expect(getBearerSession()).toEqual({ accessToken: 'rotated-token', tokenType: 'Bearer' });
+    // The bearer must never be written to web storage.
+    expect(localStorage.getItem('authToken')).toBeNull();
+    expect(localStorage.getItem('tokenType')).toBeNull();
   });
 
   it('clears local session state when the refresh fails', async () => {
-    localStorage.setItem('authToken', 'stale-token');
-    localStorage.setItem('tokenType', 'Bearer');
+    setBearerSession('stale-token', 'Bearer');
     await seedXsrfToken('csrf-token');
     axiosMocks.instance.post.mockRejectedValue(new Error('refresh rejected'));
 
     await expect(refreshSession()).rejects.toThrow('refresh rejected');
 
-    expect(localStorage.getItem('authToken')).toBeNull();
-    expect(localStorage.getItem('tokenType')).toBeNull();
+    expect(hasBearerSession()).toBe(false);
     expect(hasXsrfToken()).toBe(false);
   });
 
@@ -132,7 +141,7 @@ describe('XSRF bootstrap and session refresh transport', () => {
 
     await expect(refreshSession()).rejects.toThrow('access token');
 
-    expect(localStorage.getItem('authToken')).toBeNull();
+    expect(hasBearerSession()).toBe(false);
   });
 
   it('shares one in-flight refresh across concurrent callers', async () => {
