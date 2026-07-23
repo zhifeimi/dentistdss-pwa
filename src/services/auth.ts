@@ -1,4 +1,9 @@
-import api, { clearXsrfToken, hasXsrfToken } from './config';
+import api, {
+  clearXsrfToken,
+  CSRF_BOOTSTRAP_PATH,
+  ensureXsrfBootstrapped,
+  refreshSession,
+} from './config';
 import {
   AuthResponse,
   ClinicAdminSignupData,
@@ -19,33 +24,6 @@ const storeToken = (accessToken: string, tokenType: string = 'Bearer'): void => 
 const clearToken = (): void => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('tokenType');
-};
-
-const CSRF_BOOTSTRAP_PATH = '/api/auth/csrf';
-
-let xsrfBootstrapInFlight: Promise<void> | undefined;
-
-/**
- * Ensures the in-memory XSRF token has been bootstrapped from the API origin
- * (module state is lost on every page reload). Single-flight, so concurrent
- * callers and React StrictMode double-effects share one request. Never
- * rejects: a failed bootstrap is expected offline, and the subsequent
- * cookie-session request fails closed on its own.
- */
-const ensureXsrfBootstrapped = (): Promise<void> => {
-  if (hasXsrfToken()) {
-    return Promise.resolve();
-  }
-  if (!xsrfBootstrapInFlight) {
-    xsrfBootstrapInFlight = api
-      .get(CSRF_BOOTSTRAP_PATH)
-      .then((): void => undefined)
-      .catch((): void => undefined)
-      .finally(() => {
-        xsrfBootstrapInFlight = undefined;
-      });
-  }
-  return xsrfBootstrapInFlight;
 };
 
 const authAPI = {
@@ -97,18 +75,13 @@ const authAPI = {
 
   /**
    * Rotates the HttpOnly refresh cookie and stores the resulting access token.
+   * Delegates to the shared single-flight transport refresh, which clears
+   * local session state and rethrows on failure.
    */
   async refresh(): Promise<AuthResponse> {
-    await ensureXsrfBootstrapped();
-    try {
-      const authData = await api.post('/api/auth/refresh') as AuthResponse;
-      storeToken(authData.accessToken, authData.tokenType);
-      return authData;
-    } catch (error) {
-      clearToken();
-      clearXsrfToken();
-      throw error;
-    }
+    // The transport types the narrow token contract; the unwrapped backend
+    // payload is the full AuthResponse (tokens + user).
+    return (await refreshSession()) as unknown as AuthResponse;
   },
 
   /**

@@ -4,11 +4,15 @@ import type { ClinicAdminSignupData } from '../../src/types';
 const mocks = vi.hoisted(() => ({
   post: vi.fn(),
   get: vi.fn(),
+  refreshSession: vi.fn(),
+  ensureXsrfBootstrapped: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock('../../src/services/config', () => ({
   clearXsrfToken: vi.fn(),
-  hasXsrfToken: vi.fn(() => true),
+  CSRF_BOOTSTRAP_PATH: '/api/auth/csrf',
+  ensureXsrfBootstrapped: mocks.ensureXsrfBootstrapped,
+  refreshSession: mocks.refreshSession,
   default: {
     post: mocks.post,
     get: mocks.get,
@@ -24,6 +28,7 @@ describe('auth onboarding API contracts', () => {
   beforeEach(() => {
     mocks.post.mockReset();
     mocks.get.mockReset();
+    mocks.refreshSession.mockReset();
   });
 
   it('sends the mailbox-selected password with code verification', async () => {
@@ -42,15 +47,19 @@ describe('auth onboarding API contracts', () => {
     });
   });
 
-  it('uses exact auth routes for XSRF bootstrap and refresh', async () => {
+  it('uses exact auth routes for XSRF bootstrap and delegates refresh to the transport', async () => {
     mocks.get.mockResolvedValue({});
-    mocks.post.mockResolvedValue({ accessToken: 'access-token', tokenType: 'Bearer' });
+    mocks.refreshSession.mockResolvedValue({
+      accessToken: 'access-token',
+      tokenType: 'Bearer',
+    });
 
     await authAPI.bootstrapXsrf();
-    await authAPI.refresh();
+    const result = await authAPI.refresh();
 
     expect(mocks.get).toHaveBeenCalledWith('/api/auth/csrf');
-    expect(mocks.post).toHaveBeenCalledWith('/api/auth/refresh');
+    expect(mocks.refreshSession).toHaveBeenCalledTimes(1);
+    expect(result.accessToken).toBe('access-token');
   });
 
   it('URL-encodes mailbox aliases when resending a code', async () => {

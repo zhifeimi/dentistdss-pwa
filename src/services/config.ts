@@ -16,6 +16,13 @@ const COOKIE_SESSION_AUTH_REQUESTS = new Set([
   'POST /api/auth/logout',
   'GET /api/auth/csrf',
 ]);
+export const CSRF_BOOTSTRAP_PATH = '/api/auth/csrf';
+// Credential-authenticated routes must never be replayed after a silent
+// session refresh: their 401s are credential failures, not expired bearers.
+const REFRESH_RETRY_EXCLUDED_PATHS = new Set([
+  '/api/auth/login',
+  '/oauth2/token',
+]);
 const ABSOLUTE_URL = /^(?:[a-z][a-z\d+.-]*:)?\/\//i;
 
 type HeaderBag = Record<string, unknown> & {
@@ -73,6 +80,14 @@ const isCookieSessionAuthRequest = (request: InternalAxiosRequestConfig): boolea
     COOKIE_SESSION_AUTH_REQUESTS.has(`${method} ${pathname}`);
 };
 
+const isRefreshRetryEligible = (request: InternalAxiosRequestConfig): boolean => {
+  const pathname = authEndpointPathname(request);
+  if (pathname === undefined || isCookieSessionAuthRequest(request)) {
+    return false;
+  }
+  return !REFRESH_RETRY_EXCLUDED_PATHS.has(pathname);
+};
+
 const removeXsrfHeader = (headers: HeaderBag): void => {
   headers.delete?.(XSRF_HEADER);
   delete headers[XSRF_HEADER];
@@ -96,6 +111,70 @@ const api: AxiosInstance = axios.create({
   baseURL,
   withCredentials: true,
 });
+
+let xsrfBootstrapInFlight: Promise<void> | undefined;
+
+/**
+ * Best-effort, single-flight bootstrap of the in-memory XSRF token from the
+ * API origin (module state is lost on every page reload). Shared across
+ * concurrent callers and React StrictMode double-effects. Never rejects: a
+ * failed bootstrap is expected offline, and the subsequent cookie-session
+ * request fails closed on its own.
+ */
+export const ensureXsrfBootstrapped = (): Promise<void> => {
+  if (xsrfToken !== undefined) {
+    return Promise.resolve();
+  }
+  if (!xsrfBootstrapInFlight) {
+    xsrfBootstrapInFlight = api
+      .get(CSRF_BOOTSTRAP_PATH)
+      .then((): void => undefined)
+      .catch((): void => undefined)
+      .finally(() => {
+        xsrfBootstrapInFlight = undefined;
+      });
+  }
+  return xsrfBootstrapInFlight;
+};
+
+export interface SessionTokens {
+  accessToken: string;
+  tokenType: string;
+  [key: string]: unknown;
+}
+
+let refreshInFlight: Promise<SessionTokens> | undefined;
+
+/**
+ * Single-flight cookie-backed session refresh: bootstraps XSRF, rotates the
+ * HttpOnly refresh cookie via POST /api/auth/refresh, and stores the returned
+ * access token. Clears local session state and rethrows on failure. Concurrent
+ * callers share one rotation — important because refresh tokens are one-use.
+ */
+export const refreshSession = (): Promise<SessionTokens> => {
+  if (!refreshInFlight) {
+    refreshInFlight = (async (): Promise<SessionTokens> => {
+      await ensureXsrfBootstrapped();
+      const authData = await api.post('/api/auth/refresh') as SessionTokens | undefined;
+      if (!authData || !authData.accessToken) {
+        throw new Error('Session refresh did not return an access token.');
+      }
+      localStorage.setItem('authToken', authData.accessToken);
+      localStorage.setItem('tokenType', authData.tokenType || 'Bearer');
+      return authData;
+    })()
+      .catch((error) => {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('tokenType');
+        clearXsrfToken();
+        throw error;
+      })
+      .finally(() => {
+        refreshInFlight = undefined;
+      });
+  }
+  return refreshInFlight;
+};
 
 // Request interceptor for API calls
 api.interceptors.request.use(
@@ -178,9 +257,27 @@ api.interceptors.response.use(
     // If the response doesn't match the expected structure, return it as is
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     const originalRequest = error.config as any;
     let userMessage = 'An unexpected error occurred.';
+
+    // Expired bearer on a normal API call: attempt one shared, cookie-backed
+    // session refresh, then replay the original request with the rotated
+    // token. Cookie-session and credential routes are never replayed.
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      isRefreshRetryEligible(originalRequest)
+    ) {
+      originalRequest._retry = true;
+      try {
+        await refreshSession();
+        return await api(originalRequest);
+      } catch (_) {
+        // Refresh failed; fall through to terminal session handling.
+      }
+    }
 
     if (error.response) {
       // The request was made and the server responded with a status code
@@ -189,8 +286,8 @@ api.interceptors.response.use(
       userMessage = getHttpErrorMessage(error.response.status);
 
       // Handle authentication errors
-      if (error.response.status === 401 && !originalRequest._retry) {
-        // Remove token and redirect to login if authentication fails
+      if (error.response.status === 401) {
+        // Session is definitively dead: remove tokens and redirect to login.
         localStorage.removeItem('authToken');
         localStorage.removeItem('tokenType');
         clearXsrfToken();

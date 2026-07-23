@@ -7,6 +7,12 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../src/services/config', () => ({
+  clearXsrfToken: vi.fn(),
+  CSRF_BOOTSTRAP_PATH: '/api/auth/csrf',
+  ensureXsrfBootstrapped: vi.fn(() => Promise.resolve()),
+  refreshSession: vi.fn(() =>
+    Promise.reject(new Error('refreshSession is not used in appointment tests'))
+  ),
   default: {
     get: mocks.get,
     patch: mocks.patch,

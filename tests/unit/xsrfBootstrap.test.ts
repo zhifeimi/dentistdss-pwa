@@ -1,112 +1,159 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  hasXsrfToken: vi.fn(),
-  clearXsrfToken: vi.fn(),
-}));
+const axiosMocks = vi.hoisted(() => {
+  const interceptors = {
+    responseFulfilled: undefined as any,
+  };
+  const instance: any = vi.fn();
+  instance.get = vi.fn();
+  instance.post = vi.fn();
+  instance.interceptors = {
+    request: {
+      use: vi.fn(),
+    },
+    response: {
+      use: (onFulfilled: any) => {
+        interceptors.responseFulfilled = onFulfilled;
+      },
+    },
+  };
+  return { instance, interceptors };
+});
 
-vi.mock('../../src/services/config', () => ({
+vi.mock('axios', () => ({
   default: {
-    get: mocks.get,
-    post: mocks.post,
+    create: vi.fn(() => axiosMocks.instance),
   },
-  hasXsrfToken: mocks.hasXsrfToken,
-  clearXsrfToken: mocks.clearXsrfToken,
 }));
 
-import authAPI from '../../src/services/auth';
+import {
+  clearXsrfToken,
+  ensureXsrfBootstrapped,
+  hasXsrfToken,
+  refreshSession,
+} from '../../src/services/config';
 
-describe('XSRF bootstrap lifecycle', () => {
+const seedXsrfToken = async (token: string): Promise<void> => {
+  await axiosMocks.interceptors.responseFulfilled({
+    headers: { 'X-XSRF-TOKEN': token },
+    data: {},
+  });
+};
+
+describe('XSRF bootstrap and session refresh transport', () => {
   beforeEach(() => {
-    mocks.get.mockReset();
-    mocks.post.mockReset();
-    mocks.hasXsrfToken.mockReset();
-    mocks.hasXsrfToken.mockReturnValue(false);
-    mocks.clearXsrfToken.mockReset();
+    axiosMocks.instance.get.mockReset();
+    axiosMocks.instance.post.mockReset();
+    axiosMocks.instance.mockReset();
+    clearXsrfToken();
     localStorage.clear();
   });
 
   it('fetches the bootstrap endpoint when no token is held', async () => {
-    mocks.get.mockResolvedValue({});
+    axiosMocks.instance.get.mockResolvedValue({});
 
-    await authAPI.ensureXsrfBootstrapped();
+    await ensureXsrfBootstrapped();
 
-    expect(mocks.get).toHaveBeenCalledWith('/api/auth/csrf');
+    expect(axiosMocks.instance.get).toHaveBeenCalledWith('/api/auth/csrf');
   });
 
   it('skips the bootstrap fetch when a token is already held', async () => {
-    mocks.hasXsrfToken.mockReturnValue(true);
+    await seedXsrfToken('csrf-token');
+    expect(hasXsrfToken()).toBe(true);
 
-    await authAPI.ensureXsrfBootstrapped();
+    await ensureXsrfBootstrapped();
 
-    expect(mocks.get).not.toHaveBeenCalled();
+    expect(axiosMocks.instance.get).not.toHaveBeenCalled();
   });
 
   it('shares one in-flight bootstrap across concurrent callers', async () => {
     let resolveBootstrap: (value: unknown) => void = () => {};
-    mocks.get.mockImplementation(
+    axiosMocks.instance.get.mockImplementation(
       () => new Promise((resolve) => {
         resolveBootstrap = resolve;
       }),
     );
 
-    const first = authAPI.ensureXsrfBootstrapped();
-    const second = authAPI.ensureXsrfBootstrapped();
+    const first = ensureXsrfBootstrapped();
+    const second = ensureXsrfBootstrapped();
     resolveBootstrap({});
     await Promise.all([first, second]);
 
-    expect(mocks.get).toHaveBeenCalledTimes(1);
+    expect(axiosMocks.instance.get).toHaveBeenCalledTimes(1);
   });
 
   it('never rejects and retries after a failed bootstrap', async () => {
-    mocks.get.mockRejectedValueOnce(new Error('offline'));
+    axiosMocks.instance.get.mockRejectedValueOnce(new Error('offline'));
 
-    await expect(authAPI.ensureXsrfBootstrapped()).resolves.toBeUndefined();
+    await expect(ensureXsrfBootstrapped()).resolves.toBeUndefined();
 
-    mocks.get.mockResolvedValue({});
-    await authAPI.ensureXsrfBootstrapped();
+    axiosMocks.instance.get.mockResolvedValue({});
+    await ensureXsrfBootstrapped();
 
-    expect(mocks.get).toHaveBeenCalledTimes(2);
+    expect(axiosMocks.instance.get).toHaveBeenCalledTimes(2);
   });
 
-  it('bootstraps before the refresh request', async () => {
+  it('bootstraps before the refresh request and stores the rotated token', async () => {
     const order: string[] = [];
-    mocks.get.mockImplementation(async () => {
+    axiosMocks.instance.get.mockImplementation(async () => {
       order.push('csrf');
       return {};
     });
-    mocks.post.mockImplementation(async () => {
+    axiosMocks.instance.post.mockImplementation(async () => {
       order.push('refresh');
       return { accessToken: 'rotated-token', tokenType: 'Bearer' };
     });
 
-    await authAPI.refresh();
+    const result = await refreshSession();
 
     expect(order).toEqual(['csrf', 'refresh']);
-    expect(mocks.post).toHaveBeenCalledWith('/api/auth/refresh');
+    expect(axiosMocks.instance.post).toHaveBeenCalledWith('/api/auth/refresh');
+    expect(result.accessToken).toBe('rotated-token');
     expect(localStorage.getItem('authToken')).toBe('rotated-token');
+    expect(localStorage.getItem('tokenType')).toBe('Bearer');
   });
 
-  it('bootstraps before logout and clears local state regardless', async () => {
-    localStorage.setItem('authToken', 'access-token');
+  it('clears local session state when the refresh fails', async () => {
+    localStorage.setItem('authToken', 'stale-token');
     localStorage.setItem('tokenType', 'Bearer');
-    const order: string[] = [];
-    mocks.get.mockImplementation(async () => {
-      order.push('csrf');
-      return {};
-    });
-    mocks.post.mockImplementation(async () => {
-      order.push('logout');
-      return {};
-    });
+    await seedXsrfToken('csrf-token');
+    axiosMocks.instance.post.mockRejectedValue(new Error('refresh rejected'));
 
-    await authAPI.logout();
+    await expect(refreshSession()).rejects.toThrow('refresh rejected');
 
-    expect(order).toEqual(['csrf', 'logout']);
-    expect(mocks.post).toHaveBeenCalledWith('/api/auth/logout');
     expect(localStorage.getItem('authToken')).toBeNull();
-    expect(mocks.clearXsrfToken).toHaveBeenCalled();
+    expect(localStorage.getItem('tokenType')).toBeNull();
+    expect(hasXsrfToken()).toBe(false);
+  });
+
+  it('treats a refresh response without an access token as a failure', async () => {
+    axiosMocks.instance.get.mockResolvedValue({});
+    axiosMocks.instance.post.mockResolvedValue({});
+
+    await expect(refreshSession()).rejects.toThrow('access token');
+
+    expect(localStorage.getItem('authToken')).toBeNull();
+  });
+
+  it('shares one in-flight refresh across concurrent callers', async () => {
+    let resolveRefresh: (value: unknown) => void = () => {};
+    axiosMocks.instance.get.mockResolvedValue({});
+    axiosMocks.instance.post.mockImplementation(
+      () => new Promise((resolve) => {
+        resolveRefresh = resolve;
+      }),
+    );
+
+    const first = refreshSession();
+    const second = refreshSession();
+    await vi.waitFor(() =>
+      expect(axiosMocks.instance.post).toHaveBeenCalledTimes(1)
+    );
+    resolveRefresh({ accessToken: 'shared-token', tokenType: 'Bearer' });
+    const [firstResult, secondResult] = await Promise.all([first, second]);
+
+    expect(axiosMocks.instance.post).toHaveBeenCalledTimes(1);
+    expect(firstResult.accessToken).toBe('shared-token');
+    expect(secondResult.accessToken).toBe('shared-token');
   });
 });
