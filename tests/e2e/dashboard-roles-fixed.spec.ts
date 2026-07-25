@@ -82,7 +82,7 @@ test.describe('Dashboard Role Fix Verification', () => {
     });
 
     // Navigate to dashboard
-    await page.goto('http://localhost:3001/dashboard');
+    await page.goto('/dashboard');
 
     // Wait for navigation to complete
     await page.waitForTimeout(2000);
@@ -90,9 +90,12 @@ test.describe('Dashboard Role Fix Verification', () => {
     // Verify that the "No dashboard roles available" error is NOT shown
     await expect(page.locator('text=No dashboard roles available for your account.')).not.toBeVisible();
 
-    // Verify patient navigation sections are visible
-    await expect(page.locator('text=Overview')).toBeVisible();
-    await expect(page.locator('text=My Appointments')).toBeVisible();
+    // Verify patient navigation sections are visible. The MUI shell renders
+    // each section name more than once (AppBar title + nav drawer + content
+    // heading), so assert on the first match — one occurrence proves the
+    // section exists.
+    await expect(page.locator('text=Overview').first()).toBeVisible();
+    await expect(page.locator('text=My Appointments').first()).toBeVisible();
   });
 
   test('should handle DENTIST role correctly (uppercase from backend)', async ({ page }) => {
@@ -112,7 +115,7 @@ test.describe('Dashboard Role Fix Verification', () => {
     });
 
     // Navigate to dashboard
-    await page.goto('http://localhost:3001/dashboard');
+    await page.goto('/dashboard');
 
     // Wait for navigation to complete
     await page.waitForTimeout(2000);
@@ -120,10 +123,11 @@ test.describe('Dashboard Role Fix Verification', () => {
     // Verify that the "No dashboard roles available" error is NOT shown
     await expect(page.locator('text=No dashboard roles available for your account.')).not.toBeVisible();
 
-    // Verify dentist navigation sections are visible
-    await expect(page.locator('text=Overview')).toBeVisible();
-    await expect(page.locator('text=Appointments')).toBeVisible();
-    await expect(page.locator('text=Schedule')).toBeVisible();
+    // Verify dentist navigation sections are visible (first-match: the MUI
+    // shell repeats section names across AppBar, nav drawer, and content).
+    await expect(page.locator('text=Overview').first()).toBeVisible();
+    await expect(page.locator('text=Appointments').first()).toBeVisible();
+    await expect(page.locator('text=Schedule').first()).toBeVisible();
   });
 
   test('should handle multiple uppercase roles correctly', async ({ page }) => {
@@ -143,7 +147,7 @@ test.describe('Dashboard Role Fix Verification', () => {
     });
 
     // Navigate to dashboard
-    await page.goto('http://localhost:3001/dashboard');
+    await page.goto('/dashboard');
 
     // Wait for navigation to complete
     await page.waitForTimeout(2000);
@@ -152,6 +156,6 @@ test.describe('Dashboard Role Fix Verification', () => {
     await expect(page.locator('text=No dashboard roles available for your account.')).not.toBeVisible();
 
     // Verify navigation sections are visible (should show first role's sections)
-    await expect(page.locator('text=Overview')).toBeVisible();
+    await expect(page.locator('text=Overview').first()).toBeVisible();
   });
 });

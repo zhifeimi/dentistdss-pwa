@@ -26,7 +26,9 @@ test.describe('Basic Dashboard Functionality', () => {
   test('should handle dashboard access without authentication', async ({ page }) => {
     await page.goto('/dashboard');
     
-    // Should redirect to login or show authentication required
-    await expect(page.url()).toContain('/login');
+    // Should redirect to login or show authentication required.
+    // Use the auto-waiting page matcher: the redirect is client-side, so a
+    // raw page.url() string check races the router and reads /dashboard.
+    await expect(page).toHaveURL(/\/login/);
   });
 });
