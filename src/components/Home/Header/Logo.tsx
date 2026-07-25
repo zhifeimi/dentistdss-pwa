@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { LocalHospital as LocalHospitalIcon } from '@mui/icons-material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import { HEADER_STYLES } from './constants';
 
 interface LogoProps {

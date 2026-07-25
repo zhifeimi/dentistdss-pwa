@@ -8,7 +8,11 @@ const separator = Deno.build.os === 'windows' ? '\\' : '/';
 const projectRoot = await Deno.realPath(new URL('../', import.meta.url));
 
 const tools = {
-  vite: 'npm:vite@8.1.4',
+  // Caret range to stay specifier-compatible with package.json's
+  // "vite": "^8.1.5": deno.lock (frozen below) pins the exact resolution,
+  // so this does not loosen reproducibility — an exact pin here would add
+  // a second specifier the lock must also carry.
+  vite: 'npm:vite@^8.1.5',
   vitest: 'npm:vitest@4.1.10',
   playwright: 'npm:@playwright/test@1.61.1/cli',
 } as const;

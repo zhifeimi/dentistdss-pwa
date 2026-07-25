@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router';
 import { useAuth } from '@/context/auth';
 import { DashboardProvider } from '@/context/dashboard/DashboardContext';
 import { useDashboardNavigation } from '@/hooks/dashboard/useDashboardNavigation';

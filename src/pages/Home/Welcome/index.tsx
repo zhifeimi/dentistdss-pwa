@@ -12,7 +12,7 @@ import {
   useMediaQuery,
   CardActionArea
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import dentalCareKidsImg from '../../../assets/d6.jpg';
 import Hero from './Hero';

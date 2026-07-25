@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   } as { email?: string; firstName?: string },
 }));
 
-vi.mock('react-router-dom', () => ({
+vi.mock('react-router', () => ({
   useLocation: () => ({
     pathname: '/verify-email-code',
     search: '',

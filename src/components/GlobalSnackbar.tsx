@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import type { AlertColor } from '@mui/material/Alert';
 
 interface SnackbarEvent extends CustomEvent {

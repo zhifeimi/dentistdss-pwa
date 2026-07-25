@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, Dispatch } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 // import { useAuth } from '../auth'; // Not used currently
 import { DashboardState, DashboardSection, UserRole } from '../../types';
 import {

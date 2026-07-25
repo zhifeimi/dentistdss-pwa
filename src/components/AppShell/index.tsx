@@ -4,7 +4,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import dictionary from '../../utils/dictionary';
 
 import Home from '../../pages/Home';

@@ -13,7 +13,7 @@ import {
   InputAdornment,
   IconButton
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router';
 import { useAuth } from '../../../context/auth';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
