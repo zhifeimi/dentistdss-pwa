@@ -223,6 +223,8 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
   return (
     <Paper
       elevation={isDarkMode ? 6 : 3}
+      role="dialog"
+      aria-label="Help Assistant"
       sx={{
         position: 'absolute',
         bottom: { xs: 60, sm: 70 },
