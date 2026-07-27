@@ -1,26 +1,28 @@
 import api from './config';
 import {
   Clinic,
-  Dentist,
   ClinicSearchResult,
-  UpdateClinicRequest,
-  DentistAvailability,
-  TimeSlot,
   ClinicService,
-  Holiday,
   CreateHolidayRequest,
+  CreateWorkingHoursRequest,
+  Dentist,
+  DentistAvailability,
+  Holiday,
+  TimeSlot,
+  UpdateClinicRequest,
   WorkingHours,
-  CreateWorkingHoursRequest
 } from '../types';
 
 const clinicAPI = {
   async getClinics(): Promise<Clinic[]> {
-    return api.get('/api/clinic-admin/clinics');
+    return api.get('/api/clinic/list/all');
   },
 
   async searchClinics(keywords: string): Promise<ClinicSearchResult[]> {
     try {
-      const response = await api.post('/api/clinic-admin/clinics/search', { keywords }) as ClinicSearchResult[];
+      const response = await api.post('/api/clinic-admin/clinics/search', {
+        keywords,
+      }) as ClinicSearchResult[];
       return response;
     } catch (error) {
       throw error;
@@ -55,9 +57,13 @@ const clinicAPI = {
    * @param endDate - End date in YYYY-MM-DD format
    * @returns Array of availability objects
    */
-  async getDentistAvailability(dentistId: number, startDate: string, endDate: string): Promise<DentistAvailability[]> {
+  async getDentistAvailability(
+    dentistId: number,
+    startDate: string,
+    endDate: string,
+  ): Promise<DentistAvailability[]> {
     return api.get(`/api/clinic/dentist-availability/dentist/${dentistId}`, {
-      params: { startDate, endDate }
+      params: { startDate, endDate },
     });
   },
 
@@ -67,7 +73,10 @@ const clinicAPI = {
    * @param date - Date in YYYY-MM-DD format
    * @returns Array of availability objects
    */
-  async getDentistAvailabilityByDate(dentistId: number, date: string): Promise<DentistAvailability[]> {
+  async getDentistAvailabilityByDate(
+    dentistId: number,
+    date: string,
+  ): Promise<DentistAvailability[]> {
     return api.get(`/api/clinic/dentist-availability/dentist/${dentistId}/date/${date}`);
   },
 
@@ -80,7 +89,7 @@ const clinicAPI = {
    */
   async getAvailableSlots(dentistId: number, clinicId: number, date: string): Promise<TimeSlot[]> {
     return api.get('/api/clinic/dentist-availability/available-slots', {
-      params: { dentistId, clinicId, date }
+      params: { dentistId, clinicId, date },
     });
   },
 
@@ -158,7 +167,7 @@ const clinicAPI = {
    */
   async getServices(clinicId?: number): Promise<ClinicService[]> {
     if (clinicId) {
-      return api.get(`/api/clinic/${clinicId}/services`);
+      return api.get(`/api/clinic/service/clinic/${clinicId}`);
     }
     return api.get('/api/clinic/services/all');
   },
@@ -230,9 +239,12 @@ const clinicAPI = {
    * @param workingHoursData - Working hours data object
    * @returns Created working hours object
    */
-  async createWorkingHours(clinicId: number, workingHoursData: CreateWorkingHoursRequest): Promise<WorkingHours> {
+  async createWorkingHours(
+    clinicId: number,
+    workingHoursData: CreateWorkingHoursRequest,
+  ): Promise<WorkingHours> {
     return api.post(`/api/clinic-admin/clinics/${clinicId}/working-hours`, workingHoursData);
-  }
-}
+  },
+};
 
 export default clinicAPI;

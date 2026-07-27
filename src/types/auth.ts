@@ -90,6 +90,7 @@ export interface ProfileUpdateData {
 export interface EmailVerificationData {
   email: string;
   code: string;
+  newPassword: string;
 }
 
 // Clinic staff signup data
@@ -102,8 +103,12 @@ export interface ClinicStaffSignupData extends SignupData {
 // Clinic admin signup data
 export interface ClinicAdminSignupData extends SignupData {
   clinicName: string;
-  clinicAddress: string;
-  clinicPhone: string;
-  clinicEmail: string;
-  licenseNumber: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  phoneNumber: string;
+  businessEmail: string;
+  website?: string;
 }

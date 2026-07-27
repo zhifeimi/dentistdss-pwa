@@ -44,7 +44,7 @@ class DashboardErrorBoundary extends Component<Props, State> {
     return { hasError: true, error, errorInfo: null };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error details
     console.error('Dashboard Error Boundary caught an error:', error, errorInfo);
     
@@ -71,7 +71,7 @@ class DashboardErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
-  render(): ReactNode {
+  override render(): ReactNode {
     if (this.state.hasError) {
       // Custom fallback UI
       if (this.props.fallback && this.state.error) {

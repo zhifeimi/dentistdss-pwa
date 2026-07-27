@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useDashboardState, useDashboardDispatch, DASHBOARD_ACTIONS } from '../../context/dashboard/DashboardContext';
 import { getRoleNavigationSections, getDefaultSection } from '../../utils/dashboard/roleConfig';
 import { UserRole } from '../../types';

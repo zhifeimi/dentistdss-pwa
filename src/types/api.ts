@@ -157,14 +157,13 @@ export interface Appointment extends BaseEntity {
   startTime: string; // HH:mm:ss format
   endTime: string; // HH:mm:ss format
   status: AppointmentStatus;
-  reasonForVisit: string;
+  reasonForVisit?: string;
   symptoms?: string;
-  urgencyLevel: UrgencyLevel;
+  urgencyLevel?: UrgencyLevel;
   notes?: string;
-  createdBy: number;
+  createdBy?: number;
   confirmedBy?: number;
   cancelledBy?: number;
-  rescheduledBy?: number;
   cancellationReason?: string;
 
   // Populated fields
@@ -182,13 +181,12 @@ export interface Appointment extends BaseEntity {
   date?: string; // Alternative field name for appointmentDate
 }
 
-// Create appointment request (exact field names from API)
+// Create appointment request (actor identity is derived from the JWT)
 export interface CreateAppointmentRequest {
-  patientId: number;
+  patientId?: number;
   dentistId: number;
   clinicId: number;
-  createdBy: number;
-  serviceId: number;
+  serviceId?: number;
   appointmentDate: string; // YYYY-MM-DD format
   startTime: string; // HH:mm:ss format
   endTime: string; // HH:mm:ss format
@@ -198,12 +196,23 @@ export interface CreateAppointmentRequest {
   notes?: string;
 }
 
+export interface RescheduleAppointmentRequest {
+  newDate: string;
+  newStartTime: string;
+  newEndTime: string;
+}
+
+export interface CancelAppointmentRequest {
+  reason: string;
+}
+
 // Available time slot
 export interface TimeSlot {
   startTime: string; // HH:mm:ss format
   endTime: string; // HH:mm:ss format
-  isAvailable: boolean;
+  available: boolean;
   dentistId: number;
+  clinicId: number;
   date: string; // YYYY-MM-DD format
 }
 
@@ -268,20 +277,6 @@ export interface CreatePatientRequest {
   dateOfBirth: string; // YYYY-MM-DD format
   address?: string;
   emergencyContact?: string;
-}
-
-// Appointment reschedule request
-export interface RescheduleAppointmentRequest {
-  newDate: string; // YYYY-MM-DD format
-  newStartTime: string; // HH:mm:ss format
-  newEndTime: string; // HH:mm:ss format
-  rescheduledBy: number;
-}
-
-// Appointment cancellation request
-export interface CancelAppointmentRequest {
-  reason: string;
-  cancelledBy: number;
 }
 
 // Clinic update request

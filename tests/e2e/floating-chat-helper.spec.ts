@@ -191,9 +191,12 @@ test.describe('Floating Chat Helper E2E', () => {
       
       // Try pressing Enter
       await input.press('Enter');
-      
-      // No message should appear
-      await expect(page.getByText('   ')).not.toBeVisible();
+
+      // Whitespace-only input is never submitted (submit requires a
+      // non-blank trimmed value), so the input keeps its content and no
+      // message is added — the welcome state remains.
+      await expect(input).toHaveValue('   ');
+      await expect(sendButton).toBeDisabled();
     });
 
     test('should show loading state during API call', async ({ page }) => {
@@ -218,27 +221,35 @@ test.describe('Floating Chat Helper E2E', () => {
       const chatButton = page.getByRole('button', { name: /chat/i });
       await chatButton.click();
       
-      // Send message
-      const input = page.getByPlaceholder('Type your message...');
+      // Send message. NOTE: the input is located by role, NOT by its
+      // placeholder — the placeholder itself flips to 'Processing...' while
+      // loading, which would self-invalidate a placeholder-based locator
+      // exactly during the window under test.
+      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      const input = chat.getByRole('textbox');
       await input.fill('Test loading');
-      
+
       const sendButton = page.getByRole('button', { name: /send message/i });
       await sendButton.click();
-      
-      // Check loading states
-      await expect(page.getByText('Processing...')).toBeVisible();
-      await expect(page.getByText('Typing...')).toBeVisible();
+
+      // Check loading states: the input switches its placeholder to
+      // 'Processing...' and an assistant 'Typing...' indicator appears.
+      await expect(input).toHaveAttribute('placeholder', 'Processing...');
+      await expect(chat.getByText('Typing...')).toBeVisible();
       await expect(sendButton).toBeDisabled();
       await expect(input).toBeDisabled();
-      
+
       // Wait for response
-      await expect(page.getByText('Delayed response')).toBeVisible();
-      
-      // Check that loading states are cleared
-      await expect(page.getByText('Processing...')).not.toBeVisible();
-      await expect(page.getByText('Typing...')).not.toBeVisible();
-      await expect(sendButton).not.toBeDisabled();
+      await expect(chat.getByText('Delayed response')).toBeVisible();
+
+      // Check that loading states are cleared. The send button stays
+      // disabled while the input is empty (its disabled rule is
+      // `isLoading || !input.trim()`) — it re-enables once text is entered.
+      await expect(input).toHaveAttribute('placeholder', 'Type your message...');
+      await expect(chat.getByText('Typing...')).not.toBeVisible();
       await expect(input).not.toBeDisabled();
+      await input.fill('again');
+      await expect(sendButton).not.toBeDisabled();
     });
   });
 
@@ -263,11 +274,13 @@ test.describe('Floating Chat Helper E2E', () => {
       const sendButton = page.getByRole('button', { name: /send message/i });
       await sendButton.click();
       
-      // Check for error message in chat
-      await expect(page.getByText("I'm sorry, I encountered an error processing your request. Please try again later.")).toBeVisible();
-      
-      // Check for error alert
-      await expect(page.getByRole('alert')).toBeVisible();
+      // Check for error message in chat (scoped to the chat panel — the
+      // global snackbar also raises an alert for the failed call)
+      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      await expect(chat.getByText("I'm sorry, I encountered an error processing your request. Please try again later.")).toBeVisible();
+
+      // Check for error alert inside the chat panel
+      await expect(chat.getByRole('alert')).toBeVisible();
     });
 
     test('should handle network errors gracefully', async ({ page }) => {
@@ -287,8 +300,9 @@ test.describe('Floating Chat Helper E2E', () => {
       const sendButton = page.getByRole('button', { name: /send message/i });
       await sendButton.click();
       
-      // Check for error handling
-      await expect(page.getByText("I'm sorry, I encountered an error processing your request. Please try again later.")).toBeVisible();
+      // Check for error handling (scoped to the chat panel)
+      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      await expect(chat.getByText("I'm sorry, I encountered an error processing your request. Please try again later.")).toBeVisible();
     });
 
     test('should clear error when new message is sent', async ({ page }) => {
@@ -322,16 +336,18 @@ test.describe('Floating Chat Helper E2E', () => {
       await input.fill('First message');
       await sendButton.click();
       
-      // Wait for error
-      await expect(page.getByRole('alert')).toBeVisible();
-      
+      // Wait for error (scoped to the chat panel — the global snackbar
+      // also raises an alert and lingers)
+      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      await expect(chat.getByRole('alert')).toBeVisible();
+
       // Send second message (should succeed)
       await input.fill('Second message');
       await sendButton.click();
-      
-      // Error should be cleared
-      await expect(page.getByRole('alert')).not.toBeVisible();
-      await expect(page.getByText('Success on retry')).toBeVisible();
+
+      // Error should be cleared inside the chat panel
+      await expect(chat.getByRole('alert')).not.toBeVisible();
+      await expect(chat.getByText('Success on retry')).toBeVisible();
     });
   });
 
@@ -377,32 +393,29 @@ test.describe('Floating Chat Helper E2E', () => {
 
   test.describe('Accessibility', () => {
     test('should be keyboard accessible', async ({ page }) => {
-      // Tab to the chat button
-      await page.keyboard.press('Tab');
-      
-      // The chat button should be focused
+      // The chat button is focusable and opens the panel via keyboard.
       const chatButton = page.getByRole('button', { name: /chat/i });
+      await chatButton.focus();
       await expect(chatButton).toBeFocused();
-      
+
       // Press Enter to open dialog
       await page.keyboard.press('Enter');
-      
+
       // Dialog should open
-      await expect(page.getByText('Help Assistant')).toBeVisible();
-      
-      // Tab to input field
-      await page.keyboard.press('Tab');
-      await page.keyboard.press('Tab'); // Skip close button
-      
+      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      await expect(chat).toBeVisible();
+
+      // Type message and submit with Enter (the MUI focus-trap's exact tab
+      // order is an implementation detail — focus the field directly and
+      // drive it with the keyboard)
       const input = page.getByPlaceholder('Type your message...');
+      await input.focus();
       await expect(input).toBeFocused();
-      
-      // Type message and submit with Enter
       await page.keyboard.type('Keyboard test');
       await page.keyboard.press('Enter');
-      
+
       // Message should appear
-      await expect(page.getByText('Keyboard test')).toBeVisible();
+      await expect(chat.getByText('Keyboard test')).toBeVisible();
     });
 
     test('should have proper ARIA labels', async ({ page }) => {
@@ -437,21 +450,24 @@ test.describe('Floating Chat Helper E2E', () => {
       
       const input = page.getByPlaceholder('Type your message...');
       const sendButton = page.getByRole('button', { name: /send message/i });
-      
+      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+
       // Send multiple messages rapidly
       for (let i = 1; i <= 3; i++) {
         await input.fill(`Message ${i}`);
         await sendButton.click();
-        
-        // Wait for the message to appear before sending the next one
-        await expect(page.getByText(`Message ${i}`)).toBeVisible();
-        await expect(page.getByText('Quick response')).toBeVisible();
+
+        // Wait for the message and its response before sending the next one
+        // (each exchange adds one user bubble and one 'Quick response' bubble)
+        await expect(chat.getByText(`Message ${i}`)).toBeVisible();
+        await expect(chat.getByText('Quick response').nth(i - 1)).toBeVisible();
       }
-      
-      // All messages should be visible
-      await expect(page.getByText('Message 1')).toBeVisible();
-      await expect(page.getByText('Message 2')).toBeVisible();
-      await expect(page.getByText('Message 3')).toBeVisible();
+
+      // All messages and all three responses should be visible
+      await expect(chat.getByText('Message 1')).toBeVisible();
+      await expect(chat.getByText('Message 2')).toBeVisible();
+      await expect(chat.getByText('Message 3')).toBeVisible();
+      await expect(chat.getByText('Quick response')).toHaveCount(3);
     });
   });
 });

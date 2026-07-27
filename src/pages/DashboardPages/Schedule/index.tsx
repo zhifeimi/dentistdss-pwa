@@ -515,7 +515,7 @@ const SchedulePage: React.FC = () => {
         message={`Are you sure you want to delete this availability slot? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
-        showCancel={true}
+        showCancel
         type="error"
       />
     </Box>

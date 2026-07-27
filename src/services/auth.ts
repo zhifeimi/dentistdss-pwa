@@ -1,25 +1,23 @@
-import api from './config';
+import api, {
+  broadcastSessionEnded,
+  clearBearerSession,
+  clearXsrfToken,
+  CSRF_BOOTSTRAP_PATH,
+  ensureXsrfBootstrapped,
+  refreshSession,
+  setBearerSession,
+} from './config';
 import {
   AuthResponse,
+  ClinicAdminSignupData,
+  ClinicStaffSignupData,
   SignupData,
   User,
-  ClinicStaffSignupData,
-  ClinicAdminSignupData
 } from '../types';
 
-// Helpers to manage auth tokens in localStorage. The request interceptor in
-// api/config.js automatically injects these tokens on every request, so all we
-// need to do is persist / clear them here.
-const storeToken = (accessToken: string, tokenType: string = 'Bearer'): void => {
-  if (!accessToken) return;
-  localStorage.setItem('authToken', accessToken);
-  localStorage.setItem('tokenType', tokenType);
-};
-
-const clearToken = (): void => {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('tokenType');
-};
+// The bearer session lives only in the config transport's module memory. The
+// request interceptor there attaches it to same-origin API calls, so all we
+// need to do here is set / clear it.
 
 const authAPI = {
   /**
@@ -27,11 +25,11 @@ const authAPI = {
    * Returns the object coming from backend (typically { accessToken, tokenType, user })
    */
   async login(email: string, password: string): Promise<AuthResponse> {
-    const authData = await api.post('/api/auth/login', {email, password}) as AuthResponse;
+    const authData = await api.post('/api/auth/login', { email, password }) as AuthResponse;
 
     // The interceptor unwraps successful responses to `response.message`,
     // so `authData` should already be that object.
-    storeToken(authData.accessToken, authData.tokenType);
+    setBearerSession(authData.accessToken, authData.tokenType);
 
     return authData; // caller can extract user etc.
   },
@@ -54,16 +52,45 @@ const authAPI = {
   },
 
   /**
-   * Backend logout + local cleanup. Always clears local tokens, even if the
-   * network request fails (e.g. expired token).
+   * Fetches a readable XSRF token from the API origin for cookie-authenticated
+   * refresh and logout requests. The Axios response interceptor retains it only
+   * in memory.
+   */
+  async bootstrapXsrf(): Promise<void> {
+    await api.get(CSRF_BOOTSTRAP_PATH);
+  },
+
+  /**
+   * Best-effort, single-flight XSRF bootstrap; never rejects. Call before any
+   * cookie-session request that must survive a page reload.
+   */
+  ensureXsrfBootstrapped,
+
+  /**
+   * Rotates the HttpOnly refresh cookie and stores the resulting access token.
+   * Delegates to the shared single-flight transport refresh, which clears
+   * local session state and rethrows on failure.
+   */
+  async refresh(): Promise<AuthResponse> {
+    // The transport types the narrow token contract; the unwrapped backend
+    // payload is the full AuthResponse (tokens + user).
+    return (await refreshSession()) as unknown as AuthResponse;
+  },
+
+  /**
+   * Backend logout + local cleanup. Always clears the in-memory bearer and
+   * XSRF token and notifies other tabs, even if the network request fails.
    */
   async logout(): Promise<void> {
     try {
-      await api.post('/api/auth/logout');
+      await ensureXsrfBootstrapped();
+      await api.post('/api/auth/logout', undefined, { suppressErrorSnackbar: true });
     } catch (_) {
       // ignore — server might reject due to already invalidated token
     } finally {
-      clearToken();
+      clearBearerSession();
+      clearXsrfToken();
+      broadcastSessionEnded();
     }
   },
 
@@ -86,19 +113,22 @@ const authAPI = {
     // or Authorization header) adjust the request accordingly.
 
     // const authData = await api.post('/login/oauth2/code/google', { idToken });
-    const authData = await api.post('/oauth2/token', {idToken}) as AuthResponse;
+    const authData = await api.post('/oauth2/token', { idToken }) as AuthResponse;
     // console.log('authData', authData);
-    // Persist token locally for future API calls – mirrors the behaviour of
-    // the email/password login helper.
-    storeToken(authData.accessToken, authData.tokenType);
+    // Persist the bearer in memory for future API calls – mirrors the behaviour
+    // of the email/password login helper.
+    setBearerSession(authData.accessToken, authData.tokenType);
 
     return authData;
   },
 
   // ----- Verification helpers (unchanged) -----
-  verifySignupToken: (vtoken: string): Promise<any> => api.get(`/api/auth/signup/verify?vtoken=${vtoken}`),
-  verifySignupWithCode: (email: string, code: string): Promise<any> => api.post('/api/auth/signup/verify/code', {email, code}),
-  resendVerificationCode: (email: string): Promise<any> => api.post(`/api/auth/signup/verify/code/resend?email=${email}`),
+  verifySignupToken: (vtoken: string): Promise<any> =>
+    api.get(`/api/auth/signup/verify?vtoken=${vtoken}`),
+  verifySignupWithCode: (email: string, code: string, newPassword: string): Promise<any> =>
+    api.post('/api/auth/signup/verify/code', { email, code, newPassword }),
+  resendVerificationCode: (email: string): Promise<any> =>
+    api.post(`/api/auth/signup/verify/code/resend?email=${encodeURIComponent(email)}`),
 
   async signupClinicAdmin(clinicAdminData: ClinicAdminSignupData): Promise<any> {
     // Registers a new dental clinic together with its administrator account.

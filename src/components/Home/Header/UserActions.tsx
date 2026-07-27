@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Button, IconButton, Badge } from '@mui/material';
 import { Mail as MailIcon } from '@mui/icons-material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import type { User } from './types';
 
 interface UserActionsProps {

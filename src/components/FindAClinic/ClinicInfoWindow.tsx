@@ -64,8 +64,8 @@ const ClinicInfoWindow = React.memo<ClinicInfoWindowProps>(({ clinic, isMobile }
       <Typography 
         variant="subtitle1" 
         component="h3"
-        fontWeight="bold"
         sx={{ 
+          fontWeight: 'bold',
           mb: 1,
           fontSize: { xs: '1rem', sm: '1.1rem' },
           lineHeight: 1.3,

@@ -23,27 +23,32 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Set up Node.js 22
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - name: Set up Deno 2.9.2
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2
         with:
-          node-version: "22"
-          cache: npm
+          deno-version: v2.9.2
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Verify locked dependencies
+        run: deno install --frozen --node-modules-dir=none
 
-      - name: Type-check
-        run: npm exec tsc -- --noEmit
+      - name: Audit dependencies
+        run: deno task audit
+
+      - name: Check formatting, lint, and types
+        run: deno task check
 
       - name: Run tests
-        run: npm test -- --run
+        run: deno task test
 
       - name: Build production bundle
         env:
           VITE_API_HOST: ""
           VITE_GOOGLE_CLIENT_ID: test-client-id
           VITE_GOOGLE_MAPS_API_KEY: test-maps-key
-        run: npm run build
+        run: deno task build
+
+      - name: Confirm repository stays node_modules-free
+        run: test ! -e node_modules
 
   vercel-contract:
     name: Validate Vercel contract
@@ -54,4 +59,10 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Validate Vercel configuration
-        run: jq --exit-status '.framework == "vite" and .outputDirectory == "build"' vercel.json
+        run: >-
+          jq --exit-status
+          '.framework == "vite" and
+          .installCommand == "sh scripts/install-deno.sh" and
+          .buildCommand == "./.deno/bin/deno task build" and
+          .outputDirectory == "build"'
+          vercel.json

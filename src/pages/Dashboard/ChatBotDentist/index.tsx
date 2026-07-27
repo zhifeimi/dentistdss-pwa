@@ -268,19 +268,21 @@ const ChatInterface: React.FC = () => {
               fontSize: isMobile ? '0.875rem' : '1rem',
             }
           }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  type="submit"
-                  disabled={!input.trim() || loading}
-                  color="primary"
-                  size={isMobile ? "small" : "medium"}
-                >
-                  <SendIcon fontSize={isMobile ? "small" : "medium"} />
-                </IconButton>
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    type="submit"
+                    disabled={!input.trim() || loading}
+                    color="primary"
+                    size={isMobile ? "small" : "medium"}
+                  >
+                    <SendIcon fontSize={isMobile ? "small" : "medium"} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
           }}
           onKeyDown={handleKeyDown}
         />

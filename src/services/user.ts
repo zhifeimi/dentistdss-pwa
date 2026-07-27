@@ -8,7 +8,7 @@ const userAPI = {
      * @returns All users
      */
     async getAllUsers(): Promise<User[]> {
-        return api.get(`/api/auth/user/list/all`);
+        return api.get(`/api/user/list/all`);
     },
 
     /**
@@ -17,7 +17,7 @@ const userAPI = {
      * @returns User profile
      */
     async getProfile(userId: number): Promise<User> {
-        return api.get(`/api/auth/user/${userId}/details`);
+        return api.get(`/api/user/${userId}/details`);
     },
 
     /**
@@ -27,7 +27,7 @@ const userAPI = {
      * @returns Updated user profile
      */
     async updateProfile(userId: number, updates: ProfileUpdateData): Promise<User> {
-        return api.put(`/api/auth/user/${userId}`, updates);
+        return api.put(`/api/user/${userId}`, updates);
     },
 
     /**

@@ -13,7 +13,7 @@ import {
   Settings as SettingsIcon,
   Home as HomeIcon,
 } from '@mui/icons-material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import { getDisplayName, getUserInitials, getAvatarSrc, hasAvatarImage } from './utils';
 import type { User } from './types';
 

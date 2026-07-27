@@ -3,7 +3,11 @@
  * Extracted to follow Single Responsibility Principle
  */
 
-import type { Clinic as ApiClinic, TimeSlot } from '../../../../types/api';
+import type {
+  Clinic as ApiClinic,
+  Dentist,
+  TimeSlot,
+} from '../../../../types/api';
 
 export interface BookingData {
   clinicId: string;
@@ -61,6 +65,8 @@ export interface BookingWizardProps {
   errors: ValidationErrors;
   /** Available clinics */
   clinics: Clinic[];
+  /** Dentists loaded for the selected clinic */
+  dentists: Dentist[];
   /** Available time slots */
   availableSlots: AvailableSlot[];
   /** Available service types */
@@ -106,6 +112,7 @@ export interface WizardContentProps {
   patientData: PatientData;
   errors: ValidationErrors;
   clinics: Clinic[];
+  dentists: Dentist[];
   availableSlots: AvailableSlot[];
   serviceTypes: ServiceType[];
   loading: boolean;

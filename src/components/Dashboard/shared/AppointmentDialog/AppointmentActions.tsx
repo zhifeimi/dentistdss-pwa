@@ -1,5 +1,5 @@
 import React from 'react';
-import { DialogActions, Button, Box } from '@mui/material';
+import { Box, Button, DialogActions } from '@mui/material';
 import { canEdit } from './utils';
 import type { Appointment, DialogMode } from './types';
 
@@ -35,43 +35,43 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
 
   return (
     <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-      <Button onClick={onClose} color="inherit">
+      <Button onClick={onClose} color='inherit'>
         {isEditable ? 'Cancel' : 'Close'}
       </Button>
-      
+
       <Box sx={{ flex: 1 }} />
-      
+
       {isViewMode && (
         <>
-          {appointment.status === 'scheduled' && onConfirm && (
-            <Button onClick={() => onConfirm(appointment)} variant="outlined" color="success">
+          {appointment.status === 'REQUESTED' && onConfirm && (
+            <Button onClick={() => onConfirm(appointment)} variant='outlined' color='success'>
               Confirm
             </Button>
           )}
-          {appointment.status === 'confirmed' && onComplete && (
-            <Button onClick={() => onComplete(appointment)} variant="outlined" color="primary">
+          {appointment.status === 'CONFIRMED' && onComplete && (
+            <Button onClick={() => onComplete(appointment)} variant='outlined' color='primary'>
               Complete
             </Button>
           )}
-          {appointment.status === 'confirmed' && onMarkNoShow && (
-            <Button onClick={() => onMarkNoShow(appointment)} variant="outlined" color="warning">
+          {appointment.status === 'CONFIRMED' && onMarkNoShow && (
+            <Button onClick={() => onMarkNoShow(appointment)} variant='outlined' color='warning'>
               No-Show
             </Button>
           )}
-          {appointment.status !== 'completed' && 
-           appointment.status !== 'cancelled' && 
-           onCancel && (
-            <Button onClick={() => onCancel(appointment)} variant="outlined" color="error">
+          {appointment.status !== 'COMPLETED' &&
+            appointment.status !== 'CANCELLED' &&
+            onCancel && (
+            <Button onClick={() => onCancel(appointment)} variant='outlined' color='error'>
               Cancel
             </Button>
           )}
         </>
       )}
-      
+
       {isEditable && (
         <Button
           onClick={onSave}
-          variant="contained"
+          variant='contained'
           disabled={loading}
         >
           {loading ? 'Saving...' : 'Save Changes'}

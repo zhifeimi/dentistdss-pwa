@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, MenuItem, Box, Typography } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import { NAVIGATION_ITEMS } from './constants';
 import { getDisplayName } from './utils';
 import type { User } from './types';

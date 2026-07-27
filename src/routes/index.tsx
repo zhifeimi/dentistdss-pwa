@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router';
 import { Typography } from '@mui/material';
 import ChatInterface from '../pages/Dashboard/ChatBotDentist';
 import Login from '../pages/Home/Login';

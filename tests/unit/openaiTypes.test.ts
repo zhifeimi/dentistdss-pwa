@@ -9,6 +9,7 @@ import type {
   BackendChatService
 } from '../../src/types/openai';
 import type { ChatType } from '../../src/types/common';
+import type { ChatCompletionChunk } from 'openai/resources/chat/completions';
 
 // Import types for testing (these should be available at runtime for type checking)
 describe('OpenAI Types', () => {
@@ -195,17 +196,16 @@ describe('OpenAI Types', () => {
   });
 
   describe('OpenAI SDK Type Re-exports', () => {
-    it('should verify OpenAI SDK types are available for import', async () => {
-      // Test that we can import OpenAI SDK types
-      try {
-        const { ChatCompletionChunk } = await import('openai/resources/chat/completions');
-        // If import succeeds, the types are available
-        expect(true).toBe(true);
-      } catch (error) {
-        // If import fails, OpenAI SDK might not be installed
-        console.warn('OpenAI SDK types not available:', error.message);
-        expect(error.message).toContain('Cannot resolve module');
-      }
+    it('should verify OpenAI SDK types are available for type-only use', () => {
+      const chunk: ChatCompletionChunk = {
+        id: 'chatcmpl-test',
+        choices: [],
+        created: 0,
+        model: 'test-model',
+        object: 'chat.completion.chunk'
+      };
+
+      expect(chunk.object).toBe('chat.completion.chunk');
     });
   });
 

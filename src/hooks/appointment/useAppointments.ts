@@ -1,8 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/auth';
 import api from '../../services';
 import type { Appointment } from '../../types/api';
 import type { UserRole } from '../../types/common';
+
+export const resolveAppointmentRole = (
+  activeRole: UserRole | undefined,
+  accountRoles: string[] | undefined,
+): UserRole => activeRole || (accountRoles?.[0] || 'PATIENT') as UserRole;
 
 interface UseAppointmentsReturn {
   // Data
@@ -33,7 +38,10 @@ interface UseAppointmentsReturn {
  * - Loading and error state management
  * - Automatic refresh on date changes
  */
-const useAppointments = (selectedDate: Date | null = null): UseAppointmentsReturn => {
+const useAppointments = (
+  selectedDate: Date | null = null,
+  activeRole?: UserRole,
+): UseAppointmentsReturn => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -54,8 +62,7 @@ const useAppointments = (selectedDate: Date | null = null): UseAppointmentsRetur
       return;
     }
 
-    // Get user role - it might be in roles array or role field
-    const userRole: UserRole = (currentUser.roles?.[0] || 'PATIENT') as UserRole;
+    const userRole = resolveAppointmentRole(activeRole, currentUser.roles);
 
     if (!userRole || !currentUser.id) {
       return;
@@ -74,13 +81,19 @@ const useAppointments = (selectedDate: Date | null = null): UseAppointmentsRetur
           break;
 
         case 'DENTIST':
-          appointmentData = await api.appointment.getDentistAppointments(currentUser.id, formattedDate);
+          appointmentData = await api.appointment.getDentistAppointments(
+            currentUser.id,
+            formattedDate,
+          );
           break;
 
         case 'RECEPTIONIST':
         case 'CLINIC_ADMIN':
           if (currentUser.clinicId) {
-            appointmentData = await api.appointment.getClinicAppointments(currentUser.clinicId, formattedDate);
+            appointmentData = await api.appointment.getClinicAppointments(
+              currentUser.clinicId,
+              formattedDate,
+            );
           }
           break;
 
@@ -96,7 +109,7 @@ const useAppointments = (selectedDate: Date | null = null): UseAppointmentsRetur
     } finally {
       setLoading(false);
     }
-  }, [currentUser, getFormattedDate]);
+  }, [activeRole, currentUser, getFormattedDate]);
 
   /**
    * Refresh appointments data
@@ -108,30 +121,29 @@ const useAppointments = (selectedDate: Date | null = null): UseAppointmentsRetur
   /**
    * Update a specific appointment in the local state
    */
-  const updateAppointment = useCallback((appointmentId: string | number, updatedData: Partial<Appointment>): void => {
-    setAppointments(prev =>
-      prev.map(appointment =>
-        appointment.id === appointmentId
-          ? { ...appointment, ...updatedData }
-          : appointment
-      )
-    );
-  }, []);
+  const updateAppointment = useCallback(
+    (appointmentId: string | number, updatedData: Partial<Appointment>): void => {
+      setAppointments((prev) =>
+        prev.map((appointment) =>
+          appointment.id === appointmentId ? { ...appointment, ...updatedData } : appointment
+        )
+      );
+    },
+    [],
+  );
 
   /**
    * Remove an appointment from local state
    */
   const removeAppointment = useCallback((appointmentId: string | number): void => {
-    setAppointments(prev =>
-      prev.filter(appointment => appointment.id !== appointmentId)
-    );
+    setAppointments((prev) => prev.filter((appointment) => appointment.id !== appointmentId));
   }, []);
 
   /**
    * Add a new appointment to local state
    */
   const addAppointment = useCallback((newAppointment: Appointment): void => {
-    setAppointments(prev => [...prev, newAppointment]);
+    setAppointments((prev) => [...prev, newAppointment]);
   }, []);
 
   // Initial load and reload when selectedDate changes
@@ -140,7 +152,7 @@ const useAppointments = (selectedDate: Date | null = null): UseAppointmentsRetur
   }, [fetchAppointments, selectedDate]);
 
   // Filter appointments for today (for dashboard overview)
-  const todaysAppointments = appointments.filter(appointment => {
+  const todaysAppointments = appointments.filter((appointment) => {
     // Handle both old and new API data structures
     const dateField = appointment.appointmentDate || appointment.date;
     if (!dateField) return false;
@@ -150,7 +162,7 @@ const useAppointments = (selectedDate: Date | null = null): UseAppointmentsRetur
   });
 
   // Get upcoming appointments (next 7 days)
-  const upcomingAppointments = appointments.filter(appointment => {
+  const upcomingAppointments = appointments.filter((appointment) => {
     // Handle both old and new API data structures
     const dateField = appointment.appointmentDate || appointment.date;
     if (!dateField) return false;
@@ -165,17 +177,17 @@ const useAppointments = (selectedDate: Date | null = null): UseAppointmentsRetur
     appointments,
     todaysAppointments,
     upcomingAppointments,
-    
+
     // State
     loading,
     error,
-    
+
     // Actions
     refreshAppointments,
     updateAppointment,
     removeAppointment,
     addAppointment,
-    
+
     // Utilities
     fetchAppointments,
   };

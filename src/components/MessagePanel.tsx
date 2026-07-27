@@ -127,7 +127,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ userId }) => {
                               primary={msg.subject}
                               secondary={`From: ${msg.sender} - ${new Date(msg.date).toLocaleDateString()}`}
                               slotProps={{
-                                primary: {fontWeight: msg.read ? 'normal' : 'bold', noWrap: true},
+                                primary: {sx: {fontWeight: msg.read ? 'normal' : 'bold'}, noWrap: true},
                                 secondary: {noWrap: true}
                               }}
                           />
@@ -143,7 +143,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ userId }) => {
                 {selectedMessage ? (
                     <Box>
                       <Typography variant="h6" gutterBottom>{selectedMessage.subject}</Typography>
-                      <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
+                      <Typography variant="caption" color="textSecondary" sx={{display: 'block'}} gutterBottom>
                         From: {selectedMessage.sender} | Received: {new Date(selectedMessage.date).toLocaleString()}
                       </Typography>
                       <Divider sx={{my: 2}}/>

@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router';
 import { CssBaseline } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import { useAuth } from './context/auth';
 import useDarkMode from './hooks/useDarkMode';
 import './styles/App.scss';
 import GlobalSnackbar from './components/GlobalSnackbar';
 import AppShell from './components/AppShell';
 import { NotificationProvider } from './components/NotificationSystem';
-import { AppProvider } from '@toolpad/core/AppProvider';
 import theme from './context/theme';
 
 import AppRoutes from './routes';
@@ -23,9 +23,7 @@ function App(): React.JSX.Element {
   }
 
   return (
-    <AppProvider
-      theme={appTheme}
-    >
+    <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <NotificationProvider>
         <Router>
@@ -39,7 +37,7 @@ function App(): React.JSX.Element {
           <GlobalSnackbar />
         </Router>
       </NotificationProvider>
-    </AppProvider>
+    </ThemeProvider>
   );
 }
 

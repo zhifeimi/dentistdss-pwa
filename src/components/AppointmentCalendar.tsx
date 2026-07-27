@@ -69,7 +69,7 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
   viewType = 'month',
   onAppointmentClick,
   onNewAppointment,
-  userRole = 'patient'
+  userRole = 'PATIENT'
 }) => {
   const {
     availability,
@@ -105,13 +105,14 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
 
   const getStatusColor = (status?: string): 'success' | 'warning' | 'error' | 'info' | 'default' => {
     switch (status) {
-      case 'confirmed':
+      case 'CONFIRMED':
         return 'success';
-      case 'pending':
+      case 'REQUESTED':
+      case 'RESCHEDULED':
         return 'warning';
-      case 'cancelled':
+      case 'CANCELLED':
         return 'error';
-      case 'completed':
+      case 'COMPLETED':
         return 'info';
       default:
         return 'default';

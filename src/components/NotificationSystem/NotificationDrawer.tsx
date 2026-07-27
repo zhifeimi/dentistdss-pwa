@@ -51,8 +51,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       anchor="right"
       open={open}
       onClose={onClose}
-      PaperProps={{
-        sx: { width: { xs: '100%', sm: 400 }, display: 'flex', flexDirection: 'column' }
+      slotProps={{
+        paper: {
+          sx: { width: { xs: '100%', sm: 400 }, display: 'flex', flexDirection: 'column' }
+        }
       }}
     >
       {/* Header */}

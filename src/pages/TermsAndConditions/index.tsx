@@ -41,12 +41,12 @@ const TermsAndConditions: React.FC = () => {
           Terms & Conditions
         </Typography>
         <Box sx={{ px: 1 }}>
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1" component="p" sx={{ mb: 2 }}>
             These Terms and Conditions constitute a contract between you (the "Customer") and the DentistDSS Team
             ("we", "our", "us"). By accessing or using the DentistDSS services, you agree to be bound by these Terms.
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 500, mt: 2 }}>1. Privacy & Compliance</Typography>
-          <Typography variant="body2" paragraph>
+          <Typography variant="body2" component="p" sx={{ mb: 2 }}>
             DentistDSS is designed and operated as a HIPAA- and GDPR-compliant system. Our platform adheres to
             Australia's Privacy Act 1988, Australian Digital Health Policies (2023 - 2028), and NSW's Health Records
             Act 2002. We will never collect, store, or disclose your personal health information without your explicit
@@ -54,21 +54,21 @@ const TermsAndConditions: React.FC = () => {
             regulations.
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 500, mt: 2 }}>2. Data Collection</Typography>
-          <Typography variant="body2" paragraph>
+          <Typography variant="body2" component="p" sx={{ mb: 2 }}>
             Any personal information you provide is used solely for the purpose of delivering and improving our
             services. We do not sell user data to third parties.
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 500, mt: 2 }}>3. User Responsibilities</Typography>
-          <Typography variant="body2" paragraph>
+          <Typography variant="body2" component="p" sx={{ mb: 2 }}>
             You are responsible for maintaining the confidentiality of your account credentials and for all activities
             that occur under your account.
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 500, mt: 2 }}>4. Modifications</Typography>
-          <Typography variant="body2" paragraph>
+          <Typography variant="body2" component="p" sx={{ mb: 2 }}>
             We may update these Terms from time to time. Continued use of the service after such changes constitutes
             acceptance of the new Terms.
           </Typography>
-          <Typography variant="body2" paragraph sx={{ mt: 4 }}>
+          <Typography variant="body2" component="p" sx={{ mt: 4, mb: 2 }}>
             If you have any questions about these Terms, please contact us at dentistdss@gmail.com.
           </Typography>
         </Box>

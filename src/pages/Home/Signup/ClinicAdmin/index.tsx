@@ -18,7 +18,7 @@ import {
   MenuItem,
   SelectChangeEvent,
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
@@ -172,15 +172,14 @@ const ClinicAdmin: React.FC = () => {
         email: formData.email,
         password: formData.password,
         clinicName: formData.clinicName,
-        clinicAddress: formData.address,
-        clinicCity: formData.city,
-        clinicState: formData.state,
-        clinicZipCode: formData.zipCode,
-        clinicCountry: formData.country,
-        clinicPhone: formData.phoneNumber,
-        clinicEmail: formData.businessEmail,
-        clinicWebsite: formData.website,
-        licenseNumber: '', // Add this field to the form if needed
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        phoneNumber: formData.phoneNumber,
+        businessEmail: formData.businessEmail,
+        website: formData.website,
         role: 'CLINIC_ADMIN' as const,
       };
 
@@ -190,7 +189,6 @@ const ClinicAdmin: React.FC = () => {
       setDialogMessage('Signup request submitted! Please check your email for verification. Your clinic registration is pending approval by the DentistDSS team.');
       setOpenDialog(true);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || 'Failed to sign up. Please try again.');
     }
     setLoading(false);
@@ -287,12 +285,14 @@ const ClinicAdmin: React.FC = () => {
                     autoComplete="given-name"
                     value={formData.firstName}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -307,12 +307,14 @@ const ClinicAdmin: React.FC = () => {
                     autoComplete="family-name"
                     value={formData.lastName}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -330,12 +332,14 @@ const ClinicAdmin: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('email')}
                     helperText={getFieldError('email')}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -351,20 +355,22 @@ const ClinicAdmin: React.FC = () => {
                     autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
+                    slotProps={{
+                      input: {
+                        startAdornment: (
                           <InputAdornment position="start">
                             <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
                           </InputAdornment>
-                      ),
-                      endAdornment: (
+                        ),
+                        endAdornment: (
                           <InputAdornment position="end">
                             <IconButton onClick={handleClickShowPassword} edge="end"
                                         sx={{color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined}}>
                               {showPassword ? <VisibilityOff/> : <Visibility/>}
                             </IconButton>
                           </InputAdornment>
-                      ),
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -386,20 +392,22 @@ const ClinicAdmin: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('confirmPassword')}
                     helperText={getFieldError('confirmPassword')}
-                    InputProps={{
-                      startAdornment: (
+                    slotProps={{
+                      input: {
+                        startAdornment: (
                           <InputAdornment position="start">
                             <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
                           </InputAdornment>
-                      ),
-                      endAdornment: (
+                        ),
+                        endAdornment: (
                           <InputAdornment position="end">
                             <IconButton onClick={handleClickShowConfirmPassword} edge="end"
                                         sx={{color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined}}>
                               {showConfirmPassword ? <VisibilityOff/> : <Visibility/>}
                             </IconButton>
                           </InputAdornment>
-                      ),
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -422,12 +430,14 @@ const ClinicAdmin: React.FC = () => {
                     id="clinicName"
                     value={formData.clinicName}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <BusinessIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <BusinessIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -441,12 +451,14 @@ const ClinicAdmin: React.FC = () => {
                     id="address"
                     value={formData.address}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <HomeIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <HomeIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -552,12 +564,14 @@ const ClinicAdmin: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('businessEmail')}
                     helperText={getFieldError('businessEmail')}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -571,12 +585,14 @@ const ClinicAdmin: React.FC = () => {
                     id="phoneNumber"
                     value={formData.phoneNumber}
                     onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <LocalPhoneIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <LocalPhoneIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -594,12 +610,14 @@ const ClinicAdmin: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('website')}
                     helperText={getFieldError('website')}
-                    InputProps={{
-                      startAdornment: (
-                          <InputAdornment position="start">
-                            <LanguageIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <LanguageIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
+                            </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={textFieldSx}
                 />
@@ -659,7 +677,7 @@ const ClinicAdmin: React.FC = () => {
               </MuiLink>
             </Typography>
 
-            <Grid container justifyContent="space-between" sx={{mt: 2}}>
+            <Grid container sx={{mt: 2, justifyContent: 'space-between'}}>
               <Grid size={{ xs: 'auto' }}>
                 <MuiLink
                     component={RouterLink}

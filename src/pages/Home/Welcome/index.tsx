@@ -12,7 +12,7 @@ import {
   useMediaQuery,
   CardActionArea
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import dentalCareKidsImg from '../../../assets/d6.jpg';
 import Hero from './Hero';
@@ -170,9 +170,11 @@ const Welcome: React.FC = () => {
                 label="Your Name"
                 variant="outlined"
                 placeholder="Enter your full name"
-                inputProps={{
-                  autoComplete: 'name',
-                  inputMode: 'text'
+                slotProps={{
+                  htmlInput: {
+                    autoComplete: 'name',
+                    inputMode: 'text'
+                  }
                 }}
               />
             </Grid>
@@ -182,9 +184,11 @@ const Welcome: React.FC = () => {
                 label="Date"
                 type="date"
                 variant="outlined"
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  min: new Date().toISOString().split('T')[0] // Prevent past dates
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: {
+                    min: new Date().toISOString().split('T')[0] // Prevent past dates
+                  }
                 }}
               />
             </Grid>
@@ -194,7 +198,7 @@ const Welcome: React.FC = () => {
                 label="Time"
                 type="time"
                 variant="outlined"
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
             <Grid size={{ xs: 12 }} sx={{ textAlign: 'center' }}>

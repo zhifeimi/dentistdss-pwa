@@ -288,7 +288,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = memo(({
                     <ListItemText>View Details</ListItemText>
                   </MenuItem>
 
-                  {canPerformAction('reschedule') && appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+                  {canPerformAction('reschedule') && appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED' && (
                     <MenuItem onClick={() => handleAction('reschedule')}>
                       <ListItemIcon>
                         <RescheduleIcon fontSize="small" />
@@ -297,7 +297,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = memo(({
                     </MenuItem>
                   )}
 
-                  {canPerformAction('confirm') && appointment.status === 'scheduled' && (
+                  {canPerformAction('confirm') && appointment.status === 'REQUESTED' && (
                     <MenuItem onClick={() => handleAction('confirm')}>
                       <ListItemIcon>
                         <ConfirmIcon fontSize="small" />
@@ -306,7 +306,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = memo(({
                     </MenuItem>
                   )}
 
-                  {canPerformAction('complete') && appointment.status === 'confirmed' && (
+                  {canPerformAction('complete') && appointment.status === 'CONFIRMED' && (
                     <MenuItem onClick={() => handleAction('complete')}>
                       <ListItemIcon>
                         <CompleteIcon fontSize="small" />
@@ -315,7 +315,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = memo(({
                     </MenuItem>
                   )}
 
-                  {canPerformAction('no-show') && appointment.status === 'confirmed' && (
+                  {canPerformAction('no-show') && appointment.status === 'CONFIRMED' && (
                     <MenuItem onClick={() => handleAction('no-show')}>
                       <ListItemIcon>
                         <NoShowIcon fontSize="small" />
@@ -324,7 +324,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = memo(({
                     </MenuItem>
                   )}
 
-                  {canPerformAction('cancel') && appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+                  {canPerformAction('cancel') && appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED' && (
                     <>
                       <Divider />
                       <MenuItem onClick={() => handleAction('cancel')} sx={{ color: 'error.main' }}>

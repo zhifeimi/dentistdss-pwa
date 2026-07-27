@@ -73,45 +73,47 @@ const SearchSection = React.memo<SearchSectionProps>(({
             value={searchKeywords}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchKeywords(e.target.value)}
             onKeyPress={onKeyPress}
-            inputProps={{
-              'aria-label': 'Search for dental clinics',
-              type: 'search',
-              autoComplete: 'off',
-            }}
-            InputProps={{
-              startAdornment: (
-                <SearchIcon 
-                  sx={{ 
-                    mr: 1, 
-                    color: 'action.active',
-                    fontSize: { xs: 20, sm: 24 }
-                  }} 
-                />
-              ),
-              endAdornment: (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {loading && (
-                    <CircularProgress 
-                      size={isMobile ? 16 : 20} 
-                      sx={{ mr: 1 }} 
-                    />
-                  )}
-                  {searchKeywords && (
-                    <Button
-                      size="small"
-                      onClick={handleClear}
-                      sx={{ 
-                        minWidth: 'auto',
-                        p: 0.5,
-                        color: 'action.active'
-                      }}
-                      aria-label="Clear search"
-                    >
-                      <ClearIcon fontSize="small" />
-                    </Button>
-                  )}
-                </Box>
-              ),
+            slotProps={{
+              htmlInput: {
+                'aria-label': 'Search for dental clinics',
+                type: 'search',
+                autoComplete: 'off',
+              },
+              input: {
+                startAdornment: (
+                  <SearchIcon
+                    sx={{
+                      mr: 1,
+                      color: 'action.active',
+                      fontSize: { xs: 20, sm: 24 }
+                    }}
+                  />
+                ),
+                endAdornment: (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {loading && (
+                      <CircularProgress
+                        size={isMobile ? 16 : 20}
+                        sx={{ mr: 1 }}
+                      />
+                    )}
+                    {searchKeywords && (
+                      <Button
+                        size="small"
+                        onClick={handleClear}
+                        sx={{
+                          minWidth: 'auto',
+                          p: 0.5,
+                          color: 'action.active'
+                        }}
+                        aria-label="Clear search"
+                      >
+                        <ClearIcon fontSize="small" />
+                      </Button>
+                    )}
+                  </Box>
+                ),
+              },
             }}
             sx={{
               '& .MuiOutlinedInput-root': {

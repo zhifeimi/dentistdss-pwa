@@ -40,7 +40,7 @@ Tests for individual functions, utilities, and isolated components.
 - Algorithm testing
 - Data transformation
 
-**Run**: `npm test unit`
+**Run**: `deno task test:unit`
 
 ### 🔗 Integration Tests (`/integration/`)
 Tests for service interactions, API calls, and component integration.
@@ -53,7 +53,7 @@ Tests for service interactions, API calls, and component integration.
 - External service integration
 - Component communication
 
-**Run**: `npm test integration`
+**Run**: `deno task test:integration`
 
 ### 🎨 Component Tests (`/components/`)
 Tests for React components, UI interactions, and rendering.
@@ -66,7 +66,7 @@ Tests for React components, UI interactions, and rendering.
 - Event handling
 - State management
 
-**Run**: `npm test components`
+**Run**: `deno task test:components`
 
 ### 🛠 Utility Tests (`/utils/`)
 Tests for helper functions, utilities, and shared code.
@@ -79,7 +79,7 @@ Tests for helper functions, utilities, and shared code.
 - Helper utilities
 - Configuration processing
 
-**Run**: `npm test utils`
+**Run**: `deno task test:utils`
 
 ### 🌐 End-to-End Tests (`/e2e/`)
 Full user workflow tests using Playwright.
@@ -92,7 +92,7 @@ Full user workflow tests using Playwright.
 - Appointment booking
 - Chat interactions
 
-**Run**: `npm run test:e2e`
+**Run**: `deno task test:e2e`
 
 ## Test Configuration
 
@@ -112,30 +112,30 @@ Full user workflow tests using Playwright.
 
 ### All Tests
 ```bash
-npm test
+deno task test
 ```
 
 ### Specific Categories
 ```bash
-npm test unit          # Unit tests only
-npm test integration   # Integration tests only
-npm test components    # Component tests only
-npm test utils         # Utility tests only
+deno task test:unit          # Unit tests only
+deno task test:integration   # Integration tests only
+deno task test:components    # Component tests only
+deno task test:utils         # Utility tests only
 ```
 
 ### Watch Mode
 ```bash
-npm test -- --watch
+deno task test:watch
 ```
 
 ### Coverage Report
 ```bash
-npm test -- --coverage
+deno task test:coverage
 ```
 
 ### End-to-End Tests
 ```bash
-npm run test:e2e
+deno task test:e2e
 ```
 
 ## Writing Tests

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/auth';
 import useConfirmationDialog from '../dashboard/useConfirmationDialog';
 import type { Appointment, Clinic, Dentist, TimeSlot } from '../../types/api';
@@ -67,23 +67,12 @@ export interface UseAppointmentBookingReturn {
   // Utilities
   loadClinics: () => Promise<void>;
   loadDentists: () => Promise<void>;
+  loadServices: () => Promise<void>;
   loadAvailableSlots: () => Promise<void>;
 
   // Dialog
   confirmationDialog: any;
 }
-
-// Extract service types to a constant
-export const SERVICE_TYPES: ServiceType[] = [
-  { id: 'checkup', name: 'Regular Checkup', duration: 30, serviceId: 1, price: 150 },
-  { id: 'cleaning', name: 'Dental Cleaning', duration: 45, serviceId: 2, price: 200 },
-  { id: 'filling', name: 'Dental Filling', duration: 60, serviceId: 3, price: 300 },
-  { id: 'extraction', name: 'Tooth Extraction', duration: 90, serviceId: 4, price: 500 },
-  { id: 'consultation', name: 'Consultation', duration: 30, serviceId: 5, price: 100 },
-  { id: 'root-canal', name: 'Root Canal', duration: 120, serviceId: 6, price: 800 },
-  { id: 'crown', name: 'Crown Placement', duration: 90, serviceId: 7, price: 1200 },
-  { id: 'emergency', name: 'Emergency Visit', duration: 45, serviceId: 8, price: 250 },
-];
 
 // Extract initial state to constants
 const INITIAL_BOOKING_DATA: BookingData = {
@@ -120,7 +109,9 @@ const INITIAL_PATIENT_DATA: PatientData = {
  * - Patient profile creation for first-time bookings
  * - Form validation and error handling
  */
-const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) => void): UseAppointmentBookingReturn => {
+const useAppointmentBooking = (
+  onBookingComplete?: (appointment: Appointment) => void,
+): UseAppointmentBookingReturn => {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const { currentUser } = useAuth();
@@ -138,45 +129,74 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
   const {
     clinics,
     dentists,
+    services,
     availableSlots,
     loading: dataLoading,
     loadClinics,
     loadDentists: loadDentistsBase,
-    loadAvailableSlots: loadAvailableSlotsBase
+    loadServices: loadServicesBase,
+    loadAvailableSlots: loadAvailableSlotsBase,
   } = dataLoader;
+
+  const serviceTypes = useMemo<ServiceType[]>(() =>
+    services.map((service) => ({
+      id: String(service.id),
+      name: service.name,
+      duration: service.durationMinutes,
+      serviceId: service.id,
+      price: service.price ?? 0,
+    })), [services]);
 
   // Wrapper functions to maintain existing API
   const loadDentists = useCallback(async (): Promise<void> => {
     await loadDentistsBase(bookingData.clinicId);
   }, [loadDentistsBase, bookingData.clinicId]);
 
+  const loadServices = useCallback(async (): Promise<void> => {
+    await loadServicesBase(bookingData.clinicId);
+  }, [loadServicesBase, bookingData.clinicId]);
+
   const loadAvailableSlots = useCallback(async (): Promise<void> => {
+    const selectedService = serviceTypes.find(
+      (service) => service.id === bookingData.serviceType,
+    );
     await loadAvailableSlotsBase(
       bookingData.clinicId,
       bookingData.dentistId,
       bookingData.date,
-      bookingData.serviceDuration
+      selectedService ? String(selectedService.serviceId) : '',
+      selectedService?.duration ?? 0,
     );
-  }, [loadAvailableSlotsBase, bookingData.clinicId, bookingData.dentistId, bookingData.date, bookingData.serviceDuration]);
+  }, [
+    loadAvailableSlotsBase,
+    bookingData.clinicId,
+    bookingData.dentistId,
+    bookingData.date,
+    bookingData.serviceType,
+    serviceTypes,
+  ]);
 
   /**
    * Update booking data
    */
   const updateBookingData = useCallback((field: keyof BookingData, value: any): void => {
-    setBookingData(prev => {
+    setBookingData((prev) => {
       const updated = { ...prev, [field]: value };
 
-      // Update service duration when service type changes
+      // A service determines the authoritative slot duration. Never retain a
+      // selected interval when that duration changes.
       if (field === 'serviceType') {
-        const service = SERVICE_TYPES.find(s => s.id === value);
-        if (service) {
-          updated.serviceDuration = service.duration;
-        }
+        const service = serviceTypes.find((item) => item.id === value);
+        updated.serviceDuration = service?.duration ?? 30;
+        updated.startTime = '';
+        updated.endTime = '';
       }
 
       // Clear dependent fields when parent fields change
       if (field === 'clinicId') {
         updated.dentistId = '';
+        updated.serviceType = '';
+        updated.serviceDuration = 30;
         updated.date = '';
         updated.startTime = '';
         updated.endTime = '';
@@ -189,15 +209,15 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
     });
 
     // Clear related errors
-    setErrors(prev => ({ ...prev, [field]: '' }));
-  }, []);
+    setErrors((prev) => ({ ...prev, [field]: '' }));
+  }, [serviceTypes]);
 
   /**
    * Update patient data
    */
   const updatePatientData = useCallback((field: keyof PatientData, value: string): void => {
-    setPatientData(prev => ({ ...prev, [field]: value }));
-    setErrors(prev => ({ ...prev, [field]: '' }));
+    setPatientData((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: '' }));
   }, []);
 
   /**
@@ -216,7 +236,7 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
    */
   const nextStep = useCallback((): void => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   }, [currentStep, validateStep]);
 
@@ -224,7 +244,7 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
    * Go to previous step
    */
   const previousStep = useCallback((): void => {
-    setCurrentStep(prev => Math.max(0, prev - 1));
+    setCurrentStep((prev) => Math.max(0, prev - 1));
   }, []);
 
   /**
@@ -241,9 +261,9 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
         currentUser,
         bookingData,
         patientData,
-        serviceTypes: SERVICE_TYPES,
+        serviceTypes,
         confirmationDialog,
-        onBookingComplete
+        onBookingComplete,
       };
 
       const result = await submitBooking(submissionContext);
@@ -256,7 +276,17 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
     } finally {
       setLoading(false);
     }
-  }, [currentStep, validateStep, currentUser, bookingData, patientData, onBookingComplete, confirmationDialog, submitBooking]);
+  }, [
+    currentStep,
+    validateStep,
+    currentUser,
+    bookingData,
+    patientData,
+    serviceTypes,
+    onBookingComplete,
+    confirmationDialog,
+    submitBooking,
+  ]);
 
   /**
    * Reset booking form
@@ -278,6 +308,11 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
     loadDentists();
   }, [loadDentists]);
 
+  // Load services when clinic changes
+  useEffect(() => {
+    loadServices();
+  }, [loadServices]);
+
   // Load available slots when dependencies change
   useEffect(() => {
     loadAvailableSlots();
@@ -293,7 +328,7 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
     bookingData,
     patientData,
     errors,
-    serviceTypes: SERVICE_TYPES,
+    serviceTypes,
 
     // Actions
     updateBookingData,
@@ -307,6 +342,7 @@ const useAppointmentBooking = (onBookingComplete?: (appointment: Appointment) =>
     // Utilities
     loadClinics,
     loadDentists,
+    loadServices,
     loadAvailableSlots,
 
     // Dialog

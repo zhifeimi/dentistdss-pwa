@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build",
+  "installCommand": "sh scripts/install-deno.sh",
+  "buildCommand": "./.deno/bin/deno task build",
   "outputDirectory": "build",
   "rewrites": [
     {
@@ -33,11 +33,24 @@
       ]
     },
     {
-      "source": "/sw.js",
+      "source": "/service-worker.js",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
         }
       ]
     }

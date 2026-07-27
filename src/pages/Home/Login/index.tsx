@@ -13,7 +13,7 @@ import {
   InputAdornment,
   IconButton
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router';
 import { useAuth } from '../../../context/auth';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
@@ -242,16 +242,18 @@ const Login: React.FC = () => {
             error={!!emailError}
             helperText={emailError}
             disabled={loading}
-            inputProps={{
-              inputMode: 'email',
-              type: 'email'
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'} />
-                </InputAdornment>
-              ),
+            slotProps={{
+              htmlInput: {
+                inputMode: 'email',
+                type: 'email'
+              },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'} />
+                  </InputAdornment>
+                ),
+              },
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
@@ -285,24 +287,26 @@ const Login: React.FC = () => {
             value={password}
             onChange={handlePasswordChange}
             disabled={loading}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={handleClickShowPassword}
-                    edge="end"
-                    sx={{ color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined }}
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                      sx={{ color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined }}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
@@ -383,7 +387,7 @@ const Login: React.FC = () => {
             </Typography>
           </Divider>
 
-          <Grid container spacing={2} justifyContent="center">
+          <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
             <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'center' }}>
               <Box
                 ref={containerRef}

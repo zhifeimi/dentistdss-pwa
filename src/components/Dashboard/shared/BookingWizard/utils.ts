@@ -4,42 +4,37 @@
  */
 
 /**
- * Get wizard steps based on login status
+ * Appointment booking is authenticated-only, so patient-profile creation is
+ * not part of the wizard.
  */
-export const getWizardSteps = (isLoggedIn: boolean): string[] => [
+export const getWizardSteps = (_isLoggedIn: boolean): string[] => [
   'Select Clinic',
-  'Choose Date & Time',
   'Service Details',
-  ...(isLoggedIn ? [] : ['Patient Information']),
-  'Confirmation'
+  'Choose Date & Time',
+  'Confirmation',
 ];
 
 /**
- * Adjust step index based on login status
- * When logged in, skip the patient information step
+ * Service selection precedes slot selection so the authoritative slot request
+ * includes the persisted service duration. The content switch retains its
+ * historical component indices and unsupported patient-information step.
  */
-export const adjustStepIndex = (step: number, isLoggedIn: boolean): number => {
-  return isLoggedIn && step >= 3 ? step + 1 : step;
-};
+export const adjustStepIndex = (
+  step: number,
+  _isLoggedIn: boolean,
+): number => [0, 2, 1, 4][step] ?? step;
 
-/**
- * Check if current step is the last step
- */
-export const isLastStep = (currentStep: number, totalSteps: number): boolean => {
-  return currentStep === totalSteps - 1;
-};
+export const isLastStep = (
+  currentStep: number,
+  totalSteps: number,
+): boolean => currentStep === totalSteps - 1;
 
-/**
- * Check if current step is the first step
- */
-export const isFirstStep = (currentStep: number): boolean => {
-  return currentStep === 0;
-};
+export const isFirstStep = (currentStep: number): boolean => currentStep === 0;
 
-/**
- * Get button text based on step and loading state
- */
-export const getNextButtonText = (isLast: boolean, loading: boolean): string => {
+export const getNextButtonText = (
+  isLast: boolean,
+  loading: boolean,
+): string => {
   if (loading) return 'Processing...';
   return isLast ? 'Book Appointment' : 'Next';
 };

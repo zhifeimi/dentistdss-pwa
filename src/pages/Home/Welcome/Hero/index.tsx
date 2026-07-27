@@ -12,7 +12,7 @@ import {
   useMediaQuery,
   Divider
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import dentalQuestionImg from '../../../../assets/d2.jpg';
 import findDentistImg from '../../../../assets/d5.jpeg';
 

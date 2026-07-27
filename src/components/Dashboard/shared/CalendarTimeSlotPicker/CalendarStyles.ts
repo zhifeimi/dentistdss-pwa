@@ -1,4 +1,5 @@
 import { Theme } from '@mui/material/styles';
+import moment from 'moment';
 
 /**
  * Calendar styling utilities
@@ -78,12 +79,10 @@ export const getCalendarPaperStyles = (theme: Theme, isMobile: boolean) => ({
 export const getCalendarFormats = (isMobile: boolean) => ({
   timeGutterFormat: 'HH:mm',
   eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) => {
-    const moment = require('moment');
     return `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`;
   },
   dayHeaderFormat: isMobile ? 'ddd M/D' : 'dddd, MMMM D',
   dayRangeHeaderFormat: ({ start, end }: { start: Date; end: Date }) => {
-    const moment = require('moment');
     return `${moment(start).format('MMM D')} - ${moment(end).format('MMM D, YYYY')}`;
   },
 });

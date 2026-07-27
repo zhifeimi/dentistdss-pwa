@@ -185,7 +185,7 @@ Object.defineProperty(Element.prototype, 'scrollIntoView', {
 };
 
 // Mock React Router
-vi.mock('react-router-dom', () => ({
+vi.mock('react-router', () => ({
   useNavigate: () => vi.fn(),
   useLocation: () => ({
     pathname: '/',
