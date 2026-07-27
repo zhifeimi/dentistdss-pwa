@@ -96,7 +96,7 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
               onChange={(event) => onSelectDentist(String(event.target.value))}
               disabled={loading}
             >
-              {loading
+              {loading && dentists.length === 0
                 ? (
                   <MenuItem disabled>
                     <CircularProgress size={20} sx={{ mr: 1 }} />

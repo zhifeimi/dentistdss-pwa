@@ -3,7 +3,6 @@ import { useAuth } from '../../context/auth';
 import api from '../../services';
 import useConfirmationDialog from '../dashboard/useConfirmationDialog';
 import type { Appointment } from '../../types/api';
-import type { UserRole } from '../../types/common';
 
 type AppointmentAction = 'reschedule' | 'cancel' | 'confirm' | 'no-show' | 'complete';
 
@@ -56,7 +55,6 @@ const useAppointmentActions = (
     (appointment: Appointment, action: AppointmentAction): boolean => {
       if (!currentUser || !appointment) return false;
 
-      const userRole: UserRole = (currentUser.roles?.[0] || 'PATIENT') as UserRole;
       const isOwner = appointment.patientId === currentUser.id;
       const isAssignedDentist = appointment.dentistId === currentUser.id;
       const isClinicStaff = (currentUser.roles?.includes('RECEPTIONIST') ||
