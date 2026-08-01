@@ -9,7 +9,9 @@ import {
   Box,
   Button as MuiButton // Renamed to avoid conflict if you use a Button variable later
 } from '@mui/material';
-import BookCard from '../../../components/Home/Book/BookCard'; // Import the BookCard component
+import BookCard from '../../../components/Home/Book/BookCard';
+import GradientMesh from '../Welcome/sections/GradientMesh';
+import FilterAltIcon from '@mui/icons-material/FilterAlt'; // Import the BookCard component
 
 interface DentalBook {
   id: number;
@@ -227,7 +229,6 @@ const allTopics = [...new Set(dentalBooksData.flatMap(book => book.topics))].sor
 const BookPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isDarkMode = theme.palette.mode === 'dark';
 
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<DentalBook[]>(dentalBooksData);
@@ -258,69 +259,104 @@ const BookPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography
-        variant={isMobile ? "h4" : "h3"}
-        component="h1"
-        gutterBottom
-        align="center"
-        sx={{
-          fontWeight: 'bold',
-          color: isDarkMode ? '#e0f2f1' : 'primary.main',
-          mb: 2 // Reduced margin bottom for chips
-        }}
-      >
-        Dental Reading List
-      </Typography>
-
-      <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-        {allTopics.map(topic => (
-          <Chip
-            key={topic}
-            label={topic}
-            onClick={() => handleTopicToggle(topic)}
-            color={selectedTopics.includes(topic) ? 'primary' : 'default'}
-            variant={selectedTopics.includes(topic) ? 'filled' : 'outlined'}
+      {/* Hero — same GradientMesh idiom as the Learn page: eyebrow, h1,
+          subcopy, and topic chips that are violet when active and
+          hairline-outlined when not. */}
+      <GradientMesh>
+        <Box
+          sx={{
+            textAlign: 'center',
+            mb: 4,
+            p: { xs: 3, sm: 4 },
+            borderRadius: 3,
+            border: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Typography
+            variant="body2"
             sx={{
-              borderColor: isDarkMode && !selectedTopics.includes(topic) ? 'rgba(0, 230, 180, 0.5)' : (selectedTopics.includes(topic) ? 'primary.main' : 'rgba(0,0,0,0.23)'),
-              bgcolor: selectedTopics.includes(topic) ? (isDarkMode ? '#00897b' : 'primary.main') : (isDarkMode ? 'rgba(38, 50, 56, 0.8)' : 'default'),
-              color: selectedTopics.includes(topic) ? 'white' : (isDarkMode ? '#e0f2f1' : 'text.primary'),
-              '& .MuiChip-label': {
-                fontWeight: selectedTopics.includes(topic) ? 'medium' : 'normal'
-              },
-              '&:hover': {
-                bgcolor: selectedTopics.includes(topic)
-                  ? (isDarkMode ? '#00796b' : 'primary.dark')
-                  : (isDarkMode ? 'rgba(0, 137, 123, 0.3)' : 'rgba(0,0,0,0.08)')
-              }
-            }}
-          />
-        ))}
-      </Box>
-
-      {selectedTopics.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-          <MuiButton
-            variant="text"
-            onClick={clearFilters}
-            size="small"
-            sx={{
-              color: isDarkMode ? '#81c784' : 'primary.main',
-              textTransform: 'none'
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'primary.main',
+              fontSize: '0.75rem',
+              mb: 1.5,
             }}
           >
-            Clear All Filters
-          </MuiButton>
-        </Box>
-      )}
+            Reading list
+          </Typography>
+          <Typography
+            variant={isMobile ? "h4" : "h3"}
+            component="h1"
+            gutterBottom
+            sx={{
+              fontWeight: 600,
+              color: 'text.primary',
+              mb: 2
+            }}
+          >
+            Dental Reading List
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              mb: 3,
+              color: 'text.secondary',
+              maxWidth: '700px',
+              mx: 'auto',
+              lineHeight: 1.7,
+            }}
+          >
+            Explore our curated list of dental books. Click on any book to find it on Amazon.
+          </Typography>
 
-      <Typography
-        variant={isMobile ? "body1" : "h6"}
-        align="center"
-        color={isDarkMode ? 'rgba(255,255,255,0.8)' : "text.secondary"}
-        sx={{ mb: 4, maxWidth: '700px', mx: 'auto' }}
-      >
-        Explore our curated list of dental books. Click on any book to find it on Amazon.
-      </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+            <FilterAltIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <Typography variant="subtitle1" color="text.primary">
+              Filter by topic:
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
+            {allTopics.map((topic) => {
+              const active = selectedTopics.includes(topic);
+              return (
+                <Chip
+                  key={topic}
+                  label={topic}
+                  onClick={() => handleTopicToggle(topic)}
+                  color={active ? 'primary' : 'default'}
+                  variant={active ? 'filled' : 'outlined'}
+                  sx={{
+                    fontWeight: active ? 600 : 500,
+                    ...(active
+                      ? {}
+                      : {
+                          color: 'text.primary',
+                          borderColor: 'divider',
+                          '&:hover': { bgcolor: 'action.hover' },
+                        }),
+                  }}
+                />
+              );
+            })}
+          </Box>
+
+          {selectedTopics.length > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <MuiButton
+                variant="text"
+                onClick={clearFilters}
+                size="small"
+                color="primary"
+                sx={{ textTransform: 'none' }}
+              >
+                Clear All Filters
+              </MuiButton>
+            </Box>
+          )}
+        </Box>
+      </GradientMesh>
 
       {filteredBooks.length > 0 ? (
         <Grid container spacing={isMobile ? 2 : 3}>
@@ -334,7 +370,7 @@ const BookPage: React.FC = () => {
         <Typography
           variant="body1"
           align="center"
-          color={isDarkMode ? 'rgba(255,255,255,0.7)' : "text.secondary"}
+          color="text.secondary"
           sx={{ mt: 4 }}
         >
           No books found matching your selected topic(s). Try clearing filters or selecting different topics.
