@@ -7,16 +7,17 @@ import {
   Button,
   useTheme,
 } from '@mui/material';
-import { 
-  Close as CloseIcon, 
-  ArrowBack as ArrowBackIcon 
+import {
+  Close as CloseIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { getNextButtonText } from './utils';
 import type { WizardAppBarProps } from './types';
 
 /**
- * WizardAppBar component
- * Handles the app bar with navigation controls
+ * WizardAppBar — booking wizard top bar in the site's header idiom:
+ * hairline-bordered paper bar with a violet primary action, instead of a
+ * solid colored band.
  */
 export const WizardAppBar: React.FC<WizardAppBarProps> = ({
   onClose,
@@ -30,50 +31,46 @@ export const WizardAppBar: React.FC<WizardAppBarProps> = ({
 
   return (
     <AppBar
+      elevation={0}
+      color="default"
       sx={{
         position: 'relative',
-        backgroundColor: theme.palette.primary.main,
+        backgroundColor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
+        borderBottom: `1px solid ${theme.palette.divider}`,
       }}
     >
       <Toolbar>
         <IconButton
           edge="start"
-          color="inherit"
           onClick={onClose}
           aria-label="close"
-          sx={{ mr: 2 }}
+          sx={{ mr: 2, color: 'text.secondary' }}
         >
           <CloseIcon />
         </IconButton>
-        
-        <Typography variant="h6" component="div" sx={{ flex: 1 }}>
+
+        <Typography variant="h6" component="div" sx={{ flex: 1, fontWeight: 600 }}>
           Book New Appointment
         </Typography>
-        
+
         {!isFirstStep && (
           <Button
             color="inherit"
             onClick={onPreviousStep}
             disabled={loading}
-            sx={{ mr: 1 }}
+            startIcon={<ArrowBackIcon />}
+            sx={{ mr: 1, color: 'text.secondary' }}
           >
-            <ArrowBackIcon />
-            Go Back 
+            Go Back
           </Button>
         )}
-        
+
         <Button
-          color="inherit"
+          color="primary"
+          variant="contained"
           onClick={onNext}
           disabled={loading}
-          variant="outlined"
-          sx={{
-            borderColor: 'rgba(255, 255, 255, 0.5)',
-            '&:hover': {
-              borderColor: 'rgba(255, 255, 255, 0.8)',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }
-          }}
         >
           {getNextButtonText(isLastStep, loading)}
         </Button>

@@ -12,7 +12,7 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
   isMobile,
 }) => {
   return (
-    <Box sx={{ px: 3, pt: 3, pb: 2 }}>
+    <Box sx={{ px: 3, pt: 3, pb: 2, maxWidth: 720, mx: 'auto', width: '100%' }}>
       <Stepper
         activeStep={currentStep}
         alternativeLabel={!isMobile}
@@ -20,7 +20,10 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
         sx={{
           '& .MuiStepLabel-root': {
             fontSize: isMobile ? '0.875rem' : '1rem',
-          }
+          },
+          '& .MuiStepIcon-root.Mui-active, & .MuiStepIcon-root.Mui-completed': {
+            color: 'primary.main',
+          },
         }}
       >
         {steps.map((label) => (
