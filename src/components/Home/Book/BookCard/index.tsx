@@ -35,14 +35,12 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            bgcolor: isDarkMode ? 'rgba(38, 50, 56, 0.9)' : 'background.paper',
-            border: isDarkMode ? '1px solid rgba(0, 230, 180, 0.1)' : 'none',
+            bgcolor: 'background.paper',
+            border: `1px solid ${theme.palette.divider}`,
             transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
             '&:hover': {
               transform: 'translateY(-5px)',
-              boxShadow: isDarkMode
-                  ? `0 8px 16px rgba(0, 230, 180, 0.2)`
-                  : `0 8px 16px rgba(0, 0, 0, 0.15)`
+boxShadow: theme.shadows[isDarkMode ? 6 : 3]
             }
           }}
       >
@@ -72,7 +70,7 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
               component="div"
               sx={{
                 fontWeight: 'medium',
-                color: isDarkMode ? '#e0f2f1' : 'text.primary',
+                color: 'text.primary',
                 minHeight: '3.2em', // Approx 2 lines with some buffer
                 lineHeight: '1.4em',
                 overflow: 'hidden',
@@ -86,7 +84,7 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
           </Typography>
           <Typography
               variant="body2"
-              color={isDarkMode ? 'rgba(255,255,255,0.7)' : "text.secondary"}
+              color="text.secondary"
               sx={{
                 minHeight: '2.8em', // Approx 2 lines
                 lineHeight: '1.4em',
@@ -102,7 +100,7 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
           </Typography>
           <Typography
               variant="caption"
-              color={isDarkMode ? 'rgba(255,255,255,0.6)' : "text.secondary"}
+              color="text.secondary"
               sx={{
                 minHeight: '4em', // Approx 3 lines
                 lineHeight: '1.33em',
@@ -126,13 +124,7 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
               target="_blank"
               rel="noopener noreferrer"
               endIcon={<OpenInNewIcon/>}
-              sx={{
-                bgcolor: isDarkMode ? '#00897b' : '#013427',
-                color: isDarkMode ? '#e0f2f1' : 'white',
-                '&:hover': {
-                  bgcolor: isDarkMode ? '#00796b' : '#014d40',
-                }
-              }}
+
           >
             View on Amazon
           </Button>
