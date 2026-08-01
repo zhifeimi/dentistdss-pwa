@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router';
 import { useAuth } from '../../../context/auth';
+import AuthBrandPanel from '../../../components/Home/AuthBrandPanel';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
@@ -158,25 +159,33 @@ const Signup: React.FC = () => {
 
 
   return (
-      <Container component="main" maxWidth="xs">
-        <Paper
-            elevation={1}
-            sx={{
-              my: 8,
-              p: {xs: 3, sm: 4},
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              backgroundColor: theme.palette.background.paper,
-              borderRadius: 2,
-              border: theme.palette.mode === 'dark'
-                  ? `1px solid ${theme.palette.divider}`
-                  : 'none',
-              boxShadow: theme.palette.mode === 'dark'
-                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-                  : '0 8px 32px rgba(0, 0, 0, 0.1)',
-            }}
+      <Container component="main" maxWidth="lg">
+        <Box
+          sx={{
+            display: 'flex',
+            maxWidth: 980,
+            mx: 'auto',
+            my: 8,
+            borderRadius: 3,
+            overflow: 'hidden',
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.palette.mode === 'dark'
+                ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                : '0 8px 32px rgba(0, 0, 0, 0.1)',
+          }}
         >
+          <Box sx={{ flex: 1, bgcolor: 'background.paper' }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: {xs: 3, sm: 4},
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                backgroundColor: 'transparent',
+                borderRadius: 0,
+              }}
+            >
           <Typography
               component="h1"
               variant="h4"
@@ -582,7 +591,12 @@ const Signup: React.FC = () => {
               </Grid>
             </Grid>
           </Box>
-        </Paper>
+            </Paper>
+          </Box>
+          <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }}>
+            <AuthBrandPanel />
+          </Box>
+        </Box>
       </Container>
   );
 }
