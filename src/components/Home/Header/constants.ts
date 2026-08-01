@@ -44,7 +44,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
 export const SCROLL_THRESHOLD = 50;
 
 export const HEADER_STYLES = {
-  darkModeGradient: '#1c1c21',
+  darkModeBackground: '#1c1c21',
   darkModeIconColor: '#A98FFF',
   darkModeTextColor: '#f4f4f5',
   darkModeIconFilter: 'none',
