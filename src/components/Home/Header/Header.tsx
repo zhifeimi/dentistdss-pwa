@@ -56,9 +56,10 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleDarkMode, currentUser }
       elevation={darkMode ? 2 : (scrolled ? 4 : 0)}
       sx={{
         background: darkMode
-          ? HEADER_STYLES.darkModeBackground
-          : 'rgba(255, 255, 255, 0.85)',
-        backdropFilter: darkMode ? undefined : 'blur(12px)',
+          ? (scrolled ? HEADER_STYLES.darkModeBackground : 'transparent')
+          : (scrolled ? 'rgba(255, 255, 255, 0.85)' : 'transparent'),
+        backdropFilter: !darkMode && scrolled ? 'blur(12px)' : undefined,
+        borderBottom: scrolled ? undefined : 'none',
         color: darkMode ? undefined : theme.palette.text.primary,
         transition: 'background 0.5s ease, padding 0.3s ease, min-height 0.3s ease',
         width: '100%',

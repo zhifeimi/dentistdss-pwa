@@ -39,7 +39,7 @@ test.describe('Floating Chat Helper E2E', () => {
 
     test('should not show chat dialog initially', async ({ page }) => {
       // Chat dialog should not be visible initially
-      await expect(page.getByText('Dentabot')).not.toBeVisible();
+      await expect(page.getByRole('dialog', { name: 'Dentabot' })).not.toBeVisible();
     });
   });
 
@@ -49,7 +49,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
       
       // Check if dialog opened
-      await expect(page.getByText('Dentabot')).toBeVisible();
+      await expect(page.getByRole('dialog', { name: 'Dentabot' })).toBeVisible();
       await expect(page.getByText('Hi there! How can I help you today?')).toBeVisible();
       
       // Check if input field and send button are visible
@@ -67,7 +67,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await closeButton.click();
       
       // Verify dialog is closed
-      await expect(page.getByText('Dentabot')).not.toBeVisible();
+      await expect(page.getByRole('dialog', { name: 'Dentabot' })).not.toBeVisible();
     });
 
     test('should maintain dialog state when reopened', async ({ page }) => {
@@ -364,7 +364,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
       
       // Dialog should be appropriately sized for mobile
-      const dialog = page.getByText('Dentabot').locator('..');
+      const dialog = page.getByRole('dialog', { name: 'Dentabot' });
       await expect(dialog).toBeVisible();
       
       // Input should be functional
@@ -386,7 +386,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
       
       // Dialog should be appropriately sized for tablet
-      const dialog = page.getByText('Dentabot').locator('..');
+      const dialog = page.getByRole('dialog', { name: 'Dentabot' });
       await expect(dialog).toBeVisible();
     });
   });

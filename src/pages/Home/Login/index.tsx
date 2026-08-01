@@ -21,6 +21,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useMediaQuery } from '@mui/material';
+import AuthBrandPanel from '../../../components/Home/AuthBrandPanel';
 
 /**
  * Login - User authentication page
@@ -185,30 +186,38 @@ const Login: React.FC = () => {
   return (
     <Container
       component="main"
-      maxWidth="xs"
+      maxWidth="lg"
       sx={{
         px: { xs: 2, sm: 3 },
         py: { xs: 2, sm: 4 }
       }}
     >
-      <Paper
-        elevation={1}
+      <Box
         sx={{
-          mt: { xs: 4, sm: 6, md: 8 },
-          p: { xs: 2.5, sm: 3, md: 4 },
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          backgroundColor: theme.palette.background.paper,
-          borderRadius: 2,
-          border: theme.palette.mode === 'dark'
-            ? `1px solid ${theme.palette.divider}`
-            : 'none',
+          maxWidth: 980,
+          mx: 'auto',
+          mt: { xs: 4, sm: 6, md: 8 },
+          borderRadius: 3,
+          overflow: 'hidden',
+          border: `1px solid ${theme.palette.divider}`,
           boxShadow: theme.palette.mode === 'dark'
             ? '0 8px 32px rgba(0, 0, 0, 0.3)'
             : '0 8px 32px rgba(0, 0, 0, 0.1)',
         }}
       >
+        <Box sx={{ flex: 1, bgcolor: 'background.paper' }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 2.5, sm: 3, md: 4 },
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              backgroundColor: 'transparent',
+              borderRadius: 0,
+            }}
+          >
         <Typography
           component="h1"
           variant={isMobile ? "h5" : "h4"}
@@ -437,7 +446,12 @@ const Login: React.FC = () => {
             </MuiLink>
           </Box>
         </Box>
-      </Paper>
+          </Paper>
+        </Box>
+        <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }}>
+          <AuthBrandPanel />
+        </Box>
+      </Box>
     </Container>
   );
 };
