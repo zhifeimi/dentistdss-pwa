@@ -103,14 +103,16 @@ export const WizardContent: React.FC<WizardContentProps> = ({
     <Box
       sx={{
         flex: 1,
-        px: 3,
+        px: { xs: 2, sm: 3 },
         pb: 3,
         overflow: 'auto',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {getStepContent(currentStep)}
+      <Box sx={{ maxWidth: 720, width: '100%', mx: 'auto', pt: 1 }}>
+        {getStepContent(currentStep)}
+      </Box>
     </Box>
   );
 };
