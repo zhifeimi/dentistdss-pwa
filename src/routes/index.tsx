@@ -74,7 +74,7 @@ const AppRoutes: React.FC = () => {
                                     fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' }
                                 }}
                             >
-                                {config.app.name} - Your Dental Assistant
+                                Dentabot - Your Dental Assistant
                             </Typography>
                             <ChatInterface />
                         </>

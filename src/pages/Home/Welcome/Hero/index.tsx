@@ -10,7 +10,6 @@ import {
   CardMedia,
   useTheme,
   useMediaQuery,
-  Divider
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router';
 import dentalQuestionImg from '../../../../assets/d2.jpg';
@@ -25,21 +24,15 @@ interface HeroItem {
 
 /**
  * Hero - Hero section component for the welcome page
- * 
- * Features:
- * - Main title with animated styling
- * - Two primary action cards (Ask Questions, Find Clinic)
- * - Responsive design with dark mode support
- * - Hover animations and visual effects
+ *
+ * Clerk-style restraint: eyebrow label, quiet headline, one primary CTA
+ * plus one secondary link, fine-bordered cards. No glow, no shine sweeps.
  */
 const Hero: React.FC = () => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const white_t = (theme.palette.common as any).white_t || 'rgba(255, 255, 255, 0.2)';
-  const secondary_A100_t = (theme.palette.secondary && (theme.palette.secondary as any).A100_t) || 'rgba(77, 182, 172, 0.2)';
 
   const heroItems: HeroItem[] = [
     {
@@ -59,108 +52,91 @@ const Hero: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ my: { xs: 2, sm: 3, md: 4 }, textAlign: 'center', px: { xs: 2, sm: 3 } }}>
       <Typography
-        variant={isMobile ? "h5" : "h4"}
+        variant="body2"
+        component="p"
+        sx={{
+          fontWeight: 600,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: 'primary.main',
+          mb: { xs: 1, sm: 1.5 },
+          fontSize: '0.75rem',
+        }}
+      >
+        DentistDSS
+      </Typography>
+      <Typography
+        variant={isMobile ? "h4" : "h3"}
         component="h1"
         gutterBottom
         sx={{
-          fontWeight: 'bold',
-          color: 'primary.main',
-          mb: { xs: 2, sm: 2.5, md: 3 }
+          fontWeight: 600,
+          color: 'text.primary',
+          mb: { xs: 1.5, sm: 2, md: 2.5 }
         }}
       >
-        <Box
-          component="span"
-          sx={{
-            textShadow: isDarkMode
-              ? '0 0 10px rgba(0, 230, 180, 0.6), 0 0 20px rgba(0, 230, 180, 0.4)'
-              : '0 0 10px rgba(1, 52, 39, 0.3), 0 0 20px rgba(1, 52, 39, 0.2)',
-            letterSpacing: '0.5px',
-            position: 'relative',
-            display: 'inline-block',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              bottom: '-8px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '80px',
-              height: '3px',
-              background: isDarkMode
-                ? `linear-gradient(90deg, transparent, ${theme.palette.secondary.light}, transparent)`
-                : `linear-gradient(90deg, transparent, ${theme.palette.primary.dark}, transparent)`,
-              borderRadius: '2px'
-            }
-          }}
-        >
-          Dental Chat
-        </Box>
-        <Box
-          component="span"
-          sx={{
-            color: isDarkMode ? theme.palette.text.secondary : 'inherit'
-          }}
-        >
-          {' with AI Dentists'}
-        </Box>
+        Dental Chat with AI Dentists
+      </Typography>
+
+      <Typography
+        variant={isSmallMobile ? "body1" : "h6"}
+        sx={{
+          fontWeight: 400,
+          color: 'text.secondary',
+          maxWidth: 560,
+          mx: 'auto',
+          mb: { xs: 3, sm: 3.5, md: 4 },
+        }}
+      >
+        Ask dental questions and find a clinic — assistant guidance when you
+        need it, real clinics when it matters.
       </Typography>
 
       <Box sx={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        mb: { xs: 2, sm: 2.5, md: 3 },
-        flexDirection: { xs: 'column', sm: 'row' },
-        gap: { xs: 1, sm: 0 }
+        gap: 2,
+        mb: { xs: 3, sm: 4, md: 5 },
+        flexDirection: { xs: 'column', sm: 'row' }
       }}>
-        <Typography
-          variant={isSmallMobile ? "body1" : "h6"}
-          sx={{
-            mx: { xs: 0, sm: 2 },
-            fontWeight: 'medium',
-            color: isDarkMode ? theme.palette.success.light : 'primary.main',
-            textAlign: 'center'
-          }}
+        <Button
+          component={RouterLink}
+          to="/chat"
+          variant="contained"
+          color="primary"
+          size={isMobile ? "medium" : "large"}
+          fullWidth={isSmallMobile}
         >
-          Ask Dental Questions
-        </Typography>
-        {!isSmallMobile && (
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={{
-              borderColor: isDarkMode ? theme.palette.secondary.light : 'primary.main',
-              display: { xs: 'none', sm: 'block' }
-            }}
-          />
-        )}
-        <Typography
-          variant={isSmallMobile ? "body1" : "h6"}
-          sx={{
-            mx: { xs: 0, sm: 2 },
-            fontWeight: 'medium',
-            color: isDarkMode ? theme.palette.success.light : 'primary.main',
-            textAlign: 'center'
-          }}
+          Ask a dental question
+        </Button>
+        <Button
+          component={RouterLink}
+          to="/find-a-clinic"
+          variant="text"
+          color="primary"
+          size={isMobile ? "medium" : "large"}
+          fullWidth={isSmallMobile}
         >
-          Find a Clinic
-        </Typography>
+          Find a clinic →
+        </Button>
       </Box>
 
       <Grid container spacing={{ xs: 2, sm: 3, md: 4 }} sx={{ mt: { xs: 1, sm: 1.5, md: 2 }, justifyContent: 'center' }}>
         {heroItems.map((item, index) => (
           <Grid size={{ xs: 12, sm: 6, md: 6 }} key={index}>
             <Card
-              elevation={isDarkMode ? 4 : 2}
+              elevation={0}
               sx={{
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                borderRadius: 2,
+                borderRadius: 3,
                 bgcolor: 'background.paper',
-                border: isDarkMode ? `1px solid ${theme.palette.divider}` : 'none',
-                transition: 'all 0.3s ease',
+                border: `1px solid ${theme.palette.divider}`,
+                transition: 'box-shadow 0.2s ease, transform 0.2s ease',
                 '&:hover': {
-                  boxShadow: theme.shadows[isDarkMode ? 8 : 4],
+                  boxShadow: theme.shadows[isDarkMode ? 6 : 3],
                   transform: 'translateY(-2px)'
                 }
               }}
@@ -185,48 +161,9 @@ const Hero: React.FC = () => {
                   color="primary"
                   size={isMobile ? "medium" : "large"}
                   fullWidth={isSmallMobile}
-                  sx={{
-                    borderRadius: 8,
-                    px: { xs: 2, sm: 3 },
-                    py: { xs: 1.5, sm: 2 },
-                    minHeight: { xs: 48, sm: 52 },
-                    '&:hover': {
-                      transform: 'translateY(-3px)',
-                      boxShadow: theme.shadows[6]
-                    },
-                    textShadow: isDarkMode
-                      ? '0 1px 3px rgba(0, 0, 0, 0.4)'
-                      : '0 1px 2px rgba(0, 0, 0, 0.2)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: '-100%',
-                      width: '100%',
-                      height: '100%',
-                      background: isDarkMode
-                        ? `linear-gradient(90deg, transparent, ${secondary_A100_t}, transparent)`
-                        : `linear-gradient(90deg, transparent, ${white_t}, transparent)`,
-                      transition: 'all 0.5s ease'
-                    },
-                    '&:hover::before': {
-                      left: '100%'
-                    }
-                  }}
                 >
-                  <Box sx={{ fontWeight: 'medium', display: 'inline-block', fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-                    {item.title}
-                  </Box>
+                  {item.title}
                 </Button>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: { xs: 1.5, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                >
-                  click here
-                </Typography>
               </CardContent>
             </Card>
           </Grid>

@@ -1,21 +1,25 @@
 import { createTheme, Theme } from '@mui/material/styles';
 import { ThemeMode } from '../../types';
 
-// Enhanced dental clinic theme
+// DentistDSS theme — clerk.com visual language: near-black text on white,
+// a single violet accent, fine gray borders, restrained shadows, generous
+// whitespace. Same factory shape in both modes; dark is the inverse with a
+// lifted violet.
 const theme = (mode: ThemeMode): Theme => createTheme({
   palette: {
     mode,
     primary: {
-      main: mode === 'light' ? '#013427' : '#4caf50', // Deep green for dental/medical
-      light: mode === 'light' ? '#4caf50' : '#81c784',
-      dark: mode === 'light' ? '#00251a' : '#2e7d32',
+      main: mode === 'light' ? '#6C47FF' : '#8B6BFF',
+      light: mode === 'light' ? '#8B6BFF' : '#A98FFF',
+      dark: mode === 'light' ? '#5636E8' : '#6C47FF',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: mode === 'light' ? '#014d40' : '#26a69a', // Teal accent
-      light: mode === 'light' ? '#26a69a' : '#4db6ac',
-      dark: mode === 'light' ? '#00332b' : '#00695c',
-      contrastText: '#ffffff',
+      // Clerk's second CTA voice is near-black on light / near-white on dark.
+      main: mode === 'light' ? '#131316' : '#f4f4f5',
+      light: mode === 'light' ? '#3a3a40' : '#ffffff',
+      dark: mode === 'light' ? '#000000' : '#a1a1aa',
+      contrastText: mode === 'light' ? '#ffffff' : '#131316',
     },
     success: {
       main: '#4caf50',
@@ -38,31 +42,34 @@ const theme = (mode: ThemeMode): Theme => createTheme({
       dark: '#1976d2',
     },
     background: {
-      default: mode === 'light' ? '#f8fffe' : '#121212',
-      paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
+      default: mode === 'light' ? '#f7f7f8' : '#131316',
+      paper: mode === 'light' ? '#ffffff' : '#1c1c21',
     },
     text: {
-      primary: mode === 'light' ? '#172b4d' : '#ffffff',
-      secondary: mode === 'light' ? '#6b778c' : '#b0bec5',
+      primary: mode === 'light' ? '#131316' : '#f4f4f5',
+      secondary: mode === 'light' ? '#6b6b76' : '#a1a1aa',
     },
-    divider: mode === 'light' ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.12)',
+    divider: mode === 'light' ? '#e5e5ea' : '#2e2e35',
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter Variable", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
       fontWeight: 600,
       lineHeight: 1.2,
+      letterSpacing: '-0.02em',
     },
     h2: {
       fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
       fontWeight: 600,
       lineHeight: 1.3,
+      letterSpacing: '-0.015em',
     },
     h3: {
       fontSize: 'clamp(1.25rem, 3vw, 1.75rem)',
       fontWeight: 600,
       lineHeight: 1.3,
+      letterSpacing: '-0.01em',
     },
     h4: {
       fontSize: 'clamp(1.125rem, 2.5vw, 1.5rem)',
@@ -107,10 +114,8 @@ const theme = (mode: ThemeMode): Theme => createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          elevation: 0,
-          boxShadow: mode === 'light'
-            ? '0px 1px 3px rgba(0, 0, 0, 0.12)'
-            : '0px 1px 3px rgba(255, 255, 255, 0.12)',
+          boxShadow: 'none',
+          borderBottom: mode === 'light' ? '1px solid #e5e5ea' : '1px solid #2e2e35',
         },
       },
     },
@@ -118,7 +123,7 @@ const theme = (mode: ThemeMode): Theme => createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 8,
+          borderRadius: 10,
           fontWeight: 500,
           minHeight: 44, // Minimum touch target size
           padding: '12px 20px',
@@ -129,9 +134,9 @@ const theme = (mode: ThemeMode): Theme => createTheme({
           },
         },
         contained: {
-          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 1px 2px rgba(19, 19, 22, 0.08)',
           '&:hover': {
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
+            boxShadow: '0 2px 6px rgba(19, 19, 22, 0.12)',
           },
         },
         sizeSmall: {
@@ -156,12 +161,10 @@ const theme = (mode: ThemeMode): Theme => createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: mode === 'light'
-            ? '0px 2px 8px rgba(0, 0, 0, 0.08)'
-            : '0px 2px 8px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 1px 2px rgba(19, 19, 22, 0.05)',
           border: mode === 'light'
-            ? '1px solid rgba(0, 0, 0, 0.05)'
-            : '1px solid rgba(255, 255, 255, 0.1)',
+            ? '1px solid #e5e5ea'
+            : '1px solid #2e2e35',
         },
       },
     },
@@ -169,15 +172,15 @@ const theme = (mode: ThemeMode): Theme => createTheme({
       styleOverrides: {
         paper: {
           borderRight: mode === 'light'
-            ? '1px solid rgba(0, 0, 0, 0.12)'
-            : '1px solid rgba(255, 255, 255, 0.12)',
+            ? '1px solid #e5e5ea'
+            : '1px solid #2e2e35',
         }
       }
     },
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
+          borderRadius: 8,
           fontWeight: 500,
         },
       },
@@ -186,7 +189,7 @@ const theme = (mode: ThemeMode): Theme => createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 8,
+            borderRadius: 10,
             minHeight: 44, // Minimum touch target
             '@media (max-width: 600px)': {
               minHeight: 48, // Larger on mobile
@@ -211,28 +214,26 @@ const theme = (mode: ThemeMode): Theme => createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 10,
         },
         elevation1: {
-          boxShadow: mode === 'light'
-            ? '0px 1px 3px rgba(0, 0, 0, 0.08)'
-            : '0px 1px 3px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 1px 2px rgba(19, 19, 22, 0.05)',
         },
       },
     },
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 10,
           margin: '2px 0',
           '&.Mui-selected': {
             backgroundColor: mode === 'light'
-              ? 'rgba(1, 52, 39, 0.08)'
-              : 'rgba(76, 175, 80, 0.16)',
+              ? 'rgba(108, 71, 255, 0.08)'
+              : 'rgba(139, 107, 255, 0.16)',
             '&:hover': {
               backgroundColor: mode === 'light'
-                ? 'rgba(1, 52, 39, 0.12)'
-                : 'rgba(76, 175, 80, 0.24)',
+                ? 'rgba(108, 71, 255, 0.12)'
+                : 'rgba(139, 107, 255, 0.24)',
             },
           },
         },
@@ -241,7 +242,7 @@ const theme = (mode: ThemeMode): Theme => createTheme({
   },
   spacing: 8,
   shape: {
-    borderRadius: 8,
+    borderRadius: 10,
   },
   transitions: {
     duration: {

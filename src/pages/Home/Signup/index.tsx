@@ -160,16 +160,14 @@ const Signup: React.FC = () => {
   return (
       <Container component="main" maxWidth="xs">
         <Paper
-            elevation={3}
+            elevation={1}
             sx={{
               my: 8,
               p: {xs: 3, sm: 4},
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              backgroundColor: theme.palette.mode === 'dark'
-                  ? 'rgba(42, 45, 50, 0.9)'
-                  : theme.palette.background.paper,
+              backgroundColor: theme.palette.background.paper,
               borderRadius: 2,
               border: theme.palette.mode === 'dark'
                   ? `1px solid ${theme.palette.divider}`

@@ -57,7 +57,9 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleDarkMode, currentUser }
       sx={{
         background: darkMode
           ? HEADER_STYLES.darkModeGradient
-          : theme.palette.primary.main,
+          : 'rgba(255, 255, 255, 0.85)',
+        backdropFilter: darkMode ? undefined : 'blur(12px)',
+        color: darkMode ? undefined : theme.palette.text.primary,
         transition: 'background 0.5s ease, padding 0.3s ease, min-height 0.3s ease',
         width: '100%',
         zIndex: theme.zIndex.drawer + 1,

@@ -12,7 +12,7 @@ test.describe('Basic Dashboard Functionality', () => {
     await page.goto('/');
     
     // Should see the welcome page or login redirect
-    await expect(page).toHaveTitle(/Dentabot|Dental/);
+    await expect(page).toHaveTitle(/DentistDSS|Dentabot|Dental/);
   });
 
   test('should show login page', async ({ page }) => {

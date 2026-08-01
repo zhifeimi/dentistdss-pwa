@@ -38,10 +38,10 @@ export const FloatingChatButton: React.FC<FloatingChatButtonProps> = memo(({
 
   const getButtonStyles = () => ({
     bgcolor: isOpen 
-      ? (isDarkMode ? '#00796b' : 'secondary.main') 
-      : (isDarkMode ? '#00897b' : 'primary.main'),
+      ? (isDarkMode ? '#6C47FF' : 'secondary.main') 
+      : (isDarkMode ? '#7C5CFF' : 'primary.main'),
     boxShadow: isDarkMode 
-      ? '0 2px 12px rgba(0, 230, 180, 0.4)' 
+      ? '0 2px 12px rgba(108, 71, 255, 0.35)' 
       : '0 2px 8px rgba(0, 0, 0, 0.2)',
     width: { xs: 48, sm: 56 },
     height: { xs: 48, sm: 56 },
@@ -50,8 +50,8 @@ export const FloatingChatButton: React.FC<FloatingChatButtonProps> = memo(({
     },
     '&:hover': {
       bgcolor: isOpen 
-        ? (isDarkMode ? '#00695c' : theme.palette.secondary.dark) 
-        : (isDarkMode ? '#00695c' : theme.palette.primary.dark),
+        ? (isDarkMode ? '#5636E8' : theme.palette.secondary.dark) 
+        : (isDarkMode ? '#5636E8' : theme.palette.primary.dark),
     },
     transition: theme.transitions.create(['background-color', 'box-shadow'], {
       duration: theme.transitions.duration.short,
@@ -83,7 +83,7 @@ export const FloatingChatButton: React.FC<FloatingChatButtonProps> = memo(({
 
   return (
     <Tooltip 
-      title="Chat with AI Assistant" 
+      title="Chat with Dentabot" 
       arrow 
       placement="left"
       enterDelay={500}

@@ -34,12 +34,12 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.hover();
       
       // Check for tooltip
-      await expect(page.getByText('Chat with AI Assistant')).toBeVisible();
+      await expect(page.getByText('Chat with Dentabot')).toBeVisible();
     });
 
     test('should not show chat dialog initially', async ({ page }) => {
       // Chat dialog should not be visible initially
-      await expect(page.getByText('Help Assistant')).not.toBeVisible();
+      await expect(page.getByText('Dentabot')).not.toBeVisible();
     });
   });
 
@@ -49,7 +49,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
       
       // Check if dialog opened
-      await expect(page.getByText('Help Assistant')).toBeVisible();
+      await expect(page.getByText('Dentabot')).toBeVisible();
       await expect(page.getByText('Hi there! How can I help you today?')).toBeVisible();
       
       // Check if input field and send button are visible
@@ -67,7 +67,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await closeButton.click();
       
       // Verify dialog is closed
-      await expect(page.getByText('Help Assistant')).not.toBeVisible();
+      await expect(page.getByText('Dentabot')).not.toBeVisible();
     });
 
     test('should maintain dialog state when reopened', async ({ page }) => {
@@ -225,7 +225,7 @@ test.describe('Floating Chat Helper E2E', () => {
       // placeholder — the placeholder itself flips to 'Processing...' while
       // loading, which would self-invalidate a placeholder-based locator
       // exactly during the window under test.
-      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      const chat = page.getByRole('dialog', { name: 'Dentabot' });
       const input = chat.getByRole('textbox');
       await input.fill('Test loading');
 
@@ -276,7 +276,7 @@ test.describe('Floating Chat Helper E2E', () => {
       
       // Check for error message in chat (scoped to the chat panel — the
       // global snackbar also raises an alert for the failed call)
-      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      const chat = page.getByRole('dialog', { name: 'Dentabot' });
       await expect(chat.getByText("I'm sorry, I encountered an error processing your request. Please try again later.")).toBeVisible();
 
       // Check for error alert inside the chat panel
@@ -301,7 +301,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await sendButton.click();
       
       // Check for error handling (scoped to the chat panel)
-      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      const chat = page.getByRole('dialog', { name: 'Dentabot' });
       await expect(chat.getByText("I'm sorry, I encountered an error processing your request. Please try again later.")).toBeVisible();
     });
 
@@ -338,7 +338,7 @@ test.describe('Floating Chat Helper E2E', () => {
       
       // Wait for error (scoped to the chat panel — the global snackbar
       // also raises an alert and lingers)
-      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      const chat = page.getByRole('dialog', { name: 'Dentabot' });
       await expect(chat.getByRole('alert')).toBeVisible();
 
       // Send second message (should succeed)
@@ -364,7 +364,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
       
       // Dialog should be appropriately sized for mobile
-      const dialog = page.getByText('Help Assistant').locator('..');
+      const dialog = page.getByText('Dentabot').locator('..');
       await expect(dialog).toBeVisible();
       
       // Input should be functional
@@ -386,7 +386,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
       
       // Dialog should be appropriately sized for tablet
-      const dialog = page.getByText('Help Assistant').locator('..');
+      const dialog = page.getByText('Dentabot').locator('..');
       await expect(dialog).toBeVisible();
     });
   });
@@ -402,7 +402,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await page.keyboard.press('Enter');
 
       // Dialog should open
-      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      const chat = page.getByRole('dialog', { name: 'Dentabot' });
       await expect(chat).toBeVisible();
 
       // Type message and submit with Enter (the MUI focus-trap's exact tab
@@ -450,7 +450,7 @@ test.describe('Floating Chat Helper E2E', () => {
       
       const input = page.getByPlaceholder('Type your message...');
       const sendButton = page.getByRole('button', { name: /send message/i });
-      const chat = page.getByRole('dialog', { name: 'Help Assistant' });
+      const chat = page.getByRole('dialog', { name: 'Dentabot' });
 
       // Send multiple messages rapidly
       for (let i = 1; i <= 3; i++) {
