@@ -26,6 +26,7 @@ import { TransitionProps } from '@mui/material/transitions';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import GradientMesh from '../Welcome/sections/GradientMesh';
 
 import img11 from '../../../assets/11.jpg';
 import img22 from '../../../assets/22.jpg';
@@ -179,68 +180,91 @@ const Learn: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Hero Section */}
-      <Box
-        sx={{
-          textAlign: 'center',
-          mb: 6,
-          p: 4,
-          borderRadius: 2,
-          bgcolor: 'secondary.light',
-          boxShadow: 2
-        }}
-      >
-        <Typography
-          variant="h3"
-          component="h1"
-          gutterBottom
+      {/* Hero Section — GradientMesh panel in the landing's idiom; every
+          text and chip stays on theme colors (no contrastText-on-band
+          tricks, which were unreadable in both themes). */}
+      <GradientMesh>
+        <Box
           sx={{
-            fontWeight: 700,
-            color: 'primary.contrastText',
-            mb: 2
+            textAlign: 'center',
+            mb: 6,
+            p: { xs: 3, sm: 4 },
+            borderRadius: 3,
+            border: `1px solid ${theme.palette.divider}`,
           }}
         >
-          Learn About Oral Health
-        </Typography>
-        <Typography
-          variant="h6"
-          sx={{
-            mb: 3,
-            color: 'primary.contrastText',
-            maxWidth: '800px',
-            mx: 'auto'
-          }}
-        >
-          Discover essential information about dental health, common conditions, and how to maintain a healthy smile.
-        </Typography>
-        <Divider sx={{ width: '60%', mx: 'auto', mb: 3, backgroundColor: 'primary.contrastText' }} />
-
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-          <FilterAltIcon sx={{ mr: 1, color: 'primary.contrastText' }} />
-          <Typography variant="subtitle1" color="primary.contrastText">
-            Filter by topic:
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'primary.main',
+              fontSize: '0.75rem',
+              mb: 1.5,
+            }}
+          >
+            Oral health library
           </Typography>
-        </Box>
+          <Typography
+            variant="h3"
+            component="h1"
+            gutterBottom
+            sx={{
+              fontWeight: 600,
+              color: 'text.primary',
+              mb: 2
+            }}
+          >
+            Learn About Oral Health
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              mb: 3,
+              color: 'text.secondary',
+              maxWidth: '800px',
+              mx: 'auto',
+              lineHeight: 1.7,
+            }}
+          >
+            Discover essential information about dental health, common conditions, and how to maintain a healthy smile.
+          </Typography>
+          <Divider sx={{ width: '60%', mx: 'auto', mb: 3, borderColor: 'divider' }} />
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', color: 'primary.contrastText', flexWrap: 'wrap', gap: 1 }}>
-          {allTags.map((tag) => (
-            <Chip
-              key={tag}
-              label={tag}
-              onClick={() => handleFilterToggle(tag)}
-              color={activeFilters.includes(tag) ? 'secondary' : 'default'}
-              variant={activeFilters.includes(tag) ? 'filled' : 'outlined'}
-              sx={{
-                fontWeight: activeFilters.includes(tag) ? 600 : 400,
-                color: activeFilters.includes(tag) ? 'primary.contrastText' : 'text.primary',
-                '&:hover': {
-                  bgcolor: activeFilters.includes(tag) ? 'primary.contrastText' : 'action.hover'
-                }
-              }}
-            />
-          ))}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+            <FilterAltIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <Typography variant="subtitle1" color="text.primary">
+              Filter by topic:
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
+            {allTags.map((tag) => {
+              const active = activeFilters.includes(tag);
+              return (
+                <Chip
+                  key={tag}
+                  label={tag}
+                  onClick={() => handleFilterToggle(tag)}
+                  color={active ? 'primary' : 'default'}
+                  variant={active ? 'filled' : 'outlined'}
+                  sx={{
+                    fontWeight: active ? 600 : 500,
+                    ...(active
+                      ? {}
+                      : {
+                          color: 'text.primary',
+                          borderColor: 'divider',
+                          '&:hover': { bgcolor: 'action.hover' },
+                        }),
+                  }}
+                />
+              );
+            })}
+          </Box>
         </Box>
-      </Box>
+      </GradientMesh>
 
       {/* Article Dialog */}
       <Dialog
