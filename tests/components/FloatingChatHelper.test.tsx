@@ -80,7 +80,7 @@ describe('FloatingChatHelper Component', () => {
       await user.hover(chatButton);
       
       await waitFor(() => {
-        expect(screen.getByText('Chat with AI Assistant')).toBeInTheDocument();
+        expect(screen.getByText('Chat with Dentabot')).toBeInTheDocument();
       });
     });
 
@@ -91,7 +91,7 @@ describe('FloatingChatHelper Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.queryByText('Help Assistant')).not.toBeInTheDocument();
+      expect(screen.queryByText('Dentabot')).not.toBeInTheDocument();
     });
   });
 
@@ -107,7 +107,7 @@ describe('FloatingChatHelper Component', () => {
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
 
-      expect(screen.getByText('Help Assistant')).toBeInTheDocument();
+      expect(screen.getByText('Dentabot')).toBeInTheDocument();
       expect(screen.getByText('Hi there! How can I help you today?')).toBeInTheDocument();
     });
 
@@ -128,7 +128,7 @@ describe('FloatingChatHelper Component', () => {
       await user.click(closeButton);
 
       await waitFor(() => {
-        expect(screen.queryByText('Help Assistant')).not.toBeInTheDocument();
+        expect(screen.queryByText('Dentabot')).not.toBeInTheDocument();
       });
     });
 

@@ -60,7 +60,7 @@ const Welcome: React.FC = () => {
       <Hero />
 
       <Box sx={{
-        bgcolor: isDarkMode ? theme.palette.grey[900] : theme.palette.grey[100],
+        bgcolor: 'background.paper',
         py: { xs: 3, sm: 4, md: 5 },
         my: { xs: 2, sm: 3, md: 4 },
         borderTop: `1px solid ${theme.palette.divider}`,

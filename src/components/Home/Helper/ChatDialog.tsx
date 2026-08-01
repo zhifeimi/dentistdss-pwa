@@ -224,7 +224,7 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
     <Paper
       elevation={isDarkMode ? 6 : 3}
       role="dialog"
-      aria-label="Help Assistant"
+      aria-label="Dentabot"
       sx={{
         position: 'absolute',
         bottom: { xs: 60, sm: 70 },
@@ -234,8 +234,8 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        bgcolor: isDarkMode ? 'rgba(38, 50, 56, 0.95)' : 'background.paper',
-        border: isDarkMode ? '1px solid rgba(0, 230, 180, 0.15)' : 'none',
+        bgcolor: isDarkMode ? '#1c1c21' : 'background.paper',
+        border: isDarkMode ? '1px solid #2e2e35' : '1px solid #e5e5ea',
         borderRadius: 2,
       }}
     >
@@ -251,7 +251,7 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
         }}
       >
         <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-          Help Assistant
+          Dentabot
         </Typography>
         <IconButton
           size="small"

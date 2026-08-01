@@ -1,6 +1,6 @@
-# Dentabot
+# DentistDSS
 
-Dentabot is a React progressive web application for dental health education, AI-assisted guidance, clinic discovery, appointments, and role-based clinic workflows.
+DentistDSS is a React progressive web application for dental health education, AI-assisted guidance, clinic discovery, appointments, and role-based clinic workflows.
 
 Production: [https://dentist.mizhifei.press/](https://dentist.mizhifei.press/)
 

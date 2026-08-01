@@ -192,16 +192,14 @@ const Login: React.FC = () => {
       }}
     >
       <Paper
-        elevation={3}
+        elevation={1}
         sx={{
           mt: { xs: 4, sm: 6, md: 8 },
           p: { xs: 2.5, sm: 3, md: 4 },
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          backgroundColor: theme.palette.mode === 'dark'
-            ? 'rgba(42, 45, 50, 0.9)'
-            : theme.palette.background.paper,
+          backgroundColor: theme.palette.background.paper,
           borderRadius: 2,
           border: theme.palette.mode === 'dark'
             ? `1px solid ${theme.palette.divider}`

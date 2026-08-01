@@ -92,16 +92,16 @@ const useDarkMode = (): UseDarkModeReturn => {
 
             if (darkMode) {
                 root.style.setProperty('--theme-mode', 'dark');
-                root.style.setProperty('--theme-background', '#121212');
-                root.style.setProperty('--theme-surface', '#1e1e1e');
-                root.style.setProperty('--theme-text-primary', '#ffffff');
-                root.style.setProperty('--theme-text-secondary', '#b0bec5');
+                root.style.setProperty('--theme-background', '#131316');
+                root.style.setProperty('--theme-surface', '#1c1c21');
+                root.style.setProperty('--theme-text-primary', '#f4f4f5');
+                root.style.setProperty('--theme-text-secondary', '#a1a1aa');
             } else {
                 root.style.setProperty('--theme-mode', 'light');
-                root.style.setProperty('--theme-background', '#f8fffe');
+                root.style.setProperty('--theme-background', '#f7f7f8');
                 root.style.setProperty('--theme-surface', '#ffffff');
-                root.style.setProperty('--theme-text-primary', '#172b4d');
-                root.style.setProperty('--theme-text-secondary', '#6b778c');
+                root.style.setProperty('--theme-text-primary', '#131316');
+                root.style.setProperty('--theme-text-secondary', '#6b6b76');
             }
         }
     }, [darkMode]);

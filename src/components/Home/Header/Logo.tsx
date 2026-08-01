@@ -52,7 +52,7 @@ export const Logo: React.FC<LogoProps> = ({ darkMode, scrolled }) => {
           fontSize: { xs: '0.9rem', sm: '1rem', md: scrolled ? '1rem' : '1.25rem' }
         }}
       >
-        Dentabot
+        DentistDSS
       </Typography>
     </Box>
   );

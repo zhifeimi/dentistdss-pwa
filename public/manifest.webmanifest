@@ -1,8 +1,8 @@
 {
-  "name": "Dentist DSS PWA",
+  "name": "DentistDSS",
   "short_name": "DentistDSS",
   "description": "Dental Clinic Assistant System",
-  "theme_color": "#013427",
+  "theme_color": "#6C47FF",
   "background_color": "#ffffff",
   "display": "standalone",
   "start_url": "/",
