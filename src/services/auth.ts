@@ -1,12 +1,5 @@
-import api, {
-  broadcastSessionEnded,
-  clearBearerSession,
-  clearXsrfToken,
-  CSRF_BOOTSTRAP_PATH,
-  ensureXsrfBootstrapped,
-  refreshSession,
-  setBearerSession,
-} from './config';
+import api from './config';
+import session from './session';
 import {
   AuthResponse,
   ClinicAdminSignupData,
@@ -29,7 +22,7 @@ const authAPI = {
 
     // The interceptor unwraps successful responses to `response.message`,
     // so `authData` should already be that object.
-    setBearerSession(authData.accessToken, authData.tokenType);
+    session.setBearerSession(authData.accessToken, authData.tokenType);
 
     return authData; // caller can extract user etc.
   },
@@ -57,14 +50,14 @@ const authAPI = {
    * in memory.
    */
   async bootstrapXsrf(): Promise<void> {
-    await api.get(CSRF_BOOTSTRAP_PATH);
+    await session.ensureXsrfBootstrapped();
   },
 
   /**
    * Best-effort, single-flight XSRF bootstrap; never rejects. Call before any
    * cookie-session request that must survive a page reload.
    */
-  ensureXsrfBootstrapped,
+  ensureXsrfBootstrapped: session.ensureXsrfBootstrapped,
 
   /**
    * Rotates the HttpOnly refresh cookie and stores the resulting access token.
@@ -74,7 +67,7 @@ const authAPI = {
   async refresh(): Promise<AuthResponse> {
     // The transport types the narrow token contract; the unwrapped backend
     // payload is the full AuthResponse (tokens + user).
-    return (await refreshSession()) as unknown as AuthResponse;
+    return (await session.refreshSession()) as unknown as AuthResponse;
   },
 
   /**
@@ -83,14 +76,12 @@ const authAPI = {
    */
   async logout(): Promise<void> {
     try {
-      await ensureXsrfBootstrapped();
+      await session.ensureXsrfBootstrapped();
       await api.post('/api/auth/logout', undefined, { suppressErrorSnackbar: true });
     } catch (_) {
       // ignore — server might reject due to already invalidated token
     } finally {
-      clearBearerSession();
-      clearXsrfToken();
-      broadcastSessionEnded();
+      session.terminateSession({ redirect: false });
     }
   },
 
@@ -117,7 +108,7 @@ const authAPI = {
     // console.log('authData', authData);
     // Persist the bearer in memory for future API calls – mirrors the behaviour
     // of the email/password login helper.
-    setBearerSession(authData.accessToken, authData.tokenType);
+    session.setBearerSession(authData.accessToken, authData.tokenType);
 
     return authData;
   },
