@@ -119,7 +119,11 @@ const parseChunk = (data: string): RenderToken => {
     throw new SSEProtocolError('Invalid SSE delta shape.');
   }
 
-  const content = delta && typeof delta.content === 'string' ? delta.content : '';
+  const rawContent = delta?.content;
+  if (rawContent !== undefined && rawContent !== null && typeof rawContent !== 'string') {
+    throw new SSEProtocolError('Invalid SSE content shape.');
+  }
+  const content = typeof rawContent === 'string' ? rawContent : '';
   const finishReason = choice.finish_reason;
   if (finishReason !== undefined && finishReason !== null && typeof finishReason !== 'string') {
     throw new SSEProtocolError('Invalid SSE finish reason.');

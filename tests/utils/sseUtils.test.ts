@@ -65,6 +65,13 @@ describe('readSSEStream', () => {
     });
   });
 
+  it('rejects an OpenAI chunk whose content field has an invalid type', async () => {
+    const chunk = JSON.stringify({ choices: [{ delta: { content: 123 } }] });
+    const response = sseResponse(`data: ${chunk}\n\n`);
+
+    await expect(readSSEStream(response)).rejects.toBeInstanceOf(SSEProtocolError);
+  });
+
   it('stops at completion markers without rendering them', async () => {
     const onText = vi.fn();
     const response = sseResponse('data: Hello\n\ndata: [DONE]\n\ndata: ignored\n\n');
