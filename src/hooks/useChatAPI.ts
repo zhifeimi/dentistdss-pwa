@@ -54,6 +54,7 @@ export const useChatAPI = (chatState: UseChatStateReturn): UseChatAPIReturn => {
   const { messageActions, stateActions } = chatState;
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       abortControllerRef.current?.abort();
@@ -68,7 +69,11 @@ export const useChatAPI = (chatState: UseChatStateReturn): UseChatAPIReturn => {
   }, [messageActions]);
 
   const handleAPIError = useCallback((error: unknown, botMessage: ChatMessage): void => {
-    if (error instanceof ChatTransportError && error.partialText !== undefined) {
+    if (
+      error instanceof ChatTransportError &&
+      error.partialText !== undefined &&
+      error.partialText !== ''
+    ) {
       finalizeBotResponse(botMessage, error.partialText);
       stateActions.setError(getErrorMessage(error));
       return;

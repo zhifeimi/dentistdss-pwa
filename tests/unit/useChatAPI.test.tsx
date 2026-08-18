@@ -96,6 +96,28 @@ describe('useChatAPI', () => {
     });
   });
 
+  it('keeps updates active through the StrictMode effect cycle', async () => {
+    mocks.send.mockImplementationOnce(async (_agent, _prompt, options) => {
+      options.onText?.('Hello');
+      return { kind: 'completed', text: 'Hello' };
+    });
+    const { result } = renderHook(() => {
+      const state = useChatState();
+      return { state, chat: useChatAPI(state) };
+    }, { reactStrictMode: true });
+
+    await act(async () => {
+      await result.current.chat.sendMessage('Hello');
+    });
+
+    expect(result.current.state.messages[1]).toMatchObject({
+      sender: 'bot',
+      text: 'Hello',
+      isStreaming: false,
+    });
+    expect(result.current.state.chatState.isLoading).toBe(false);
+  });
+
   it('finalizes a cancelled response when partial text exists', async () => {
     mocks.send.mockImplementationOnce(async (
       _agent: string,
@@ -160,6 +182,27 @@ describe('useChatAPI', () => {
   it('adds the generic bot error bubble and error state for failures without partial text', async () => {
     mocks.send.mockRejectedValueOnce(
       new ChatTransportError('network', 'The chatbot network request failed.'),
+    );
+    const { result } = renderChat();
+
+    await act(async () => {
+      await result.current.chat.sendMessage('Hello');
+    });
+
+    expect(result.current.state.messages).toHaveLength(2);
+    expect(result.current.state.messages[1]).toMatchObject({
+      sender: 'bot',
+      error: true,
+      text: "I'm sorry, I encountered an error processing your request. Please try again later.",
+    });
+    expect(result.current.state.chatState.error).toBe(
+      'Network connection failed. Please check your internet connection and try again.',
+    );
+  });
+
+  it('treats an empty partial transport error as a failure without partial text', async () => {
+    mocks.send.mockRejectedValueOnce(
+      new ChatTransportError('network', 'The chatbot network request failed.', undefined, ''),
     );
     const { result } = renderChat();
 
