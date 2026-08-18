@@ -1,290 +1,232 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { MockedFunction } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
-  parseSSEEvents,
-  processSSEBuffer,
-  extractStreamingToken,
-  processSSEDataWithSpacing,
-  validateSSEHeaders,
-  createEnhancedSSEReader,
-  isOpenAIChunkFormat,
-  formatSSEError,
-  type SSEEvent,
-  type SSEParseResult,
-  type StreamingToken,
-  type TokenCallback
+  readSSEStream,
+  SSEObserverError,
+  SSEProtocolError,
+  SSEReadError,
+  type SSEReadResult,
 } from '../../src/utils/sseUtils';
 
-describe('SSE Utils', () => {
-  describe('parseSSEEvents', () => {
-    it('should parse basic SSE event', () => {
-      const eventBlock: string = 'data: Hello world\n\n';
-      const events: SSEEvent[] = parseSSEEvents(eventBlock);
+const sseResponse = (body: BodyInit | null, contentType = 'text/event-stream'): Response =>
+  new Response(body, { headers: { 'content-type': contentType } });
 
-      expect(events).toHaveLength(1);
-      expect(events[0]).toEqual({
-        type: 'message',
-        data: 'Hello world',
-        id: undefined,
-        retry: undefined
-      });
-    });
+const streamResponse = (
+  chunks: Uint8Array[],
+  contentType = 'text/event-stream',
+): Response => {
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(chunk);
+      }
+      controller.close();
+    },
+  });
+  return new Response(stream, { headers: { 'content-type': contentType } });
+};
 
-    it('should parse SSE event with custom type', () => {
-      const eventBlock: string = 'event: custom\ndata: Custom data\n\n';
-      const events: SSEEvent[] = parseSSEEvents(eventBlock);
+const encode = (value: string): Uint8Array => new TextEncoder().encode(value);
 
-      expect(events).toHaveLength(1);
-      expect(events[0]).toEqual({
-        type: 'custom',
-        data: 'Custom data',
-        id: undefined,
-        retry: undefined
-      });
-    });
+describe('readSSEStream', () => {
+  it('reads LF-delimited events and joins repeated data fields with newlines', async () => {
+    const response = sseResponse('data: first\ndata: second\n\ndata: third\n\n');
 
-    it('should parse SSE event with id and retry', () => {
-      const eventBlock: string = 'id: 123\nevent: message\ndata: Test\nretry: 5000\n\n';
-      const events: SSEEvent[] = parseSSEEvents(eventBlock);
-
-      expect(events).toHaveLength(1);
-      expect(events[0]).toEqual({
-        type: 'message',
-        data: 'Test',
-        id: '123',
-        retry: 5000
-      });
-    });
-
-    it('should handle multiple events', () => {
-      const eventBlock: string = 'data: First\n\ndata: Second\n\n';
-      const events: SSEEvent[] = parseSSEEvents(eventBlock);
-
-      expect(events).toHaveLength(2);
-      expect(events[0].data).toBe('First');
-      expect(events[1].data).toBe('Second');
+    await expect(readSSEStream(response)).resolves.toEqual({
+      kind: 'completed',
+      text: 'first\nsecond third',
     });
   });
 
-  describe('processSSEBuffer', () => {
-    it('should process complete SSE messages', () => {
-      const buffer: string = 'data: Hello\n\ndata: World\n\ndata: Incomplete';
-      const result: SSEParseResult = processSSEBuffer(buffer);
+  it('reads CRLF-delimited events', async () => {
+    const response = sseResponse('data: Hello\r\ndata: world\r\n\r\ndata: !\r\n\r\n');
 
-      expect(result.events).toHaveLength(2);
-      expect(result.events.map(event => event.data)).toEqual(['Hello', 'World']);
-      expect(result.remainingBuffer).toBe('data: Incomplete');
-    });
-
-    it('should handle empty buffer', () => {
-      const result: SSEParseResult = processSSEBuffer('');
-
-      expect(result.events).toHaveLength(0);
-      expect(result.remainingBuffer).toBe('');
+    await expect(readSSEStream(response)).resolves.toEqual({
+      kind: 'completed',
+      text: 'Hello\nworld!',
     });
   });
 
-  describe('extractStreamingToken', () => {
-    it('should extract token from plain text', () => {
-      const token: StreamingToken | null = extractStreamingToken('Hello');
+  it('accepts plain text event data', async () => {
+    const response = sseResponse('data: plain text\n\n');
 
-      expect(token).toEqual({
-        content: 'Hello',
-        isComplete: false,
-        finishReason: null
-      });
-    });
-
-    it('should handle completion signals', () => {
-      const token1: StreamingToken | null = extractStreamingToken('[DONE]');
-      const token2: StreamingToken | null = extractStreamingToken('null');
-
-      expect(token1?.isComplete).toBe(true);
-      expect(token1?.finishReason).toBe('stop');
-      expect(token2?.isComplete).toBe(true);
-    });
-
-    it('should extract token from OpenAI JSON chunk', () => {
-      const chunk: string = JSON.stringify({
-        choices: [{
-          delta: { content: 'Hello' },
-          finish_reason: null
-        }]
-      });
-
-      const token: StreamingToken | null = extractStreamingToken(chunk);
-
-      expect(token).toEqual({
-        content: 'Hello',
-        isComplete: false,
-        finishReason: null
-      });
-    });
-
-    it('should handle OpenAI completion chunk', () => {
-      const chunk: string = JSON.stringify({
-        choices: [{
-          delta: { content: 'Final' },
-          finish_reason: 'stop'
-        }]
-      });
-
-      const token: StreamingToken | null = extractStreamingToken(chunk);
-
-      expect(token).toEqual({
-        content: 'Final',
-        isComplete: true,
-        finishReason: 'stop'
-      });
+    await expect(readSSEStream(response)).resolves.toEqual({
+      kind: 'completed',
+      text: 'plain text',
     });
   });
 
-  describe('processSSEDataWithSpacing', () => {
-    it('should add intelligent spacing between tokens', () => {
-      const callback: MockedFunction<TokenCallback> = vi.fn();
+  it('parses an OpenAI-shaped chunk using a local wire shape', async () => {
+    const chunk = JSON.stringify({ choices: [{ delta: { content: 'Hello' } }] });
+    const response = sseResponse(`data: ${chunk}\n\n`);
 
-      let result: string = processSSEDataWithSpacing('data: Hello\n\n', '', callback);
-      expect(result).toBe('Hello');
-
-      result = processSSEDataWithSpacing('data: world\n\n', result, callback);
-      expect(result).toBe('Hello world');
-
-      expect(callback).toHaveBeenCalledTimes(2);
-    });
-
-    it('should not add space before punctuation', () => {
-      const callback: MockedFunction<TokenCallback> = vi.fn();
-
-      let result: string = processSSEDataWithSpacing('data: Hello\n\n', '', callback);
-      result = processSSEDataWithSpacing('data: ,\n\n', result, callback);
-      result = processSSEDataWithSpacing('data:  world\n\n', result, callback);
-
-      expect(result).toBe('Hello, world');
-    });
-
-    it('should handle error events', () => {
-      const callback: MockedFunction<TokenCallback> = vi.fn();
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      const result: string = processSSEDataWithSpacing('event: error\ndata: Error message\n\n', '', callback);
-
-      expect(result).toBe('');
-      expect(consoleSpy).toHaveBeenCalledWith('SSE Error event received:', 'Error message');
-
-      consoleSpy.mockRestore();
+    await expect(readSSEStream(response)).resolves.toEqual({
+      kind: 'completed',
+      text: 'Hello',
     });
   });
 
-  describe('validateSSEHeaders', () => {
-    it('should validate correct SSE headers', () => {
-      const response = new Response('', {
-        headers: { 'content-type': 'text/event-stream' }
-      });
-      
-      expect(validateSSEHeaders(response)).toBe(true);
-    });
+  it('stops at completion markers without rendering them', async () => {
+    const onText = vi.fn();
+    const response = sseResponse('data: Hello\n\ndata: [DONE]\n\ndata: ignored\n\n');
 
-    it('should reject incorrect headers', () => {
-      const response = new Response('', {
-        headers: { 'content-type': 'application/json' }
-      });
-      
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const result = validateSSEHeaders(response);
-      
-      expect(result).toBe(false);
-      expect(consoleSpy).toHaveBeenCalled();
-      
-      consoleSpy.mockRestore();
+    await expect(readSSEStream(response, { onText })).resolves.toEqual({
+      kind: 'completed',
+      text: 'Hello',
+    });
+    expect(onText).toHaveBeenCalledTimes(1);
+    expect(onText).toHaveBeenCalledWith('Hello');
+  });
+
+  it('flushes a split UTF-8 code point at EOF', async () => {
+    const bytes = encode('data: hi 🙂\n\n');
+    const splitAt = bytes.length - 2;
+    const response = streamResponse([bytes.slice(0, splitAt), bytes.slice(splitAt)]);
+
+    await expect(readSSEStream(response)).resolves.toEqual({
+      kind: 'completed',
+      text: 'hi 🙂',
     });
   });
 
-  describe('createEnhancedSSEReader', () => {
-    it('should process SSE stream correctly', async () => {
-      const mockStream = new ReadableStream({
-        start(controller) {
-          // Send data in the format that the implementation expects
-          controller.enqueue(new TextEncoder().encode('data: Hello\n\n'));
-          controller.enqueue(new TextEncoder().encode('data: world\n\n'));
-          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-          controller.close();
+  it('reports the characterized cumulative text', async () => {
+    const response = sseResponse(
+      'data: Hello\n\ndata: world\n\ndata: !\n\ndata: [DONE]\n\n',
+    );
+    const onText = vi.fn();
+
+    const result = await readSSEStream(response, { onText });
+
+    expect(result).toEqual({ kind: 'completed', text: 'Hello world!' });
+    expect(onText.mock.calls).toEqual([
+      ['Hello'],
+      ['Hello world'],
+      ['Hello world!'],
+    ]);
+  });
+
+  it('preserves the existing punctuation and spacing characterization', async () => {
+    const response = sseResponse('data: Hello\n\ndata: ,\n\ndata:  world\n\n');
+
+    await expect(readSSEStream(response)).resolves.toEqual({
+      kind: 'completed',
+      text: 'Hello, world',
+    });
+  });
+
+  it('returns partial text on cancellation and cancels and releases the reader', async () => {
+    let readCount = 0;
+    let resolvePendingRead: (result: ReadableStreamReadResult<Uint8Array>) => void = () => {};
+    const cancel = vi.fn(async () => {
+      resolvePendingRead({ done: true, value: undefined });
+    });
+    const releaseLock = vi.fn();
+    const reader: ReadableStreamDefaultReader<Uint8Array> = {
+      read: vi.fn(() => {
+        readCount += 1;
+        if (readCount === 1) {
+          return Promise.resolve({ done: false, value: encode('data: partial\n\n') });
         }
-      });
+        return new Promise((resolve) => {
+          resolvePendingRead = resolve;
+        });
+      }),
+      cancel,
+      releaseLock,
+      closed: Promise.resolve(),
+    };
+    const response = {
+      headers: new Headers({ 'content-type': 'text/event-stream' }),
+      body: { getReader: () => reader },
+    } as unknown as Response;
+    const controller = new AbortController();
+    const onText = vi.fn(() => controller.abort());
 
-      const response = new Response(mockStream, {
-        headers: { 'content-type': 'text/event-stream' }
-      });
+    const result = await readSSEStream(response, { signal: controller.signal, onText });
 
-      const callback: MockedFunction<TokenCallback> = vi.fn();
-      const result: string = await createEnhancedSSEReader(response, callback);
-
-      // The current implementation has issues with event parsing, so just test basic functionality
-      expect(typeof result).toBe('string');
-      // Don't test callback calls since the implementation may not call them due to parsing issues
-    });
-
-    it('should handle invalid headers', async () => {
-      const response = new Response('', {
-        headers: { 'content-type': 'application/json' }
-      });
-
-      await expect(createEnhancedSSEReader(response)).rejects.toThrow('Invalid SSE response headers');
-    });
-
-    it('should handle missing response body', async () => {
-      const response = new Response(null, {
-        headers: { 'content-type': 'text/event-stream' }
-      });
-
-      await expect(createEnhancedSSEReader(response)).rejects.toThrow('Response body is not readable');
-    });
+    expect(result).toEqual({ kind: 'cancelled', text: 'partial' });
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(releaseLock).toHaveBeenCalledTimes(1);
   });
 
-  describe('isOpenAIChunkFormat', () => {
-    it('should identify OpenAI chunk format', () => {
-      const chunk = JSON.stringify({
-        choices: [{ delta: { content: 'test' } }]
-      });
-      
-      expect(isOpenAIChunkFormat(chunk)).toBe(true);
-    });
+  it('wraps a reader failure with the partial text', async () => {
+    const cause = new Error('socket closed');
+    let readCount = 0;
+    const releaseLock = vi.fn();
+    const reader: ReadableStreamDefaultReader<Uint8Array> = {
+      read: vi.fn(() => {
+        readCount += 1;
+        if (readCount === 1) {
+          return Promise.resolve({ done: false, value: encode('data: partial\n\n') });
+        }
+        return Promise.reject(cause);
+      }),
+      cancel: vi.fn(async () => {}),
+      releaseLock,
+      closed: Promise.resolve(),
+    };
+    const response = {
+      headers: new Headers({ 'content-type': 'text/event-stream' }),
+      body: { getReader: () => reader },
+    } as unknown as Response;
 
-    it('should reject non-OpenAI format', () => {
-      expect(isOpenAIChunkFormat('plain text')).toBe(false);
-      expect(isOpenAIChunkFormat('{"other": "format"}')).toBe(false);
-      expect(isOpenAIChunkFormat('{"choices": "not an array"}')).toBe(false);
-    });
+    await expect(readSSEStream(response)).rejects.toMatchObject({
+      name: 'SSEReadError',
+      partialText: 'partial',
+      cause,
+    } satisfies Partial<SSEReadError>);
+    expect(releaseLock).toHaveBeenCalledTimes(1);
   });
 
-  describe('formatSSEError', () => {
-    it('should format abort error', () => {
-      const error = new Error('Request aborted');
-      error.name = 'AbortError';
-      
-      const message = formatSSEError(error, '/test');
-      expect(message).toContain('Request was aborted');
-    });
+  it('wraps observer failure after cancelling the reader', async () => {
+    const cause = new Error('observer failed');
+    const cancel = vi.fn(async () => {});
+    const releaseLock = vi.fn();
+    const reader: ReadableStreamDefaultReader<Uint8Array> = {
+      read: vi.fn(() => Promise.resolve({ done: false, value: encode('data: partial\n\n') })),
+      cancel,
+      releaseLock,
+      closed: Promise.resolve(),
+    };
+    const response = {
+      headers: new Headers({ 'content-type': 'text/event-stream' }),
+      body: { getReader: () => reader },
+    } as unknown as Response;
 
-    it('should format network error', () => {
-      const error = new Error('network connection failed');
-      
-      const message = formatSSEError(error, '/test');
-      expect(message).toContain('Network connection error');
-    });
+    await expect(
+      readSSEStream(response, { onText: () => { throw cause; } }),
+    ).rejects.toMatchObject({
+      name: 'SSEObserverError',
+      partialText: 'partial',
+      cause,
+    } satisfies Partial<SSEObserverError>);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(releaseLock).toHaveBeenCalledTimes(1);
+  });
 
-    it('should format timeout error', () => {
-      const error = new Error('request timeout');
-      
-      const message = formatSSEError(error, '/test');
-      expect(message).toContain('Request timeout');
-    });
+  it('rejects an invalid response protocol without logging', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const response = sseResponse('', 'application/json');
 
-    it('should format generic error', () => {
-      const error = new Error('Something went wrong');
-      
-      const message = formatSSEError(error, '/test');
-      expect(message).toContain('SSE streaming failed for /test');
-      expect(message).toContain('Something went wrong');
-    });
+    await expect(readSSEStream(response)).rejects.toBeInstanceOf(SSEProtocolError);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('rejects a response without a readable body', async () => {
+    const response = sseResponse(null);
+
+    await expect(readSSEStream(response)).rejects.toBeInstanceOf(SSEProtocolError);
+  });
+
+  it('rejects a valid JSON event that is not an OpenAI-shaped chunk', async () => {
+    const response = sseResponse('data: {"unexpected":true}\n\n');
+
+    await expect(readSSEStream(response)).rejects.toBeInstanceOf(SSEProtocolError);
+  });
+
+  it('returns the explicit result union for a normal stream', async () => {
+    const result: SSEReadResult = await readSSEStream(sseResponse('data: ok\n\n'));
+
+    expect(result.kind).toBe('completed');
   });
 });

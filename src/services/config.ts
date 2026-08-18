@@ -263,8 +263,9 @@ api.interceptors.response.use(
   },
 );
 
-// Temporary compatibility exports for consumers migrated in later tasks. All
-// state and browser lifecycle behavior remains owned by session.ts.
+// Narrow compatibility exports for ordinary Axios-era consumers. Session state
+// and browser lifecycle behavior remain owned by session.ts; chatbot transport
+// imports the concrete singleton directly.
 export const setBearerSession = session.setBearerSession;
 export const getBearerSession = session.getBearerSession;
 export const hasBearerSession = session.hasBearerSession;
@@ -273,8 +274,7 @@ export const clearXsrfToken = session.clearXsrfToken;
 export const hasXsrfToken = session.hasXsrfToken;
 export const ensureXsrfBootstrapped = session.ensureXsrfBootstrapped;
 export const refreshSession = session.refreshSession;
-export const CSRF_BOOTSTRAP_PATH = '/api/auth/csrf';
-export const LOGIN_PATH = '/login';
+const LOGIN_PATH = '/login';
 export const redirectToLogin = (): void => {
   if (window.location.pathname !== LOGIN_PATH) {
     window.location.href = LOGIN_PATH;

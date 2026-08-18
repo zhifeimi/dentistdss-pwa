@@ -8,9 +8,9 @@ import {
   User,
 } from '../types';
 
-// The bearer session lives only in the config transport's module memory. The
-// request interceptor there attaches it to same-origin API calls, so all we
-// need to do here is set / clear it.
+// The bearer session is owned by the concrete session singleton. The ordinary
+// Axios interceptor reads that shared state for same-origin requests, while
+// auth methods only set or clear it through session.
 
 const authAPI = {
   /**
