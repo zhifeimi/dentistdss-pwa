@@ -187,6 +187,53 @@ describe('session lifecycle', () => {
     });
   });
 
+  it('does not restore a bearer when refresh resolves after termination', async () => {
+    let resolveRefresh: (value: unknown) => void = () => {};
+    axiosMocks.rawAuth.get.mockResolvedValue({ headers: {} });
+    axiosMocks.rawAuth.post.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+    const lifecycle = createSessionLifecycle(makeBrowserHarness().browserEffects);
+
+    const refresh = lifecycle.refreshSession();
+    await vi.waitFor(() => expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1));
+    lifecycle.terminateSession({ redirect: false });
+    resolveRefresh({
+      headers: { 'X-XSRF-TOKEN': 'stale-csrf' },
+      data: { accessToken: 'stale-access-token', tokenType: 'Bearer' },
+    });
+    await refresh.catch(() => undefined);
+
+    expect(lifecycle.hasBearerSession()).toBe(false);
+    expect(lifecycle.hasXsrfToken()).toBe(false);
+  });
+
+  it('does not let a late refresh failure clear a newer bearer', async () => {
+    let rejectRefresh: (reason?: unknown) => void = () => {};
+    axiosMocks.rawAuth.get.mockResolvedValue({ headers: {} });
+    axiosMocks.rawAuth.post.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRefresh = reject;
+        }),
+    );
+    const lifecycle = createSessionLifecycle(makeBrowserHarness().browserEffects);
+
+    const refresh = lifecycle.refreshSession();
+    await vi.waitFor(() => expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1));
+    lifecycle.setBearerSession('newer-access-token', 'Bearer');
+    rejectRefresh(new Error('stale refresh failure'));
+    await refresh.catch(() => undefined);
+
+    expect(lifecycle.getBearerSession()).toEqual({
+      accessToken: 'newer-access-token',
+      tokenType: 'Bearer',
+    });
+  });
+
   it('clears local state without broadcasting or redirecting when termination is explicit', () => {
     const harness = makeBrowserHarness();
     const lifecycle = createSessionLifecycle(harness.browserEffects);

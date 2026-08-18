@@ -111,21 +111,25 @@ export const createSessionLifecycle = (
   let xsrfToken: string | undefined;
   let xsrfBootstrapInFlight: Promise<void> | undefined;
   let refreshInFlight: Promise<SessionTokens> | undefined;
+  let sessionEpoch = 0;
 
   const channel = browserEffects.createSessionChannel((message) => {
-    if (message !== SESSION_ENDED_MESSAGE || !bearerSession) {
+    if (message !== SESSION_ENDED_MESSAGE) {
       return;
     }
 
-    bearerSession = undefined;
-    xsrfToken = undefined;
-    browserEffects.redirectToLogin();
+    const hadBearerSession = bearerSession !== undefined;
+    clearLocalSession();
+    if (hadBearerSession) {
+      browserEffects.redirectToLogin();
+    }
   });
 
   const setBearerSession = (accessToken: string, tokenType: string = 'Bearer'): void => {
     if (!accessToken) {
       return;
     }
+    sessionEpoch += 1;
     bearerSession = {
       accessToken,
       tokenType: tokenType || 'Bearer',
@@ -135,11 +139,13 @@ export const createSessionLifecycle = (
   const getBearerSession = (): BearerSession | undefined => bearerSession;
   const hasBearerSession = (): boolean => bearerSession !== undefined;
   const clearBearerSession = (): void => {
+    sessionEpoch += 1;
     bearerSession = undefined;
   };
   const getXsrfToken = (): string | undefined => xsrfToken;
   const hasXsrfToken = (): boolean => xsrfToken !== undefined;
   const clearXsrfToken = (): void => {
+    sessionEpoch += 1;
     xsrfToken = undefined;
   };
 
@@ -151,8 +157,9 @@ export const createSessionLifecycle = (
   };
 
   const clearLocalSession = (): void => {
-    clearBearerSession();
-    clearXsrfToken();
+    sessionEpoch += 1;
+    bearerSession = undefined;
+    xsrfToken = undefined;
   };
 
   const ensureXsrfBootstrapped = (): Promise<void> => {
@@ -160,9 +167,14 @@ export const createSessionLifecycle = (
       return xsrfBootstrapInFlight ?? Promise.resolve();
     }
 
+    const bootstrapEpoch = sessionEpoch;
     xsrfBootstrapInFlight = rawAuthClient
       .get(CSRF_BOOTSTRAP_PATH)
-      .then((response) => captureXsrfFromHeaders(response.headers))
+      .then((response) => {
+        if (bootstrapEpoch === sessionEpoch) {
+          captureXsrfFromHeaders(response.headers);
+        }
+      })
       .catch(() => undefined)
       .finally(() => {
         xsrfBootstrapInFlight = undefined;
@@ -173,23 +185,35 @@ export const createSessionLifecycle = (
 
   const refreshSession = (): Promise<SessionTokens> => {
     if (!refreshInFlight) {
+      const refreshEpoch = sessionEpoch;
       refreshInFlight = (async (): Promise<SessionTokens> => {
         await ensureXsrfBootstrapped();
+        if (refreshEpoch !== sessionEpoch) {
+          throw new Error('Session refresh superseded.');
+        }
         const response = await rawAuthClient.post(
           '/api/auth/refresh',
           undefined,
           xsrfToken ? { headers: { [XSRF_HEADER]: xsrfToken } } : undefined,
         );
+        if (refreshEpoch !== sessionEpoch) {
+          throw new Error('Session refresh superseded.');
+        }
         captureXsrfFromHeaders(response.headers);
         const tokens = response.data?.dataObject ?? response.data;
         if (!tokens?.accessToken) {
           throw new Error('Session refresh did not return an access token.');
         }
+        if (refreshEpoch !== sessionEpoch) {
+          throw new Error('Session refresh superseded.');
+        }
         setBearerSession(tokens.accessToken, tokens.tokenType);
         return tokens as SessionTokens;
       })()
         .catch((error) => {
-          clearLocalSession();
+          if (refreshEpoch === sessionEpoch) {
+            clearLocalSession();
+          }
           throw error;
         })
         .finally(() => {
