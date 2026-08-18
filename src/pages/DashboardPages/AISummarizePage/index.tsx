@@ -23,7 +23,6 @@ import ChatHeader from '../../../components/shared/ChatComponents/ChatHeader';
 import ChatMessage from '../../../components/shared/ChatComponents/ChatMessage';
 import ChatInput from '../../../components/shared/ChatComponents/ChatInput';
 import { getWelcomeMessage, getQuickActions } from '../../../utils/chatUtils';
-import api from '../../../services';
 
 interface CustomEvent extends Event {
   detail: {
@@ -36,7 +35,7 @@ interface CustomEvent extends Event {
  * AISummarizePage - AI documentation summarization for dentists
  *
  * Features:
- * - Uses api.chatbot.documentationSummarize for post-appointment summaries
+ * - Uses the shared chatbot transport for post-appointment summaries
  * - Real-time SSE streaming responses
  * - Session management for conversation continuity
  * - Documentation and summarization interface
@@ -63,19 +62,9 @@ const AISummarizePage: React.FC = () => {
   // Get quick actions
   const quickActions = getQuickActions('documentationSummarize', setQuickInput);
 
-  // Custom send message handler that updates lastSummary
+  // Capture cumulative summary text while the shared transport streams.
   const handleSendMessage = useCallback(async () => {
-    // Custom callback to capture the summary
-    const customCallback = (token: string, fullText: string) => {
-      setLastSummary(fullText);
-    };
-
-    await sendMessage(null, (content: string, onTokenReceived: (token: string, fullText: string) => void) => {
-      return api.chatbot.documentationSummarize(content, (token: string, fullText: string) => {
-        onTokenReceived(token, fullText);
-        customCallback(token, fullText);
-      });
-    });
+    await sendMessage(null, setLastSummary);
   }, [sendMessage]);
 
   // Clear conversation and reset summary

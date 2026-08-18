@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '../context/auth';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import api from '../services';
+import { ChatTransportError, type ChatbotAgent } from '../services/chatbot';
 
 interface ChatMessage {
   id: number;
@@ -10,18 +10,16 @@ interface ChatMessage {
   isStreaming?: boolean;
 }
 
-type ChatType = 'help' | 'aidentist' | 'receptionist' | 'triage' | 'documentationSummarize';
+type ChatType = ChatbotAgent;
 
-type StreamCallback = (token: string, fullText: string) => void;
-
-type ApiEndpoint = (content: string, callback: StreamCallback) => Promise<any>;
+type TextObserver = (text: string) => void;
 
 interface UseAIChatReturn {
   messages: ChatMessage[];
   inputValue: string;
   isLoading: boolean;
   error: string;
-  sendMessage: (messageContent?: string | null, apiEndpoint?: ApiEndpoint | null) => Promise<void>;
+  sendMessage: (messageContent?: string | null, onText?: TextObserver) => Promise<void>;
   clearConversation: (newWelcomeMessage?: string | null) => void;
   handleKeyPress: (event: React.KeyboardEvent) => void;
   setQuickInput: (text: string) => void;
@@ -39,144 +37,140 @@ interface UseAIChatReturn {
  * - Real-time SSE streaming support
  * - Error handling and loading states
  * - Reusable across different chat types
- * - User identification through JWT authentication tokens
+ * - Conversation cancellation on lifecycle changes
  */
 const useAIChat = (chatType: ChatType = 'help', initialWelcomeMessage: string = ''): UseAIChatReturn => {
-  const { currentUser } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const controllerRef = useRef<AbortController | null>(null);
 
-  // Initialize welcome message
+  const abortActiveRequest = useCallback((): void => {
+    const controller = controllerRef.current;
+    if (!controller) return;
+
+    controller.abort();
+    controllerRef.current = null;
+  }, []);
+
+  // Initialize or replace the welcome message.
   useEffect(() => {
+    abortActiveRequest();
+    setIsLoading(false);
+    setError('');
     if (initialWelcomeMessage) {
       setMessages([{
-        id: 1,
+        id: Date.now(),
         type: 'ai',
         content: initialWelcomeMessage,
         timestamp: new Date(),
       }]);
+    } else {
+      setMessages([]);
     }
-  }, [initialWelcomeMessage]);
+  }, [abortActiveRequest, initialWelcomeMessage]);
 
-  // Send message handler
-  const sendMessage = useCallback(async (messageContent: string | null = null, apiEndpoint: ApiEndpoint | null = null): Promise<void> => {
+  // Abort an in-flight transport when the hook leaves the tree.
+  useEffect(() => abortActiveRequest, [abortActiveRequest]);
+
+  // Send message handler.
+  const sendMessage = useCallback(async (
+    messageContent: string | null = null,
+    onText: TextObserver | null = null,
+  ): Promise<void> => {
     const content = messageContent || inputValue.trim();
-    if (!content || isLoading) return;
+    if (!content || isLoading || controllerRef.current) return;
 
     const userMessage: ChatMessage = {
       id: Date.now(),
-      type: 'user' as const,
+      type: 'user',
       content,
       timestamp: new Date(),
     };
+    const aiMessage: ChatMessage = {
+      id: userMessage.id + 1,
+      type: 'ai',
+      content: '',
+      timestamp: new Date(),
+      isStreaming: true,
+    };
+    const controller = new AbortController();
+    controllerRef.current = controller;
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage, aiMessage]);
     if (!messageContent) setInputValue('');
     setIsLoading(true);
     setError('');
 
-    try {
-      // Create AI message placeholder
-      const aiMessage: ChatMessage = {
-        id: Date.now() + 1,
-        type: 'ai' as const,
-        content: '',
-        timestamp: new Date(),
-        isStreaming: true,
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-
-      // Determine API endpoint
-      let apiCall;
-      if (apiEndpoint) {
-        apiCall = apiEndpoint(content, (token, fullText) => {
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === aiMessage.id
-                ? { ...msg, content: fullText, isStreaming: false }
-                : msg
-            )
-          );
-        });
+    const isCurrentRequest = (): boolean => controllerRef.current === controller;
+    const updateAiMessage = (contentText: string, isStreaming: boolean): void => {
+      if (!isCurrentRequest()) return;
+      setMessages(prev => prev.map(message =>
+        message.id === aiMessage.id
+          ? { ...message, content: contentText, isStreaming }
+          : message,
+      ));
+    };
+    const removeAiMessage = (): void => {
+      if (!isCurrentRequest()) return;
+      setMessages(prev => prev.filter(message => message.id !== aiMessage.id));
+    };
+    const finalizeCancellation = (partialText: string): void => {
+      if (partialText) {
+        updateAiMessage(partialText, false);
       } else {
-        // Default endpoint selection based on chatType
-        switch (chatType) {
-          case 'aidentist':
-            apiCall = api.chatbot.aidentist(content, (token, fullText) => {
-              setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === aiMessage.id
-                    ? { ...msg, content: fullText, isStreaming: false }
-                    : msg
-                )
-              );
-            });
-            break;
-          case 'receptionist':
-            apiCall = api.chatbot.receptionist(content, (token, fullText) => {
-              setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === aiMessage.id
-                    ? { ...msg, content: fullText, isStreaming: false }
-                    : msg
-                )
-              );
-            });
-            break;
-          case 'triage':
-            apiCall = api.chatbot.triage(content, (token, fullText) => {
-              setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === aiMessage.id
-                    ? { ...msg, content: fullText, isStreaming: false }
-                    : msg
-                )
-              );
-            });
-            break;
-          case 'documentationSummarize':
-            apiCall = api.chatbot.documentationSummarize(content, (token, fullText) => {
-              setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === aiMessage.id
-                    ? { ...msg, content: fullText, isStreaming: false }
-                    : msg
-                )
-              );
-            });
-            break;
-          case 'help':
-          default:
-            apiCall = api.chatbot.help(content, (token, fullText) => {
-              setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === aiMessage.id
-                    ? { ...msg, content: fullText, isStreaming: false }
-                    : msg
-                )
-              );
-            });
-            break;
-        }
+        removeAiMessage();
+      }
+    };
+
+    try {
+      const response = await api.chatbot.send(chatType, content, {
+        signal: controller.signal,
+        onText: (text) => {
+          if (!isCurrentRequest()) return;
+          updateAiMessage(text, true);
+          onText?.(text);
+        },
+      });
+
+      if (!isCurrentRequest()) return;
+      if (response.kind === 'cancelled') {
+        finalizeCancellation(response.text);
+      } else {
+        updateAiMessage(response.text, false);
+      }
+    } catch (caughtError) {
+      if (!isCurrentRequest()) return;
+      if (controller.signal.aborted) {
+        const currentMessage = messages.find(message => message.id === aiMessage.id);
+        finalizeCancellation(currentMessage?.content || '');
+        return;
       }
 
-      await apiCall;
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setError((error as Error).message || 'Failed to send message. Please try again.');
-      
-      // Remove the failed AI message
-      setMessages(prev => prev.slice(0, -1));
+      if (caughtError instanceof ChatTransportError) {
+        if (caughtError.partialText) {
+          updateAiMessage(caughtError.partialText, false);
+        } else {
+          removeAiMessage();
+        }
+        setError(caughtError.message);
+      } else {
+        removeAiMessage();
+        setError(caughtError instanceof Error ? caughtError.message : 'Failed to send message. Please try again.');
+      }
     } finally {
-      setIsLoading(false);
+      if (isCurrentRequest()) {
+        controllerRef.current = null;
+        setIsLoading(false);
+      }
     }
-  }, [inputValue, isLoading, chatType]);
+  }, [chatType, inputValue, isLoading]);
 
-  // Clear conversation
+  // Clear conversation.
   const clearConversation = useCallback((newWelcomeMessage: string | null = null): void => {
+    abortActiveRequest();
+    setIsLoading(false);
     const welcomeMessage = newWelcomeMessage || initialWelcomeMessage;
     if (welcomeMessage) {
       setMessages([{
@@ -189,9 +183,9 @@ const useAIChat = (chatType: ChatType = 'help', initialWelcomeMessage: string = 
       setMessages([]);
     }
     setError('');
-  }, [initialWelcomeMessage]);
+  }, [abortActiveRequest, initialWelcomeMessage]);
 
-  // Handle Enter key press
+  // Handle Enter key press.
   const handleKeyPress = useCallback((event: React.KeyboardEvent): void => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -199,7 +193,7 @@ const useAIChat = (chatType: ChatType = 'help', initialWelcomeMessage: string = 
     }
   }, [sendMessage]);
 
-  // Set predefined input
+  // Set predefined input.
   const setQuickInput = useCallback((text: string): void => {
     setInputValue(text);
   }, []);
