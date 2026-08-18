@@ -1,30 +1,30 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import FloatingChatHelper from '../../src/components/Home/Helper';
 import api from '../../src/services';
-import type { TokenCallback } from '../../src/utils/sseUtils';
+import { type ChatbotResult, ChatTransportError } from '../../src/services/chatbot';
 import { testUtils } from '../setup';
 
 // Mock the entire Material-UI system
 vi.mock('@mui/material/useMediaQuery', () => ({
-  default: vi.fn(() => false)
+  default: vi.fn(() => false),
 }));
 
 vi.mock('@mui/system', () => ({
-  useMediaQuery: vi.fn(() => false)
+  useMediaQuery: vi.fn(() => false),
 }));
 
 // Mock the API
 vi.mock('../../src/services', () => ({
   default: {
     chatbot: {
-      help: vi.fn()
-    }
-  }
+      send: vi.fn(),
+    },
+  },
 }));
 
 // Test wrapper with theme
@@ -48,8 +48,23 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
 };
 
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+}
+
+const deferred = <T,>(): Deferred<T> => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+};
+
+const completed = (text: string): ChatbotResult => ({ kind: 'completed', text });
+
 describe('FloatingChatHelper Component', () => {
-  const mockChatbotHelp = api.chatbot.help as MockedFunction<typeof api.chatbot.help>;
+  const mockChatbotSend = api.chatbot.send as MockedFunction<typeof api.chatbot.send>;
 
   beforeEach(() => {
     testUtils.clearAllMocks();
@@ -60,7 +75,7 @@ describe('FloatingChatHelper Component', () => {
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
@@ -73,12 +88,12 @@ describe('FloatingChatHelper Component', () => {
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.hover(chatButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Chat with Dentabot')).toBeInTheDocument();
       });
@@ -88,7 +103,7 @@ describe('FloatingChatHelper Component', () => {
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.queryByText('Dentabot')).not.toBeInTheDocument();
@@ -101,7 +116,7 @@ describe('FloatingChatHelper Component', () => {
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
@@ -116,14 +131,12 @@ describe('FloatingChatHelper Component', () => {
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
 
-      // Close dialog
       const closeButton = screen.getByRole('button', { name: /close chat/i });
       await user.click(closeButton);
 
@@ -137,7 +150,7 @@ describe('FloatingChatHelper Component', () => {
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
@@ -151,74 +164,66 @@ describe('FloatingChatHelper Component', () => {
   describe('Message Sending', () => {
     it('should send message when form is submitted', async () => {
       const user = userEvent.setup();
-      const mockResponse = 'Hello! How can I help you?';
-      
-      mockChatbotHelp.mockResolvedValue(mockResponse);
+      mockChatbotSend.mockResolvedValueOnce(completed('Hello! How can I help you?'));
 
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
 
-      // Type message
       const input = screen.getByPlaceholderText('Type your message...');
       await user.type(input, 'Hello');
 
-      // Send message
       const sendButton = screen.getByRole('button', { name: /send message/i });
       await user.click(sendButton);
 
-      // Check API was called
-      expect(mockChatbotHelp).toHaveBeenCalledWith(
+      expect(mockChatbotSend).toHaveBeenCalledWith(
+        'help',
         'Hello',
-        expect.any(Function)
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+          onText: expect.any(Function),
+        }),
       );
-
-      // Check user message appears
       expect(screen.getByText('Hello')).toBeInTheDocument();
     });
 
-    it('should handle streaming response correctly', async () => {
+    it('should handle cumulative streaming response without timers', async () => {
       const user = userEvent.setup();
-      let streamingCallback: TokenCallback;
-      
-      mockChatbotHelp.mockImplementation(async (message: string, callback?: TokenCallback) => {
-        if (callback) {
-          streamingCallback = callback;
-          // Simulate streaming
-          setTimeout(() => {
-            callback('Hello', 'Hello');
-            callback(' there!', 'Hello there!');
-          }, 100);
-        }
-        return 'Hello there!';
+      const response = deferred<ChatbotResult>();
+      let onText!: (text: string) => void;
+      mockChatbotSend.mockImplementationOnce(async (_agent, _prompt, options) => {
+        onText = options.onText!;
+        return response.promise;
       });
 
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog and send message
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-
       const input = screen.getByPlaceholderText('Type your message...');
       await user.type(input, 'Hi');
+      await user.click(screen.getByRole('button', { name: /send message/i }));
 
-      const sendButton = screen.getByRole('button', { name: /send message/i });
-      await user.click(sendButton);
+      await waitFor(() => expect(onText).toBeTypeOf('function'));
+      act(() => {
+        onText('Hello');
+        onText('Hello there!');
+      });
+      expect(screen.getByText('Hello there!')).toBeInTheDocument();
 
-      // Wait for streaming to complete
-      await waitFor(() => {
-        expect(screen.getByText('Hello there!')).toBeInTheDocument();
-      }, { timeout: 3000 });
+      act(() => {
+        response.resolve(completed('Hello there!'));
+      });
+      await waitFor(() => expect(screen.queryByText('Typing...')).not.toBeInTheDocument());
     });
 
     it('should not send empty messages', async () => {
@@ -226,115 +231,121 @@ describe('FloatingChatHelper Component', () => {
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
 
-      // Try to send empty message
       const sendButton = screen.getByRole('button', { name: /send message/i });
       expect(sendButton).toBeDisabled();
 
-      // Try with whitespace only
       const input = screen.getByPlaceholderText('Type your message...');
       await user.type(input, '   ');
-      
+
       expect(sendButton).toBeDisabled();
-      expect(mockChatbotHelp).not.toHaveBeenCalled();
+      expect(mockChatbotSend).not.toHaveBeenCalled();
     });
 
     it('should handle Enter key submission', async () => {
       const user = userEvent.setup();
-      mockChatbotHelp.mockResolvedValue('Response');
+      mockChatbotSend.mockResolvedValueOnce(completed('Response'));
 
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
 
-      // Type message and press Enter
       const input = screen.getByPlaceholderText('Type your message...');
       await user.type(input, 'Hello{enter}');
 
-      expect(mockChatbotHelp).toHaveBeenCalledWith('Hello', expect.any(Function));
+      expect(mockChatbotSend).toHaveBeenCalledWith(
+        'help',
+        'Hello',
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+          onText: expect.any(Function),
+        }),
+      );
     });
   });
 
   describe('Error Handling', () => {
     it('should display error message when API call fails', async () => {
       const user = userEvent.setup();
-      const errorMessage = 'Network error occurred';
-      
-      mockChatbotHelp.mockRejectedValue(new Error(errorMessage));
+      mockChatbotSend.mockRejectedValueOnce(
+        new ChatTransportError('network', 'The chatbot network request failed.'),
+      );
 
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog and send message
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-
       const input = screen.getByPlaceholderText('Type your message...');
       await user.type(input, 'Hello');
+      await user.click(screen.getByRole('button', { name: /send message/i }));
 
-      const sendButton = screen.getByRole('button', { name: /send message/i });
-      await user.click(sendButton);
-
-      // Wait for error message
       await waitFor(() => {
-        expect(screen.getByText('Network connection failed. Please check your internet connection and try again.')).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            'Network connection failed. Please check your internet connection and try again.',
+          ),
+        ).toBeInTheDocument();
       });
-
-      // Check error message in chat
-      expect(screen.getByText("I'm sorry, I encountered an error processing your request. Please try again later.")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "I'm sorry, I encountered an error processing your request. Please try again later.",
+        ),
+      ).toBeInTheDocument();
     });
 
     it('should clear error when new message is sent', async () => {
       const user = userEvent.setup();
-      
-      // First call fails
-      mockChatbotHelp.mockRejectedValueOnce(new Error('Network error'));
-      // Second call succeeds
-      mockChatbotHelp.mockResolvedValueOnce('Success response');
+      mockChatbotSend
+        .mockRejectedValueOnce(
+          new ChatTransportError('network', 'The chatbot network request failed.'),
+        )
+        .mockResolvedValueOnce(completed('Success response'));
 
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-
       const input = screen.getByPlaceholderText('Type your message...');
       const sendButton = screen.getByRole('button', { name: /send message/i });
 
-      // Send first message (fails)
       await user.type(input, 'Hello');
       await user.click(sendButton);
-
       await waitFor(() => {
-        expect(screen.getByText('Network connection failed. Please check your internet connection and try again.')).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            'Network connection failed. Please check your internet connection and try again.',
+          ),
+        ).toBeInTheDocument();
       });
 
-      // Send second message (succeeds)
       await user.clear(input);
       await user.type(input, 'Try again');
       await user.click(sendButton);
 
       await waitFor(() => {
-        expect(screen.queryByText('Network connection failed. Please check your internet connection and try again.')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText(
+            'Network connection failed. Please check your internet connection and try again.',
+          ),
+        ).not.toBeInTheDocument();
       });
     });
   });
@@ -342,40 +353,29 @@ describe('FloatingChatHelper Component', () => {
   describe('Loading States', () => {
     it('should show loading indicator during API call', async () => {
       const user = userEvent.setup();
-      let resolvePromise: (value: string) => void;
-      
-      mockChatbotHelp.mockImplementation(() => {
-        return new Promise<string>((resolve) => {
-          resolvePromise = resolve;
-        });
-      });
+      const response = deferred<ChatbotResult>();
+      mockChatbotSend.mockReturnValueOnce(response.promise);
 
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog and send message
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-
       const input = screen.getByPlaceholderText('Type your message...');
       await user.type(input, 'Hello');
-
       const sendButton = screen.getByRole('button', { name: /send message/i });
       await user.click(sendButton);
 
-      // Check loading states
       expect(screen.getByPlaceholderText('Processing...')).toBeInTheDocument();
       expect(screen.getByText('Typing...')).toBeInTheDocument();
       expect(sendButton).toBeDisabled();
 
-      // Resolve the promise
       act(() => {
-        resolvePromise!('Response');
+        response.resolve(completed('Response'));
       });
-
       await waitFor(() => {
         expect(screen.queryByPlaceholderText('Processing...')).not.toBeInTheDocument();
       });
@@ -383,42 +383,59 @@ describe('FloatingChatHelper Component', () => {
 
     it('should disable input and button during loading', async () => {
       const user = userEvent.setup();
-      let resolvePromise: (value: string) => void;
-      
-      mockChatbotHelp.mockImplementation(() => {
-        return new Promise<string>((resolve) => {
-          resolvePromise = resolve;
-        });
-      });
+      const response = deferred<ChatbotResult>();
+      mockChatbotSend.mockReturnValueOnce(response.promise);
 
       render(
         <TestWrapper>
           <FloatingChatHelper />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
-      // Open dialog and send message
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-
       const input = screen.getByPlaceholderText('Type your message...');
       await user.type(input, 'Hello');
-
       const sendButton = screen.getByRole('button', { name: /send message/i });
       await user.click(sendButton);
 
-      // Check disabled states
       expect(input).toBeDisabled();
       expect(sendButton).toBeDisabled();
 
-      // Resolve the promise
       act(() => {
-        resolvePromise!('Response');
+        response.resolve(completed('Response'));
       });
+      await waitFor(() => expect(input).not.toBeDisabled());
+    });
+  });
 
-      await waitFor(() => {
-        expect(input).not.toBeDisabled();
-      });
+  it('aborts the captured request when the helper unmounts', async () => {
+    const user = userEvent.setup();
+    const response = deferred<ChatbotResult>();
+    let capturedSignal!: AbortSignal;
+    mockChatbotSend.mockImplementationOnce(async (_agent, _prompt, options) => {
+      capturedSignal = options.signal!;
+      return response.promise;
+    });
+
+    const { unmount } = render(
+      <TestWrapper>
+        <FloatingChatHelper />
+      </TestWrapper>,
+    );
+
+    const chatButton = screen.getByRole('button', { name: /chat/i });
+    await user.click(chatButton);
+    const input = screen.getByPlaceholderText('Type your message...');
+    await user.type(input, 'Hello');
+    await user.click(screen.getByRole('button', { name: /send message/i }));
+
+    await waitFor(() => expect(capturedSignal).toBeInstanceOf(AbortSignal));
+    unmount();
+
+    expect(capturedSignal.aborted).toBe(true);
+    act(() => {
+      response.resolve(completed('Response'));
     });
   });
 });

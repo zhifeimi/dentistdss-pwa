@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Box } from '@mui/material';
 import { useChatState } from '../../../hooks/useChatState';
 import { useChatAPI } from '../../../hooks/useChatAPI';
@@ -41,7 +41,7 @@ const FloatingChatHelper: React.FC<FloatingChatHelperProps> = () => {
 
   // Dialog control handlers
   const handleToggleDialog = useCallback(() => {
-    setIsDialogOpen(prev => {
+    setIsDialogOpen((prev) => {
       if (!prev) {
         // Clear errors when opening dialog
         chatState.stateActions.clearError();
@@ -69,14 +69,6 @@ const FloatingChatHelper: React.FC<FloatingChatHelperProps> = () => {
       console.error('Failed to send message:', error);
     }
   }, [chatAPI]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      chatAPI.cancelRequest();
-    };
-  }, [chatAPI.cancelRequest]);
-
 
   // Render the component using composition
   return (
