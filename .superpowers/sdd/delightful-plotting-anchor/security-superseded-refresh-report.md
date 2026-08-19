@@ -59,6 +59,19 @@ The same focused command passed:
 
 The production build emitted the existing large-chunk warning; it did not fail the build and is unrelated to this transport fix.
 
+## Re-review fix round
+
+The re-review identified that same-epoch replay was still inside the refresh `try/catch`. A replay HTTP 500 or network failure could therefore be mistaken for refresh failure, causing the original 401 handler to run again.
+
+- Added parameterized Axios regressions for same-epoch refresh success followed by replay HTTP 500 and network failure.
+- Each regression asserts one refresh, one replay with `_retry`, direct replay-error propagation, refreshed bearer preservation, exactly ordinary replay snackbar presentation, and no outer termination or redirect.
+- RED: the two new tests failed because the original 401 error replaced the replay error and duplicate error handling occurred.
+- GREEN: focused lifecycle/Axios/chatbot/SSE suite passed with 4 files and 65 tests.
+- Implementation now records explicit refresh outcomes (`succeeded`, `superseded`, or `failed`), catches only `session.refreshSession()`, and performs the replay outside that catch only for a successful same-epoch refresh. Superseded refreshes still never replay and skip terminal cleanup; ordinary refresh failures retain existing terminal behavior.
+- Full Vitest after the fix passed with 24 files and 195 tests.
+- `deno task check`, production build, `test ! -e node_modules`, and `git diff --check` all passed after the fix.
+- The parallel Chromium run had 4 readiness failures and 17 passes; a serial rerun of the same focused specs passed all 21 tests. The failures were UI startup/readiness timeouts, not transport assertions.
+
 ## Working-tree note
 
 The worktree contained pre-existing modifications in unrelated files and an untracked `.claude/` directory. They were preserved and are not part of this change. Dependencies and audit baselines were not modified.

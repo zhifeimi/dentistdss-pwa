@@ -202,7 +202,7 @@ api.interceptors.response.use(
     const hadSession = session.hasBearerSession();
     const suppressSnackbar = originalRequest?.suppressErrorSnackbar === true;
     let userMessage = 'An unexpected error occurred.';
-    let supersededRefresh = false;
+    let refreshOutcome: 'not-attempted' | 'succeeded' | 'superseded' | 'failed' = 'not-attempted';
 
     // Expired bearer on a normal API call: attempt one shared, cookie-backed
     // session refresh, then replay the original request with the rotated
@@ -216,14 +216,19 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         await session.refreshSession();
-        return await api(originalRequest);
+        refreshOutcome = 'succeeded';
       } catch (refreshError) {
         if (refreshError instanceof SessionRefreshSupersededError) {
           originalRequest._refreshSuperseded = true;
-          supersededRefresh = true;
+          refreshOutcome = 'superseded';
+        } else {
+          refreshOutcome = 'failed';
         }
         // Refresh failed; fall through to error presentation. A superseded
         // refresh must never replay the original request.
+      }
+      if (refreshOutcome === 'succeeded') {
+        return await api(originalRequest);
       }
     }
 
@@ -241,10 +246,10 @@ api.interceptors.response.use(
         if (
           hadSession &&
           !isCookieSessionAuthRequest(originalRequest) &&
-          !supersededRefresh
+          refreshOutcome !== 'superseded'
         ) {
           session.terminateSession({ redirect: true });
-        } else if (!supersededRefresh) {
+        } else if (refreshOutcome !== 'superseded') {
           session.clearLocalSession();
         }
       }
