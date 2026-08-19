@@ -23,6 +23,14 @@ export interface SessionChannel {
   postMessage(message: typeof SESSION_ENDED_MESSAGE): void;
 }
 
+export class SessionRefreshSupersededError extends Error {
+  override readonly name = 'SessionRefreshSupersededError';
+
+  constructor() {
+    super('Session refresh superseded.');
+  }
+}
+
 export interface BrowserEffects {
   createSessionChannel(
     onMessage: (message: unknown) => void,
@@ -189,7 +197,7 @@ export const createSessionLifecycle = (
       refreshInFlight = (async (): Promise<SessionTokens> => {
         await ensureXsrfBootstrapped();
         if (refreshEpoch !== sessionEpoch) {
-          throw new Error('Session refresh superseded.');
+          throw new SessionRefreshSupersededError();
         }
         const response = await rawAuthClient.post(
           '/api/auth/refresh',
@@ -197,7 +205,7 @@ export const createSessionLifecycle = (
           xsrfToken ? { headers: { [XSRF_HEADER]: xsrfToken } } : undefined,
         );
         if (refreshEpoch !== sessionEpoch) {
-          throw new Error('Session refresh superseded.');
+          throw new SessionRefreshSupersededError();
         }
         captureXsrfFromHeaders(response.headers);
         const tokens = response.data?.dataObject ?? response.data;
@@ -205,15 +213,16 @@ export const createSessionLifecycle = (
           throw new Error('Session refresh did not return an access token.');
         }
         if (refreshEpoch !== sessionEpoch) {
-          throw new Error('Session refresh superseded.');
+          throw new SessionRefreshSupersededError();
         }
         setBearerSession(tokens.accessToken, tokens.tokenType);
         return tokens as SessionTokens;
       })()
         .catch((error) => {
-          if (refreshEpoch === sessionEpoch) {
-            clearLocalSession();
+          if (refreshEpoch !== sessionEpoch) {
+            throw new SessionRefreshSupersededError();
           }
+          clearLocalSession();
           throw error;
         })
         .finally(() => {

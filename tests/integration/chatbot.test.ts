@@ -10,14 +10,22 @@ import type {
   StreamingExchangeRequest,
 } from '../../src/services/chatbotStream';
 
-const sessionMocks = vi.hoisted(() => ({
-  getBearerSession: vi.fn(),
-  refreshSession: vi.fn(),
-  terminateSession: vi.fn(),
-}));
+const sessionMocks = vi.hoisted(() => {
+  class SessionRefreshSupersededError extends Error {
+    override readonly name = 'SessionRefreshSupersededError';
+  }
+
+  return {
+    getBearerSession: vi.fn(),
+    refreshSession: vi.fn(),
+    terminateSession: vi.fn(),
+    SessionRefreshSupersededError,
+  };
+});
 
 vi.mock('../../src/services/session', () => ({
   session: sessionMocks,
+  SessionRefreshSupersededError: sessionMocks.SessionRefreshSupersededError,
 }));
 
 const exchange: StreamingExchange = {
@@ -56,7 +64,7 @@ describe('ChatbotModule', () => {
   const chatbot = createChatbotModule(exchange);
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     sessionMocks.getBearerSession.mockReturnValue(undefined);
     sessionMocks.refreshSession.mockResolvedValue({ accessToken: 'rotated-token' });
     sessionMocks.terminateSession.mockImplementation(() => {});
@@ -176,6 +184,44 @@ describe('ChatbotModule', () => {
     expect(bodySpy).not.toHaveBeenCalled();
     expect(sessionMocks.refreshSession).not.toHaveBeenCalled();
     expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
+  });
+
+  it('replays with the newer bearer when refresh is superseded', async () => {
+    const oldBearer = { accessToken: 'old-token', tokenType: 'Bearer' };
+    const newerBearer = { accessToken: 'newer-token', tokenType: 'Bearer' };
+    sessionMocks.getBearerSession
+      .mockReturnValueOnce(oldBearer)
+      .mockReturnValueOnce(newerBearer);
+    sessionMocks.refreshSession.mockRejectedValue(
+      new sessionMocks.SessionRefreshSupersededError('Session refresh superseded.'),
+    );
+    (exchange.post as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(response('private', 401))
+      .mockResolvedValueOnce(stream('replayed'));
+
+    const result = await chatbot.send('aidentist', 'question');
+
+    expect(result).toEqual({ kind: 'completed', text: 'replayed' });
+    expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
+    expect(exchange.post).toHaveBeenCalledTimes(2);
+    expect(exchange.post.mock.calls[1][1].headers).toMatchObject({
+      Authorization: 'Bearer newer-token',
+    });
+  });
+
+  it('does not repeat termination when a superseded refresh finds no bearer', async () => {
+    sessionMocks.getBearerSession
+      .mockReturnValueOnce({ accessToken: 'old-token', tokenType: 'Bearer' })
+      .mockReturnValueOnce(undefined);
+    sessionMocks.refreshSession.mockRejectedValue(
+      new sessionMocks.SessionRefreshSupersededError('Session refresh superseded.'),
+    );
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(response('private', 401));
+
+    await expectTransportError(chatbot.send('aidentist', 'question'), 'session-ended');
+
+    expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
+    expect(exchange.post).toHaveBeenCalledTimes(1);
   });
 
   it('terminates immediately when refresh fails', async () => {
@@ -341,6 +387,19 @@ describe('ChatbotModule', () => {
     const error = await expectTransportError(chatbot.send('help', 'question'), 'protocol');
 
     expect(error.message).not.toContain('not sse');
+  });
+
+  it('retains streamed text when a later chunk violates the protocol', async () => {
+    const validChunk = JSON.stringify({ choices: [{ delta: { content: 'partial' } }] });
+    const malformedChunk = JSON.stringify({ choices: [{ delta: { content: 123 } }] });
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(
+      response(`data: ${validChunk}\n\ndata: ${malformedChunk}\n\n`),
+    );
+
+    const error = await expectTransportError(chatbot.send('help', 'question'), 'protocol');
+
+    expect(error.partialText).toBe('partial');
+    expect(error.message).not.toContain('123');
   });
 
   it('maps observer errors and retains partial text', async () => {

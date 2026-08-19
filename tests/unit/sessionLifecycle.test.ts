@@ -226,7 +226,9 @@ describe('session lifecycle', () => {
     await vi.waitFor(() => expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1));
     lifecycle.setBearerSession('newer-access-token', 'Bearer');
     rejectRefresh(new Error('stale refresh failure'));
-    await refresh.catch(() => undefined);
+    await expect(refresh).rejects.toMatchObject({
+      name: 'SessionRefreshSupersededError',
+    });
 
     expect(lifecycle.getBearerSession()).toEqual({
       accessToken: 'newer-access-token',

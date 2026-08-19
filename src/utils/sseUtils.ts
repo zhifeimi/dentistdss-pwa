@@ -10,7 +10,7 @@ export interface SSEReadOptions {
 export class SSEProtocolError extends Error {
   override readonly name = 'SSEProtocolError';
 
-  constructor(message = 'Invalid SSE response.') {
+  constructor(message = 'Invalid SSE response.', readonly partialText?: string) {
     super(message);
   }
 }
@@ -300,7 +300,7 @@ export async function readSSEStream(
     }
     if (error instanceof SSEProtocolError) {
       await cancel();
-      throw error;
+      throw new SSEProtocolError(error.message, text);
     }
     if (error instanceof SSEReadError) {
       throw error;

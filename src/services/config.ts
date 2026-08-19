@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import config from '../config';
-import session from './session';
+import session, { SessionRefreshSupersededError } from './session';
 import { getHttpErrorMessage } from '../utils/httpErrorMessages';
 
 // Internal transport requests (XSRF bootstrap, session refresh) fail quietly:
@@ -202,6 +202,7 @@ api.interceptors.response.use(
     const hadSession = session.hasBearerSession();
     const suppressSnackbar = originalRequest?.suppressErrorSnackbar === true;
     let userMessage = 'An unexpected error occurred.';
+    let supersededRefreshWithoutBearer = false;
 
     // Expired bearer on a normal API call: attempt one shared, cookie-backed
     // session refresh, then replay the original request with the rotated
@@ -216,7 +217,18 @@ api.interceptors.response.use(
       try {
         await session.refreshSession();
         return await api(originalRequest);
-      } catch (_) {
+      } catch (refreshError) {
+        if (refreshError instanceof SessionRefreshSupersededError) {
+          if (session.hasBearerSession()) {
+            try {
+              return await api(originalRequest);
+            } catch (_) {
+              supersededRefreshWithoutBearer = !session.hasBearerSession();
+            }
+          } else {
+            supersededRefreshWithoutBearer = true;
+          }
+        }
         // Refresh failed; fall through to terminal session handling.
       }
     }
@@ -232,9 +244,13 @@ api.interceptors.response.use(
         // Cookie-session endpoints own their failure handling; only a
         // bearer-authenticated request ending a live session broadcasts the
         // end and redirects to login.
-        if (hadSession && !isCookieSessionAuthRequest(originalRequest)) {
+        if (
+          hadSession &&
+          !isCookieSessionAuthRequest(originalRequest) &&
+          !supersededRefreshWithoutBearer
+        ) {
           session.terminateSession({ redirect: true });
-        } else {
+        } else if (!supersededRefreshWithoutBearer) {
           session.clearLocalSession();
         }
       }

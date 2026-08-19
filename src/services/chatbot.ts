@@ -3,7 +3,7 @@ import {
   type StreamingExchange,
   type StreamingExchangeRequest,
 } from './chatbotStream';
-import { session } from './session';
+import { session, SessionRefreshSupersededError } from './session';
 import {
   readSSEStream,
   SSEObserverError,
@@ -211,7 +211,12 @@ const readResponse = async (
       );
     }
     if (error instanceof SSEProtocolError) {
-      throw new ChatTransportError('protocol', errorMessages.protocol);
+      throw new ChatTransportError(
+        'protocol',
+        errorMessages.protocol,
+        undefined,
+        error.partialText,
+      );
     }
     if (error instanceof SSEReadError) {
       throw new ChatTransportError('network', errorMessages.network, undefined, error.partialText);
@@ -275,7 +280,9 @@ const createModule = (exchange: StreamingExchange): ChatbotModule => ({
     if ('kind' in refreshResult && refreshResult.kind === 'cancelled') {
       return { kind: 'cancelled', text: '' };
     }
-    if (refreshResult.kind === 'rejected') {
+    const refreshWasSuperseded = refreshResult.kind === 'rejected' &&
+      refreshResult.error instanceof SessionRefreshSupersededError;
+    if (refreshResult.kind === 'rejected' && !refreshWasSuperseded) {
       session.terminateSession({ redirect: true });
       throw new ChatTransportError('session-ended', errorMessages.sessionEnded, 401);
     }
@@ -285,7 +292,9 @@ const createModule = (exchange: StreamingExchange): ChatbotModule => ({
     }
     const rotatedBearer = session.getBearerSession();
     if (!rotatedBearer) {
-      session.terminateSession({ redirect: true });
+      if (!refreshWasSuperseded) {
+        session.terminateSession({ redirect: true });
+      }
       throw new ChatTransportError('session-ended', errorMessages.sessionEnded, 401);
     }
     if (signal?.aborted) {
