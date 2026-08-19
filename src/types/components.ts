@@ -139,17 +139,6 @@ export interface NotificationContextValue {
   hideNotification: () => void;
 }
 
-// AI Chat interface props
-export interface EnhancedChatInterfaceProps {
-  apiEndpoint: string;
-  placeholder?: string;
-  title?: string;
-  userId?: number;
-  maxHeight?: string | number;
-  enableFileUpload?: boolean;
-  enableVoiceInput?: boolean;
-}
-
 // Form validation props
 export interface FormValidationProps<T> {
   data: T;

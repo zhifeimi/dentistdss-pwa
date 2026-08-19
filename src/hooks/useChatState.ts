@@ -166,29 +166,3 @@ export const useChatState = (): UseChatStateReturn => {
     stateActions,
   } as const;
 };
-
-/**
- * Type guard for checking if a message is streaming
- */
-export const isStreamingMessage = (message: ChatMessage): boolean => {
-  return message.isStreaming === true;
-};
-
-/**
- * Type guard for checking if a message has an error
- */
-export const isErrorMessage = (message: ChatMessage): boolean => {
-  return message.error === true;
-};
-
-/**
- * Utility function to find the last streaming message
- */
-export const findLastStreamingMessage = (messages: readonly ChatMessage[]): ChatMessage | null => {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (isStreamingMessage(messages[i])) {
-      return messages[i];
-    }
-  }
-  return null;
-};

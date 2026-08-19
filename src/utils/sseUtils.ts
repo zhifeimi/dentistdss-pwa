@@ -1,5 +1,3 @@
-export type TokenCallback = (token: string, fullResponse: string) => void;
-
 export type SSEReadResult =
   | { kind: 'completed'; text: string }
   | { kind: 'cancelled'; text: string };

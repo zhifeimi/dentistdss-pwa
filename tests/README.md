@@ -13,8 +13,7 @@ tests/
 ├── setup.tsx                 # Global test configuration and mocks (TypeScript)
 ├── tsconfig.json             # TypeScript configuration for tests
 ├── unit/                     # Unit tests for individual functions
-│   ├── javascript.test.ts    # JavaScript fundamentals tests (TypeScript)
-│   └── openaiTypes.test.ts   # OpenAI type definitions tests (TypeScript)
+│   └── javascript.test.ts    # JavaScript fundamentals tests (TypeScript)
 ├── integration/              # Integration tests for services and APIs
 │   └── chatbot.test.ts       # Chatbot service integration tests (TypeScript)
 ├── components/               # React component tests
@@ -215,8 +214,7 @@ vi.mock('../components/MyComponent', () => ({
 // Mock a service
 vi.mock('../services/api', () => ({
   chatbot: {
-    help: vi.fn().mockResolvedValue('mock response'),
-    aidentist: vi.fn().mockResolvedValue('mock clinical response'),
+    send: vi.fn().mockResolvedValue({ kind: 'completed', text: 'mock response' }),
   },
 }));
 ```

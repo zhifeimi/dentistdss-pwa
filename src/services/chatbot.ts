@@ -317,32 +317,7 @@ const createModule = (exchange: StreamingExchange): ChatbotModule => ({
 export const createChatbotModule = (exchange: StreamingExchange = fetchStreamingExchange): ChatbotModule =>
   createModule(exchange);
 
-const productionChatbot = createChatbotModule();
-
-const chatbotAPI = Object.assign(productionChatbot, {
-  help: (prompt: string, callback?: (token: string, text: string) => void) =>
-    productionChatbot.send('help', prompt, {
-      onText: (text) => callback?.('', text),
-    }).then((result) => result.text),
-  aidentist: (prompt: string, callback?: (token: string, text: string) => void) =>
-    productionChatbot.send('aidentist', prompt, {
-      onText: (text) => callback?.('', text),
-    }).then((result) => result.text),
-  receptionist: (prompt: string, callback?: (token: string, text: string) => void) =>
-    productionChatbot.send('receptionist', prompt, {
-      onText: (text) => callback?.('', text),
-    }).then((result) => result.text),
-  triage: (prompt: string, callback?: (token: string, text: string) => void) =>
-    productionChatbot.send('triage', prompt, {
-      onText: (text) => callback?.('', text),
-    }).then((result) => result.text),
-  documentationSummarize: (
-    prompt: string,
-    callback?: (token: string, text: string) => void,
-  ) => productionChatbot.send('documentationSummarize', prompt, {
-    onText: (text) => callback?.('', text),
-  }).then((result) => result.text),
-});
+const chatbotAPI: ChatbotModule = createChatbotModule();
 
 export type {
   StreamingExchange,
