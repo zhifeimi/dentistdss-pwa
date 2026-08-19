@@ -1,10 +1,6 @@
 import React, {createContext, useState, useContext, useEffect, useCallback, ReactNode} from 'react';
 import api from '../../services';
-import {
-  clearBearerSession,
-  hasBearerSession,
-  setBearerSession,
-} from '../../services/config';
+import session from '../../services/session';
 import { AuthContextValue, User, UserRole } from '../../types';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -30,7 +26,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     try {
       // The bearer lives only in module memory; the axios interceptor in
       // config.ts attaches it to same-origin API calls.
-      setBearerSession(token, tokenType);
+      session.setBearerSession(token, tokenType);
 
       const userData = await api.auth.me(); // Fetch user details using the new token
       if (userData) {
@@ -42,7 +38,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
       }
     } catch (error) {
       console.error('Failed to process auth token or fetch user:', error);
-      clearBearerSession();
+      session.clearBearerSession();
       setCurrentUser(null);
       throw error;
     }
@@ -146,16 +142,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
       // Prewarm the in-memory XSRF token so cookie-backed refresh and logout
       // keep working after a page reload wiped module state. Single-flight
       // in the auth service (StrictMode-safe) and never rejects.
-      void api.auth.ensureXsrfBootstrapped();
+      void session.ensureXsrfBootstrapped();
 
       // A page reload wipes the in-memory bearer: restore the session from
       // the HttpOnly refresh cookie when one exists. A failed restore just
       // means the visitor is anonymous — no logout, no redirect.
-      let sessionAvailable = hasBearerSession();
+      let sessionAvailable = session.hasBearerSession();
       if (!sessionAvailable) {
         try {
           await api.auth.refresh();
-          sessionAvailable = hasBearerSession();
+          sessionAvailable = session.hasBearerSession();
         } catch (_) {
           sessionAvailable = false;
         }

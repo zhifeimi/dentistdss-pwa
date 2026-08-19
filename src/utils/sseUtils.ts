@@ -1,303 +1,316 @@
-/**
- * Enhanced SSE (Server-Sent Events) Utilities
- * 
- * Uses OpenAI SDK types and utilities for better SSE data processing
- * while maintaining backend-only OpenAI integration through Spring AI.
- */
+export type SSEReadResult =
+  | { kind: 'completed'; text: string }
+  | { kind: 'cancelled'; text: string };
 
-// Import OpenAI SDK types for better type safety
-import type { ChatCompletionChunk } from 'openai/resources/chat/completions';
+export interface SSEReadOptions {
+  signal?: AbortSignal;
+  onText?: (text: string) => void;
+}
 
-// Type definitions for SSE processing
-export interface SSEEvent {
+export class SSEProtocolError extends Error {
+  override readonly name = 'SSEProtocolError';
+
+  constructor(message = 'Invalid SSE response.', readonly partialText?: string) {
+    super(message);
+  }
+}
+
+export class SSEObserverError extends Error {
+  override readonly name = 'SSEObserverError';
+
+  constructor(readonly partialText: string, override readonly cause: unknown) {
+    super('SSE text observer failed.');
+  }
+}
+
+export class SSEReadError extends Error {
+  override readonly name = 'SSEReadError';
+
+  constructor(readonly partialText: string, override readonly cause: unknown) {
+    super('SSE stream read failed.');
+  }
+}
+
+interface RenderToken {
+  content: string;
+  complete: boolean;
+}
+
+const EVENT_DELIMITER = /\r\n\r\n|\n\n|\r\r/;
+const ABORTED = Symbol('sse-aborted');
+
+type EventRecord = {
   type: string;
   data: string;
-  id?: string;
-  retry?: number;
-}
+};
 
-export interface SSEParseResult {
-  events: SSEEvent[];
-  remainingBuffer: string;
-}
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
-export interface StreamingToken {
-  content: string;
-  isComplete: boolean;
-  finishReason?: string | null;
-}
+const parseEvent = (eventBlock: string): EventRecord | undefined => {
+  const dataLines: string[] = [];
+  let type = 'message';
 
-export type TokenCallback = (token: string, fullResponse: string) => void;
+  for (const line of eventBlock.split(/\r\n|\r|\n/)) {
+    if (!line || line.startsWith(':')) {
+      continue;
+    }
 
-/**
- * Parse SSE event block into structured events
- */
-export function parseSSEEvents(eventBlock: string): SSEEvent[] {
-  const lines = eventBlock.split('\n');
-  const events: SSEEvent[] = [];
-  let currentEvent: Partial<SSEEvent> = {};
+    const separator = line.indexOf(':');
+    const field = separator < 0 ? line : line.slice(0, separator);
+    const value = separator < 0 ? '' : line.slice(separator + 1).trim();
 
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-
-    if (trimmedLine === '') {
-      // Empty line indicates end of event
-      if (currentEvent.data !== undefined) {
-        events.push({
-          type: currentEvent.type || 'message',
-          data: currentEvent.data,
-          id: currentEvent.id,
-          retry: currentEvent.retry,
-        });
-      }
-      currentEvent = {};
-    } else if (trimmedLine.startsWith('data:')) {
-      currentEvent.data = trimmedLine.slice('data:'.length).trim();
-    } else if (trimmedLine.startsWith('event:')) {
-      currentEvent.type = trimmedLine.slice('event:'.length).trim();
-    } else if (trimmedLine.startsWith('id:')) {
-      currentEvent.id = trimmedLine.slice('id:'.length).trim();
-    } else if (trimmedLine.startsWith('retry:')) {
-      const retryValue = parseInt(trimmedLine.slice('retry:'.length).trim(), 10);
-      if (!isNaN(retryValue)) {
-        currentEvent.retry = retryValue;
-      }
+    if (field === 'data') {
+      dataLines.push(value);
+    } else if (field === 'event') {
+      type = value;
     }
   }
 
-  // 🔧 FIX: Push any remaining event that doesn't end with an empty line
-  if (currentEvent.data !== undefined) {
-    events.push({
-      type: currentEvent.type || 'message',
-      data: currentEvent.data,
-      id: currentEvent.id,
-      retry: currentEvent.retry,
-    });
+  if (dataLines.length === 0) {
+    return undefined;
   }
 
-  return events;
-}
+  return { type, data: dataLines.join('\n') };
+};
 
-/**
- * Process SSE buffer and extract complete events
- */
-export function processSSEBuffer(buffer: string): SSEParseResult {
-  const events: SSEEvent[] = [];
-  let remainingBuffer = buffer;
-  let position: number;
-
-  // Process complete SSE messages (terminated by double newline)
-  while ((position = remainingBuffer.indexOf('\n\n')) >= 0) {
-    const eventBlock = remainingBuffer.slice(0, position);
-    remainingBuffer = remainingBuffer.slice(position + 2);
-
-    if (eventBlock.trim()) {
-      const parsedEvents = parseSSEEvents(eventBlock);
-      events.push(...parsedEvents);
-    }
+const findEvent = (buffer: string): { block: string; rest: string } | undefined => {
+  const delimiter = EVENT_DELIMITER.exec(buffer);
+  if (!delimiter || delimiter.index < 0) {
+    return undefined;
   }
 
   return {
-    events,
-    remainingBuffer,
+    block: buffer.slice(0, delimiter.index),
+    rest: buffer.slice(delimiter.index + delimiter[0].length),
   };
-}
+};
 
-/**
- * Extract streaming token from SSE data using OpenAI-compatible format
- */
-export function extractStreamingToken(data: string): StreamingToken | null {
-  if (!data || data === '[DONE]' || data === 'null') {
-    return {
-      content: '',
-      isComplete: true,
-      finishReason: 'stop',
-    };
+const parseChunk = (data: string): RenderToken => {
+  const marker = data.trim();
+  if (marker === '[DONE]' || marker === 'null') {
+    return { content: '', complete: true };
   }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(data);
+  } catch (_) {
+    return { content: data, complete: false };
+  }
+
+  if (parsed === null) {
+    return { content: '', complete: true };
+  }
+
+  if (!isRecord(parsed) || !Array.isArray(parsed.choices) || parsed.choices.length === 0) {
+    throw new SSEProtocolError('Invalid SSE data shape.');
+  }
+
+  const choice = parsed.choices[0];
+  if (!isRecord(choice)) {
+    throw new SSEProtocolError('Invalid SSE choice shape.');
+  }
+
+  const delta = choice.delta;
+  if (delta !== undefined && !isRecord(delta)) {
+    throw new SSEProtocolError('Invalid SSE delta shape.');
+  }
+
+  const rawContent = delta?.content;
+  if (rawContent !== undefined && rawContent !== null && typeof rawContent !== 'string') {
+    throw new SSEProtocolError('Invalid SSE content shape.');
+  }
+  const content = typeof rawContent === 'string' ? rawContent : '';
+  const finishReason = choice.finish_reason;
+  if (finishReason !== undefined && finishReason !== null && typeof finishReason !== 'string') {
+    throw new SSEProtocolError('Invalid SSE finish reason.');
+  }
+
+  if (delta === undefined && finishReason === undefined) {
+    throw new SSEProtocolError('Invalid SSE choice shape.');
+  }
+
+  return {
+    content,
+    complete: finishReason !== undefined && finishReason !== null,
+  };
+};
+
+// This predicate intentionally preserves the spacing behavior of the former reader.
+const needsRenderedSpace = (currentText: string, incomingText: string): boolean =>
+  currentText.length > 0 &&
+  !incomingText.match(/^[.,!?;:)}\]"']/) &&
+  !currentText.match(/[(\[{"'\s]$/);
+
+const renderEvent = (
+  event: EventRecord,
+  currentText: string,
+  onText?: (text: string) => void,
+): { text: string; complete: boolean } => {
+  if (event.type !== 'message') {
+    throw new SSEProtocolError('Invalid SSE event type.');
+  }
+
+  const token = parseChunk(event.data);
+  let text = currentText;
+  if (token.content) {
+    text += needsRenderedSpace(text, token.content) ? ` ${token.content}` : token.content;
+    if (onText) {
+      try {
+        onText(text);
+      } catch (cause) {
+        throw new SSEObserverError(text, cause);
+      }
+    }
+  }
+
+  return { text, complete: token.complete };
+};
+
+const cancelReader = async (reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void> => {
+  try {
+    await reader.cancel();
+  } catch (_) {
+    // The original cancellation or stream failure remains the useful error.
+  }
+};
+
+const readWithAbort = async (
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  signal: AbortSignal | undefined,
+): Promise<ReadableStreamReadResult<Uint8Array>> => {
+  if (!signal) {
+    return reader.read();
+  }
+  if (signal.aborted) {
+    throw ABORTED;
+  }
+
+  let abort: (() => void) | undefined;
+  const readPromise = reader.read();
+  // A cancellation can return before the underlying read settles. Consume a
+  // later rejection so an abort does not create an unhandled reader promise.
+  readPromise.catch(() => undefined);
+  const abortPromise = new Promise<never>((_, reject) => {
+    abort = () => reject(ABORTED);
+    signal.addEventListener('abort', abort, { once: true });
+  });
 
   try {
-    // Try to parse as OpenAI-compatible JSON chunk
-    const chunk = JSON.parse(data) as ChatCompletionChunk;
-    
-    if (chunk.choices && chunk.choices[0]) {
-      const choice = chunk.choices[0];
-      const content = choice.delta?.content || '';
-      const finishReason = choice.finish_reason;
-      
-      return {
-        content,
-        isComplete: !!finishReason,
-        finishReason,
-      };
-    }
-  } catch (error) {
-    // If not JSON, treat as plain text token (fallback for simple SSE)
-    return {
-      content: data,
-      isComplete: false,
-      finishReason: null,
-    };
-  }
-
-  return null;
-}
-
-/**
- * Enhanced SSE data processing with proper token spacing
- */
-export function processSSEDataWithSpacing(
-  rawEventsBlock: string,
-  cumulativeResponse: string,
-  onTokenReceived?: TokenCallback
-): string {
-  const events = parseSSEEvents(rawEventsBlock);
-  let updatedResponse = cumulativeResponse;
-
-  for (const event of events) {
-    if (event.type === 'error') {
-      console.warn('SSE Error event received:', event.data);
-      continue;
-    }
-
-    if (event.retry) {
-      console.log(`SSE retry time: ${event.retry}ms`);
-      continue;
-    }
-
-    const token = extractStreamingToken(event.data);
-    if (!token || !token.content) {
-      continue;
-    }
-
-    // Add intelligent spacing between tokens
-    const needsSpace = updatedResponse.length > 0 &&
-                      !token.content.match(/^[.,!?;:)}\]"']/) &&
-                      !updatedResponse.match(/[(\[{"'\s]$/);
-
-    if (needsSpace) {
-      updatedResponse += ' ' + token.content;
-    } else {
-      updatedResponse += token.content;
-    }
-
-    // Call the streaming callback
-    if (typeof onTokenReceived === 'function') {
-      onTokenReceived(token.content, updatedResponse);
-    }
-
-    // Check if streaming is complete
-    if (token.isComplete) {
-      break;
+    return await Promise.race([readPromise, abortPromise]);
+  } finally {
+    if (abort) {
+      signal.removeEventListener('abort', abort);
     }
   }
+};
 
-  return updatedResponse;
-}
-
-/**
- * Validate SSE response headers
- */
-export function validateSSEHeaders(response: Response): boolean {
-  const contentType = response.headers.get('content-type');
-  
-  if (!contentType || !contentType.includes('text/event-stream')) {
-    console.warn(`Expected text/event-stream but got: ${contentType}`);
-    return false;
+const validateResponse = (response: Response): void => {
+  const contentType = response.headers.get('content-type')?.toLowerCase();
+  if (!contentType?.includes('text/event-stream')) {
+    throw new SSEProtocolError('Expected text/event-stream response.');
   }
+  if (!response.body) {
+    throw new SSEProtocolError('Response body is not readable.');
+  }
+};
 
-  return true;
-}
-
-/**
- * Create enhanced SSE reader with better error handling
- */
-export async function createEnhancedSSEReader(
+export async function readSSEStream(
   response: Response,
-  onTokenReceived?: TokenCallback
-): Promise<string> {
-  if (!validateSSEHeaders(response)) {
-    throw new Error('Invalid SSE response headers');
-  }
-
-  const reader = response.body?.getReader();
-  if (!reader) {
-    throw new Error('Response body is not readable');
-  }
-
-  const decoder = new TextDecoder('utf-8');
+  options: SSEReadOptions = {},
+): Promise<SSEReadResult> {
+  validateResponse(response);
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
   let buffer = '';
-  let cumulativeResponse = '';
+  let text = '';
+  let readerWasCancelled = false;
+
+  const cancel = async (): Promise<void> => {
+    if (!readerWasCancelled) {
+      readerWasCancelled = true;
+      await cancelReader(reader);
+    }
+  };
+
+  const processBlock = (block: string): boolean => {
+    const event = parseEvent(block);
+    if (!event) {
+      return false;
+    }
+    const rendered = renderEvent(event, text, options.onText);
+    text = rendered.text;
+    return rendered.complete;
+  };
 
   try {
+    if (options.signal?.aborted) {
+      await cancel();
+      return { kind: 'cancelled', text };
+    }
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const { value, done } = await reader.read();
-
-      if (done) {
-        // Process any remaining data in the buffer
-        if (buffer.length > 0) {
-          cumulativeResponse = processSSEDataWithSpacing(
-            buffer,
-            cumulativeResponse,
-            onTokenReceived
-          );
+      let result: ReadableStreamReadResult<Uint8Array>;
+      try {
+        result = await readWithAbort(reader, options.signal);
+      } catch (cause) {
+        if (cause === ABORTED || options.signal?.aborted) {
+          await cancel();
+          return { kind: 'cancelled', text };
         }
+        throw new SSEReadError(text, cause);
+      }
+
+      if (options.signal?.aborted) {
+        await cancel();
+        return { kind: 'cancelled', text };
+      }
+
+      if (result.done) {
+        buffer += decoder.decode();
         break;
       }
 
-      const chunk = decoder.decode(value, { stream: true });
-      buffer += chunk;
-
-      // Process complete SSE events
-      const parseResult = processSSEBuffer(buffer);
-      buffer = parseResult.remainingBuffer;
-
-      // Process each complete event
-      for (const event of parseResult.events) {
-        const eventBlock = `event: ${event.type}\ndata: ${event.data}\n`;
-        cumulativeResponse = processSSEDataWithSpacing(
-          eventBlock,
-          cumulativeResponse,
-          onTokenReceived
-        );
+      buffer += decoder.decode(result.value, { stream: true });
+      let nextEvent = findEvent(buffer);
+      while (nextEvent) {
+        buffer = nextEvent.rest;
+        if (processBlock(nextEvent.block)) {
+          return { kind: 'completed', text };
+        }
+        if (options.signal?.aborted) {
+          await cancel();
+          return { kind: 'cancelled', text };
+        }
+        nextEvent = findEvent(buffer);
       }
     }
+
+    if (buffer.trim()) {
+      processBlock(buffer);
+    }
+
+    return { kind: 'completed', text };
+  } catch (error) {
+    if (error instanceof SSEObserverError) {
+      await cancel();
+      throw error;
+    }
+    if (error instanceof SSEProtocolError) {
+      await cancel();
+      throw new SSEProtocolError(error.message, text);
+    }
+    if (error instanceof SSEReadError) {
+      throw error;
+    }
+    if (error === ABORTED || options.signal?.aborted) {
+      await cancel();
+      return { kind: 'cancelled', text };
+    }
+    throw new SSEReadError(text, error);
   } finally {
     reader.releaseLock();
   }
-
-  return cumulativeResponse;
-}
-
-/**
- * Utility to check if a string looks like OpenAI JSON chunk
- */
-export function isOpenAIChunkFormat(data: string): boolean {
-  try {
-    const parsed = JSON.parse(data);
-    return !!(parsed.choices && Array.isArray(parsed.choices));
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Format error message for SSE failures
- */
-export function formatSSEError(error: any, endpoint: string): string {
-  const baseMessage = `SSE streaming failed for ${endpoint}`;
-  
-  if (error.name === 'AbortError') {
-    return `${baseMessage}: Request was aborted`;
-  }
-  
-  if (error.message?.includes('network')) {
-    return `${baseMessage}: Network connection error`;
-  }
-  
-  if (error.message?.includes('timeout')) {
-    return `${baseMessage}: Request timeout`;
-  }
-  
-  return `${baseMessage}: ${error.message || 'Unknown error'}`;
 }

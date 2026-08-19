@@ -250,8 +250,6 @@ export interface Notification extends BaseEntity {
   relatedEntityType?: string;
 }
 
-// Note: ChatMessage and ChatSession types are defined in common.ts to avoid duplication
-
 // Clinic search and booking
 export interface ClinicSearchParams {
   location?: string;

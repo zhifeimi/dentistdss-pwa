@@ -26,7 +26,6 @@ import {
   getResponsiveMargin,
   TOUCH_TARGETS
 } from '../../../utils/mobileOptimization';
-import api from '../../../services';
 
 type ChatType = 'receptionist' | 'triage';
 
@@ -34,8 +33,8 @@ type ChatType = 'receptionist' | 'triage';
  * AIReceptionistPage - AI chat interface for patients
  *
  * Features:
- * - Default receptionist mode using api.chatbot.receptionist
- * - Activatable "AI Triage" tab for api.chatbot.triage
+ * - Default receptionist mode using the shared chatbot transport
+ * - Activatable "AI Triage" tab using the selected chat agent
  * - Real-time SSE streaming responses
  * - Session management for conversation continuity
  * - Material-UI consistent design
@@ -76,11 +75,10 @@ const AIReceptionistPage: React.FC = () => {
     clearConversation(newWelcomeMessage);
   }, [clearConversation, currentUser]);
 
-  // Handle message sending with custom API endpoint
+  // Handle message sending for the selected chat agent.
   const handleSendMessage = useCallback(async () => {
-    const apiEndpoint = activeTab === 0 ? api.chatbot.receptionist : api.chatbot.triage;
-    await sendMessage(null, apiEndpoint);
-  }, [sendMessage, activeTab]);
+    await sendMessage();
+  }, [sendMessage]);
 
   // Get quick actions for current mode
   const quickActions = getQuickActions(currentChatType, setQuickInput);

@@ -1,372 +1,342 @@
-import config from '../config';
 import {
-  broadcastSessionEnded,
-  clearBearerSession,
-  clearXsrfToken,
-  getBearerSession,
-  redirectToLogin,
-  refreshSession,
-} from './config';
-import { createEnhancedSSEReader, formatSSEError, TokenCallback } from '../utils/sseUtils';
+  fetchStreamingExchange,
+  type StreamingExchange,
+  type StreamingExchangeRequest,
+} from './chatbotStream';
+import { session, SessionRefreshSupersededError } from './session';
+import {
+  readSSEStream,
+  SSEObserverError,
+  SSEProtocolError,
+  SSEReadError,
+} from '../utils/sseUtils';
 
-/**
- * Chatbot API service with enhanced SSE processing
- *
- * This service communicates with the Spring AI backend which handles all OpenAI API interactions.
- * The frontend uses OpenAI SDK utilities for improved SSE data processing and type safety.
- *
- * Features:
- * - Enhanced SSE (Server-Sent Events) streaming response handling
- * - Type safety using OpenAI SDK TypeScript definitions
- * - Improved token parsing and message formatting
- * - Session management through backend JWT authentication
- * - All OpenAI communication flows through Spring AI backend
- */
+export const CHATBOT_AGENTS = [
+  'help',
+  'aidentist',
+  'receptionist',
+  'triage',
+  'documentationSummarize',
+] as const;
 
-// Type definitions for chatbot service
-interface AuthData {
-  token: string;
-  tokenType: string;
+export type ChatbotAgent = typeof CHATBOT_AGENTS[number];
+
+export interface ChatbotSendOptions {
+  signal?: AbortSignal;
+  onText?: (text: string) => void;
 }
 
-interface AuthStatus {
-  hasToken: boolean;
-  tokenType?: string;
-  tokenLength?: number;
-  tokenPreview?: string | null;
-  storage: 'memory';
+export type ChatbotResult =
+  | { kind: 'completed'; text: string }
+  | { kind: 'cancelled'; text: string };
+
+export type ChatTransportErrorCode =
+  | 'invalid-input'
+  | 'authentication-required'
+  | 'unauthorized'
+  | 'rate-limited'
+  | 'http'
+  | 'network'
+  | 'protocol'
+  | 'observer-failed'
+  | 'session-ended';
+
+export class ChatTransportError extends Error {
+  override readonly name = 'ChatTransportError';
+
+  constructor(
+    readonly code: ChatTransportErrorCode,
+    message: string,
+    readonly status?: number,
+    readonly partialText?: string,
+  ) {
+    super(message);
+  }
 }
 
-// TokenCallback is now imported from sseUtils
+export interface ChatbotModule {
+  send(
+    agent: ChatbotAgent,
+    prompt: string,
+    options?: ChatbotSendOptions,
+  ): Promise<ChatbotResult>;
+}
 
-/**
- * Reads the in-memory bearer session shared with the axios transport.
- * @returns Object with token and tokenType, or null if not available
- */
-function getAuthToken(): AuthData | null {
-  const session = getBearerSession();
-  if (!session) {
-    return null;
+type AgentConfig = {
+  endpoint: string;
+  auth: 'optional' | 'required';
+};
+
+const AGENT_CONFIG: Record<ChatbotAgent, AgentConfig> = {
+  help: { endpoint: '/help', auth: 'optional' },
+  aidentist: { endpoint: '/aidentist', auth: 'required' },
+  receptionist: { endpoint: '/receptionist', auth: 'required' },
+  triage: { endpoint: '/triage', auth: 'required' },
+  documentationSummarize: {
+    endpoint: '/documentation/summarize',
+    auth: 'required',
+  },
+};
+
+const BASE_HEADERS = {
+  'Content-Type': 'text/plain',
+  Accept: 'text/event-stream',
+  'Cache-Control': 'no-cache',
+} as const;
+
+const errorMessages = {
+  invalidInput: 'Invalid chatbot request.',
+  authenticationRequired: 'Authentication is required for this chatbot.',
+  unauthorized: 'The chatbot request was unauthorized.',
+  rateLimited: 'The chatbot request was rate limited.',
+  http: 'The chatbot request failed.',
+  network: 'The chatbot network request failed.',
+  protocol: 'The chatbot stream had an invalid protocol.',
+  observer: 'The chatbot text observer failed.',
+  sessionEnded: 'The chatbot session ended.',
+} as const;
+
+type Cancellation = { kind: 'cancelled' };
+
+type ResponseOrCancellation = Response | Cancellation;
+
+type Settled<T> = { kind: 'fulfilled'; value: T } | { kind: 'rejected'; error: unknown };
+
+const isCancellation = (value: ResponseOrCancellation): value is Cancellation =>
+  'kind' in value && value.kind === 'cancelled';
+
+const isChatbotAgent = (value: string): value is ChatbotAgent =>
+  (CHATBOT_AGENTS as readonly string[]).includes(value);
+
+const makeHeaders = (
+  bearer: ReturnType<typeof session.getBearerSession>,
+): Record<string, string> => {
+  const headers: Record<string, string> = { ...BASE_HEADERS };
+  if (bearer) {
+    headers.Authorization = `${bearer.tokenType} ${bearer.accessToken}`;
+  }
+  return headers;
+};
+
+const raceWithCancellation = async <T>(
+  operation: Promise<T>,
+  signal: AbortSignal | undefined,
+): Promise<T | Cancellation> => {
+  if (!signal) {
+    return operation;
+  }
+  if (signal.aborted) {
+    operation.catch(() => undefined);
+    return { kind: 'cancelled' };
   }
 
-  return { token: session.accessToken, tokenType: session.tokenType || 'Bearer' };
-}
-
-
-// SSE processing is now handled by enhanced utilities in sseUtils.ts
-
-// Core function to call the backend streaming API using fetch for streaming support
-async function streamApiCall(endpoint: string, prompt: string, onTokenReceived?: TokenCallback): Promise<string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'text/plain', // Send prompt as plain text
-    'Accept': 'text/event-stream', // Expect SSE response from Spring WebFlux
-    'Cache-Control': 'no-cache', // Prevent caching of SSE streams
-  };
-
-  // Add authentication token with improved validation
-  const authData = getAuthToken();
-  if (authData) {
-    headers['Authorization'] = `${authData.tokenType} ${authData.token}`;
-    console.log(`Making authenticated request to ${endpoint} with token type: ${authData.tokenType}`);
-  } else {
-    console.warn(`No valid authentication token available for ${endpoint}`);
-    // For endpoints that require authentication, this will result in a 401 error
-    // which is handled below
-  }
-
-  // Use the same base URL pattern as other services
-  const baseURL = config.api.baseUrl;
-  const fullUrl = `${baseURL}/api/genai/chatbot${endpoint}`;
+  let abort: (() => void) | undefined;
+  const cancellation = new Promise<Cancellation>((resolve) => {
+    abort = () => resolve({ kind: 'cancelled' });
+    signal.addEventListener('abort', abort, { once: true });
+  });
+  operation.catch(() => undefined);
 
   try {
-    const response = await fetch(fullUrl, {
-      method: 'POST',
-      headers: headers,
-      body: prompt,
-      credentials: 'include', // Include cookies for session management
-    });
-
-    if (!response.ok) {
-      let errorMessage = `API call failed with status ${response.status}`;
-      try {
-        const text = await response.text();
-        errorMessage = text || errorMessage;
-      } catch (e) {
-        // Ignore if can't read text
-      }
-
-      console.error(`Chatbot API Error for ${endpoint}:`, {
-        status: response.status,
-        statusText: response.statusText,
-        message: errorMessage,
-        url: fullUrl,
-        hasAuthToken: !!authData,
-        tokenType: authData?.tokenType
-      });
-
-      // Handle authentication errors following established pattern
-      if (response.status === 401) {
-        let sessionEnded = authData !== null;
-        if (sessionEnded) {
-          // The bearer may simply have expired: attempt one shared,
-          // cookie-backed refresh before giving up on the session.
-          try {
-            await refreshSession();
-            sessionEnded = false;
-          } catch (_) {
-            sessionEnded = true;
-          }
-        }
-
-        if (sessionEnded) {
-          console.error('Authentication failed - clearing the in-memory session');
-          clearBearerSession();
-          clearXsrfToken();
-          broadcastSessionEnded();
-        }
-
-        // Provide a specific error message based on context
-        const authErrorMessage = sessionEnded
-          ? 'Your session has expired. Please log in again.'
-          : authData
-          ? 'Your session was refreshed. Please send your message again.'
-          : 'Authentication required. Please log in to access this feature.';
-
-        // Dispatch error event following established pattern
-        const event = new CustomEvent('show-snackbar', {
-          detail: {
-            message: authErrorMessage,
-            severity: 'error',
-          },
-        });
-        window.dispatchEvent(event);
-
-        // Only a user who actually had a session is sent back to login, after
-        // a short delay to allow the message to be seen. Anonymous visitors
-        // stay on the current page.
-        if (sessionEnded) {
-          setTimeout(() => {
-            redirectToLogin();
-          }, 2000);
-        }
-      }
-
-      // Pass error to callback
-      if (typeof onTokenReceived === 'function') {
-        onTokenReceived(errorMessage, errorMessage);
-      }
-      throw new Error(errorMessage);
+    return await Promise.race([operation, cancellation]);
+  } finally {
+    if (abort) {
+      signal.removeEventListener('abort', abort);
     }
-
-    // Use enhanced SSE reader with OpenAI SDK utilities
-    const cumulativeResponse = await createEnhancedSSEReader(response, onTokenReceived);
-    return cumulativeResponse;
-  } catch (error) {
-    console.error('Error in streamApiCall:', error);
-
-    // Use enhanced error formatting
-    let userMessage = formatSSEError(error, endpoint);
-    const errorMessage = (error as Error).message;
-
-    // Handle specific backend error messages
-    if (errorMessage && errorMessage.includes("maximal inquiries")) {
-      userMessage = errorMessage; // Use specific rate limit message
-    } else if (errorMessage && errorMessage.includes("SSE streaming failed")) {
-      userMessage = 'Sorry, I encountered a connection error. Please try again.';
-    } else if (!userMessage.includes('SSE streaming failed')) {
-      userMessage = 'Sorry, I encountered an error processing your request. Please try again.';
-    }
-
-    // Dispatch error event following established pattern
-    const event = new CustomEvent('show-snackbar', {
-      detail: {
-        message: userMessage,
-        severity: 'error',
-      },
-    });
-    window.dispatchEvent(event);
-
-    // Pass error to callback
-    if (typeof onTokenReceived === 'function') {
-      onTokenReceived(userMessage, userMessage);
-    }
-
-    throw error; // Re-throw for caller handling
-  }
-}
-
-/**
- * Enhanced Chatbot API with backend-only OpenAI integration
- *
- * All OpenAI communication flows through the Spring AI backend.
- * Frontend uses enhanced SSE processing with OpenAI SDK utilities for better data handling.
- * User identification is handled through JWT authentication tokens.
- */
-const chatbotAPI = {
-  /**
-   * General help chatbot - no authentication required
-   * @param userInput - The user's message
-   * @param onTokenReceived - Callback for streaming tokens (token, fullResponse) => void
-   * @returns Complete response text
-   */
-  async help(userInput: string, onTokenReceived?: TokenCallback): Promise<string> {
-    const response = await streamApiCall('/help', userInput, onTokenReceived);
-    return response;
-  },
-
-  /**
-   * AI Dentist chatbot - requires authentication
-   * @param userInput - The user's message
-   * @param onTokenReceived - Callback for streaming tokens (token, fullResponse) => void
-   * @returns Complete response text
-   */
-  async aidentist(userInput: string, onTokenReceived?: TokenCallback): Promise<string> {
-    const authData = getAuthToken();
-    if (!authData) {
-      const authErrorMsg = 'Authentication required to access the AI Dentist. Please log in.';
-      console.error(authErrorMsg);
-
-      // Dispatch error event for consistency
-      const event = new CustomEvent('show-snackbar', {
-        detail: {
-          message: authErrorMsg,
-          severity: 'error',
-        },
-      });
-      window.dispatchEvent(event);
-
-      if (typeof onTokenReceived === 'function') {
-        onTokenReceived(authErrorMsg, authErrorMsg);
-      }
-      return Promise.reject(new Error(authErrorMsg));
-    }
-    const response = await streamApiCall('/aidentist', userInput, onTokenReceived);
-    return response;
-  },
-
-  /**
-   * Triage chatbot - requires authentication
-   * @param userInput - The user's message
-   * @param onTokenReceived - Callback for streaming tokens (token, fullResponse) => void
-   * @returns Complete response text
-   */
-  async triage(userInput: string, onTokenReceived?: TokenCallback): Promise<string> {
-    // Check authentication first
-    const authData = getAuthToken();
-    if (!authData) {
-      const authErrorMsg = 'Authentication required to access the Triage chatbot. Please log in.';
-      console.error(authErrorMsg);
-
-      const event = new CustomEvent('show-snackbar', {
-        detail: {
-          message: authErrorMsg,
-          severity: 'error',
-        },
-      });
-      window.dispatchEvent(event);
-
-      if (typeof onTokenReceived === 'function') {
-        onTokenReceived(authErrorMsg, authErrorMsg);
-      }
-      return Promise.reject(new Error(authErrorMsg));
-    }
-
-    const response = await streamApiCall('/triage', userInput, onTokenReceived);
-    return response;
-  },
-
-  /**
-   * Receptionist chatbot - requires authentication
-   * @param userInput - The user's message
-   * @param onTokenReceived - Callback for streaming tokens (token, fullResponse) => void
-   * @returns Complete response text
-   */
-  async receptionist(userInput: string, onTokenReceived?: TokenCallback): Promise<string> {
-    // Check authentication first
-    const authData = getAuthToken();
-    if (!authData) {
-      const authErrorMsg = 'Authentication required to access the Receptionist chatbot. Please log in.';
-      console.error(authErrorMsg);
-
-      const event = new CustomEvent('show-snackbar', {
-        detail: {
-          message: authErrorMsg,
-          severity: 'error',
-        },
-      });
-      window.dispatchEvent(event);
-
-      if (typeof onTokenReceived === 'function') {
-        onTokenReceived(authErrorMsg, authErrorMsg);
-      }
-      return Promise.reject(new Error(authErrorMsg));
-    }
-
-    const response = await streamApiCall('/receptionist', userInput, onTokenReceived);
-    return response;
-  },
-
-  /**
-   * Documentation summarization chatbot - requires authentication
-   * @param userInput - The user's message
-   * @param onTokenReceived - Callback for streaming tokens (token, fullResponse) => void
-   * @returns Complete response text
-   */
-  async documentationSummarize(userInput: string, onTokenReceived?: TokenCallback): Promise<string> {
-    // Check authentication first
-    const authData = getAuthToken();
-    if (!authData) {
-      const authErrorMsg = 'Authentication required to access Documentation Summarization. Please log in.';
-      console.error(authErrorMsg);
-
-      const event = new CustomEvent('show-snackbar', {
-        detail: {
-          message: authErrorMsg,
-          severity: 'error',
-        },
-      });
-      window.dispatchEvent(event);
-
-      if (typeof onTokenReceived === 'function') {
-        onTokenReceived(authErrorMsg, authErrorMsg);
-      }
-      return Promise.reject(new Error(authErrorMsg));
-    }
-
-    const response = await streamApiCall('/documentation/summarize', userInput, onTokenReceived);
-    return response;
-  },
-
-  // Legacy function names for backward compatibility
-  botAssistant(userInput: string, onTokenReceived?: TokenCallback): Promise<string> {
-    return this.help(userInput, onTokenReceived);
-  },
-
-  botDentist(userInput: string, onTokenReceived?: TokenCallback): Promise<string> {
-    return this.aidentist(userInput, onTokenReceived);
-  },
-
-  // Additional utility methods
-  isBackendIntegrationEnabled(): boolean {
-    // Always true since we use backend-only OpenAI integration
-    return true;
-  },
-
-  /**
-   * Debug utility to check authentication status
-   * @returns Authentication status information
-   */
-  getAuthStatus(): AuthStatus {
-    const authData = getAuthToken();
-    return {
-      hasToken: !!authData,
-      tokenType: authData?.tokenType,
-      tokenLength: authData?.token?.length,
-      // Don't log the actual token for security
-      tokenPreview: authData?.token ? `${authData.token.substring(0, 10)}...` : null,
-      storage: 'memory',
-    };
   }
 };
+
+const settledRefresh = (refreshPromise: Promise<unknown>): Promise<Settled<unknown>> =>
+  refreshPromise.then(
+    (value) => ({ kind: 'fulfilled', value }),
+    (error) => ({ kind: 'rejected', error }),
+  );
+
+const request = (
+  exchange: StreamingExchange,
+  endpoint: string,
+  prompt: string,
+  bearer: ReturnType<typeof session.getBearerSession>,
+  signal: AbortSignal | undefined,
+): Promise<Response> => {
+  const exchangeRequest: StreamingExchangeRequest = {
+    body: prompt,
+    headers: makeHeaders(bearer),
+    signal,
+  };
+  return Promise.resolve().then(() => exchange.post(endpoint, exchangeRequest));
+};
+
+const mapHttpError = (response: Response): ChatTransportError => {
+  if (response.status === 429) {
+    return new ChatTransportError('rate-limited', errorMessages.rateLimited, response.status);
+  }
+  return new ChatTransportError('http', errorMessages.http, response.status);
+};
+
+const requestOrNetworkError = async (
+  exchange: StreamingExchange,
+  endpoint: string,
+  prompt: string,
+  bearer: ReturnType<typeof session.getBearerSession>,
+  signal: AbortSignal | undefined,
+): Promise<Response | Cancellation> => {
+  try {
+    return await raceWithCancellation(
+      request(exchange, endpoint, prompt, bearer, signal),
+      signal,
+    );
+  } catch (_) {
+    if (signal?.aborted) {
+      return { kind: 'cancelled' };
+    }
+    throw new ChatTransportError('network', errorMessages.network);
+  }
+};
+
+const readResponse = async (
+  response: Response,
+  signal: AbortSignal | undefined,
+  onText: ((text: string) => void) | undefined,
+): Promise<ChatbotResult> => {
+  try {
+    return await readSSEStream(response, { signal, onText });
+  } catch (error) {
+    if (error instanceof SSEObserverError) {
+      throw new ChatTransportError(
+        'observer-failed',
+        errorMessages.observer,
+        undefined,
+        error.partialText,
+      );
+    }
+    if (error instanceof SSEProtocolError) {
+      throw new ChatTransportError(
+        'protocol',
+        errorMessages.protocol,
+        undefined,
+        error.partialText,
+      );
+    }
+    if (error instanceof SSEReadError) {
+      throw new ChatTransportError('network', errorMessages.network, undefined, error.partialText);
+    }
+    throw new ChatTransportError('network', errorMessages.network);
+  }
+};
+
+const createModule = (exchange: StreamingExchange): ChatbotModule => ({
+  async send(agent, prompt, options = {}): Promise<ChatbotResult> {
+    if (!isChatbotAgent(agent) || typeof prompt !== 'string') {
+      throw new ChatTransportError('invalid-input', errorMessages.invalidInput);
+    }
+
+    const normalizedPrompt = prompt.trim();
+    if (!normalizedPrompt) {
+      throw new ChatTransportError('invalid-input', errorMessages.invalidInput);
+    }
+
+    const { signal, onText } = options;
+    if (signal?.aborted) {
+      return { kind: 'cancelled', text: '' };
+    }
+
+    const agentConfig = AGENT_CONFIG[agent];
+    const initialBearer = session.getBearerSession();
+    if (agentConfig.auth === 'required' && !initialBearer) {
+      throw new ChatTransportError(
+        'authentication-required',
+        errorMessages.authenticationRequired,
+      );
+    }
+
+    const firstResponse = await requestOrNetworkError(
+      exchange,
+      agentConfig.endpoint,
+      normalizedPrompt,
+      initialBearer,
+      signal,
+    );
+    if (isCancellation(firstResponse)) {
+      return { kind: 'cancelled', text: '' };
+    }
+
+    if (firstResponse.ok) {
+      return readResponse(firstResponse, signal, onText);
+    }
+
+    if (firstResponse.status !== 401 || !initialBearer) {
+      if (firstResponse.status === 401) {
+        throw new ChatTransportError('unauthorized', errorMessages.unauthorized, 401);
+      }
+      throw mapHttpError(firstResponse);
+    }
+
+    const refreshPromise = Promise.resolve().then(() => session.refreshSession());
+    const refreshResult = await raceWithCancellation(
+      settledRefresh(refreshPromise),
+      signal,
+    );
+    if ('kind' in refreshResult && refreshResult.kind === 'cancelled') {
+      return { kind: 'cancelled', text: '' };
+    }
+    const refreshWasSuperseded = refreshResult.kind === 'rejected' &&
+      refreshResult.error instanceof SessionRefreshSupersededError;
+    if (refreshWasSuperseded) {
+      if (signal?.aborted) {
+        return { kind: 'cancelled', text: '' };
+      }
+      throw new ChatTransportError('unauthorized', errorMessages.unauthorized, 401);
+    }
+    if (refreshResult.kind === 'rejected') {
+      session.terminateSession({ redirect: true });
+      throw new ChatTransportError('session-ended', errorMessages.sessionEnded, 401);
+    }
+
+    if (signal?.aborted) {
+      return { kind: 'cancelled', text: '' };
+    }
+    const rotatedBearer = session.getBearerSession();
+    if (!rotatedBearer) {
+      if (!refreshWasSuperseded) {
+        session.terminateSession({ redirect: true });
+      }
+      throw new ChatTransportError('session-ended', errorMessages.sessionEnded, 401);
+    }
+    if (signal?.aborted) {
+      return { kind: 'cancelled', text: '' };
+    }
+
+    const replayResponse = await requestOrNetworkError(
+      exchange,
+      agentConfig.endpoint,
+      normalizedPrompt,
+      rotatedBearer,
+      signal,
+    );
+    if (isCancellation(replayResponse)) {
+      return { kind: 'cancelled', text: '' };
+    }
+    if (replayResponse.status === 401) {
+      session.terminateSession({ redirect: true });
+      throw new ChatTransportError('session-ended', errorMessages.sessionEnded, 401);
+    }
+    if (!replayResponse.ok) {
+      throw mapHttpError(replayResponse);
+    }
+
+    return readResponse(replayResponse, signal, onText);
+  },
+});
+
+export const createChatbotModule = (exchange: StreamingExchange = fetchStreamingExchange): ChatbotModule =>
+  createModule(exchange);
+
+const chatbotAPI: ChatbotModule = createChatbotModule();
+
+export type {
+  StreamingExchange,
+  StreamingExchangeRequest,
+} from './chatbotStream';
 
 export default chatbotAPI;
