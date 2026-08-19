@@ -1,30 +1,48 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const interceptors = vi.hoisted(() => ({
-  requestFulfilled: undefined as any,
-  responseFulfilled: undefined as any,
-}));
+const axiosMocks = vi.hoisted(() => {
+  const interceptors = {
+    requestFulfilled: undefined as any,
+    responseFulfilled: undefined as any,
+  };
+  const state = { createCount: 0 };
+  const rawAuth: any = {
+    get: vi.fn(),
+    post: vi.fn(),
+  };
+  const ordinary: any = {
+    interceptors: {
+      request: {
+        use: (onFulfilled: any) => {
+          interceptors.requestFulfilled = onFulfilled;
+        },
+      },
+      response: {
+        use: (onFulfilled: any) => {
+          interceptors.responseFulfilled = onFulfilled;
+        },
+      },
+    },
+  };
+  return { state, rawAuth, ordinary, interceptors };
+});
 
 vi.mock('axios', () => ({
   default: {
-    create: vi.fn(() => ({
-      interceptors: {
-        request: {
-          use: (onFulfilled: any) => {
-            interceptors.requestFulfilled = onFulfilled;
-          },
-        },
-        response: {
-          use: (onFulfilled: any) => {
-            interceptors.responseFulfilled = onFulfilled;
-          },
-        },
-      },
-    })),
+    create: vi.fn(() => {
+      const client = axiosMocks.state.createCount % 2 === 0
+        ? axiosMocks.rawAuth
+        : axiosMocks.ordinary;
+      axiosMocks.state.createCount += 1;
+      return client;
+    }),
   },
 }));
 
-import { clearBearerSession, clearXsrfToken, setBearerSession } from '../../src/services/config';
+import { clearBearerSession, clearXsrfToken, setBearerSession } from '../../src/services/session';
+import '../../src/services/config';
+
+const { interceptors } = axiosMocks;
 
 describe('XSRF transport', () => {
   beforeEach(() => {

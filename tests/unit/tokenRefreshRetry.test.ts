@@ -2,14 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const axiosMocks = vi.hoisted(() => {
   const interceptors = {
+    requestFulfilled: undefined as any,
     responseRejected: undefined as any,
+  };
+  const state = { createCount: 0 };
+  const rawAuth: any = {
+    get: vi.fn(),
+    post: vi.fn(),
   };
   const instance: any = vi.fn();
   instance.get = vi.fn();
   instance.post = vi.fn();
   instance.interceptors = {
     request: {
-      use: vi.fn(),
+      use: (onFulfilled: any) => {
+        interceptors.requestFulfilled = onFulfilled;
+      },
     },
     response: {
       use: (_onFulfilled: any, onRejected: any) => {
@@ -17,22 +25,29 @@ const axiosMocks = vi.hoisted(() => {
       },
     },
   };
-  return { instance, interceptors };
+  return { state, rawAuth, instance, interceptors };
 });
 
 vi.mock('axios', () => ({
   default: {
-    create: vi.fn(() => axiosMocks.instance),
+    create: vi.fn(() => {
+      const client = axiosMocks.state.createCount % 2 === 0
+        ? axiosMocks.rawAuth
+        : axiosMocks.instance;
+      axiosMocks.state.createCount += 1;
+      return client;
+    }),
   },
 }));
 
-import {
+import session, {
   clearBearerSession,
   clearXsrfToken,
   getBearerSession,
   hasBearerSession,
   setBearerSession,
-} from '../../src/services/config';
+} from '../../src/services/session';
+import '../../src/services/config';
 
 const HOME_URL = 'http://localhost:3000/';
 
@@ -48,8 +63,8 @@ const make401 = (overrides: Record<string, unknown> = {}) => ({
 
 describe('401 refresh-retry transport', () => {
   beforeEach(() => {
-    axiosMocks.instance.get.mockReset();
-    axiosMocks.instance.post.mockReset();
+    axiosMocks.rawAuth.get.mockReset();
+    axiosMocks.rawAuth.post.mockReset();
     axiosMocks.instance.mockReset();
     clearXsrfToken();
     clearBearerSession();
@@ -59,24 +74,170 @@ describe('401 refresh-retry transport', () => {
 
   it('refreshes once and replays the failed request with the rotated token', async () => {
     setBearerSession('expired-token', 'Bearer');
-    axiosMocks.instance.get.mockResolvedValue({});
-    axiosMocks.instance.post.mockResolvedValue({
-      accessToken: 'rotated-token',
-      tokenType: 'Bearer',
+    axiosMocks.rawAuth.get.mockResolvedValue({});
+    axiosMocks.rawAuth.post.mockResolvedValue({
+      headers: {},
+      data: {
+        accessToken: 'rotated-token',
+        tokenType: 'Bearer',
+      },
     });
     axiosMocks.instance.mockResolvedValue({ id: 'replayed' });
 
     const result = await axiosMocks.interceptors.responseRejected(make401());
 
-    expect(axiosMocks.instance.post).toHaveBeenCalledWith('/api/auth/refresh', undefined, {
-      suppressErrorSnackbar: true,
-    });
+    expect(axiosMocks.rawAuth.post).toHaveBeenCalledWith(
+      '/api/auth/refresh',
+      undefined,
+      undefined,
+    );
     expect(axiosMocks.instance).toHaveBeenCalledTimes(1);
     expect(axiosMocks.instance.mock.calls[0][0]._retry).toBe(true);
     expect(result).toEqual({ id: 'replayed' });
     expect(getBearerSession()).toEqual({ accessToken: 'rotated-token', tokenType: 'Bearer' });
     expect(localStorage.getItem('authToken')).toBeNull();
     expect(window.location.href).toBe(HOME_URL);
+  });
+
+  it.each([
+    {
+      label: 'HTTP 500',
+      createError: (request: any) => ({
+        config: request,
+        response: { status: 500, data: {} },
+      }),
+      message: 'Internal Server Error. Please try again later.',
+    },
+    {
+      label: 'network',
+      createError: (request: any) => ({
+        config: request,
+        request: { readyState: 4 },
+        message: 'network replay failed',
+      }),
+      message: 'No response from server. Please check your connection.',
+    },
+  ])(
+    'propagates a same-epoch replay $label without outer 401 handling',
+    async ({ createError, message }) => {
+      setBearerSession('expired-token', 'Bearer');
+      axiosMocks.rawAuth.get.mockResolvedValue({});
+      axiosMocks.rawAuth.post.mockResolvedValue({
+        headers: {},
+        data: {
+          accessToken: 'rotated-token',
+          tokenType: 'Bearer',
+        },
+      });
+      let replayError: any;
+      axiosMocks.instance.mockImplementation(async (request: any) => {
+        const prepared = axiosMocks.interceptors.requestFulfilled(request);
+        expect(prepared.headers.Authorization).toBe('Bearer rotated-token');
+        expect(prepared._retry).toBe(true);
+        replayError = createError(prepared);
+        return axiosMocks.interceptors.responseRejected(replayError);
+      });
+      const snackbars: unknown[] = [];
+      const dispatchEvent = vi.spyOn(window, 'dispatchEvent').mockImplementation((event: Event) => {
+        if (event.type === 'show-snackbar') {
+          snackbars.push((event as CustomEvent).detail);
+        }
+        return true;
+      });
+      const terminateSession = vi.spyOn(session, 'terminateSession');
+
+      try {
+        const pending = axiosMocks.interceptors.responseRejected(make401());
+        const pendingResult = pending.catch((error: unknown) => error);
+
+        await vi.waitFor(() => expect(replayError).toBeDefined());
+        const result = await pendingResult;
+        expect(result).toBe(replayError);
+        expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1);
+        expect(axiosMocks.instance).toHaveBeenCalledTimes(1);
+        expect(axiosMocks.instance.mock.calls[0][0]._retry).toBe(true);
+        expect(getBearerSession()).toEqual({
+          accessToken: 'rotated-token',
+          tokenType: 'Bearer',
+        });
+        expect(terminateSession).not.toHaveBeenCalled();
+        expect(window.location.href).toBe(HOME_URL);
+        expect(snackbars).toEqual([{ message, severity: 'error' }]);
+      } finally {
+        terminateSession.mockRestore();
+        dispatchEvent.mockRestore();
+      }
+    },
+  );
+
+  it('rejects the superseded mutation without replaying it under the newer bearer', async () => {
+    setBearerSession('expired-token', 'Bearer');
+    axiosMocks.rawAuth.get.mockResolvedValue({});
+    let rejectRefresh: (reason?: unknown) => void = () => {};
+    axiosMocks.rawAuth.post.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRefresh = reject;
+        }),
+    );
+    const originalError = make401({
+      url: '/api/users/password',
+      method: 'post',
+      data: { currentPassword: 'a-password', newPassword: 'attacker-chosen' },
+    });
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent');
+    const terminateSession = vi.spyOn(session, 'terminateSession');
+    const clearLocalSession = vi.spyOn(session, 'clearLocalSession');
+
+    try {
+      const pending = axiosMocks.interceptors.responseRejected(originalError);
+      await vi.waitFor(() => expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1));
+      setBearerSession('newer-token', 'Bearer');
+      rejectRefresh(new Error('stale refresh failure'));
+
+      await expect(pending).rejects.toBe(originalError);
+      expect(originalError.config._retry).toBe(true);
+      expect(originalError.config._refreshSuperseded).toBe(true);
+      expect(axiosMocks.instance).not.toHaveBeenCalled();
+      expect(getBearerSession()).toEqual({ accessToken: 'newer-token', tokenType: 'Bearer' });
+      expect(clearLocalSession).not.toHaveBeenCalled();
+      expect(terminateSession).not.toHaveBeenCalled();
+      expect(window.location.href).toBe(HOME_URL);
+      expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'show-snackbar' }));
+      expect(dispatchEvent).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'session-ended' }));
+    } finally {
+      clearLocalSession.mockRestore();
+      terminateSession.mockRestore();
+      dispatchEvent.mockRestore();
+    }
+  });
+
+
+  it('does not repeat terminal effects when superseded refresh follows logout', async () => {
+    setBearerSession('expired-token', 'Bearer');
+    axiosMocks.rawAuth.get.mockResolvedValue({});
+    let rejectRefresh: (reason?: unknown) => void = () => {};
+    axiosMocks.rawAuth.post.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRefresh = reject;
+        }),
+    );
+    const terminateSession = vi.spyOn(session, 'terminateSession');
+
+    try {
+      const pending = axiosMocks.interceptors.responseRejected(make401());
+      await vi.waitFor(() => expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1));
+      session.terminateSession({ redirect: true });
+      rejectRefresh(new Error('stale refresh failure'));
+
+      await expect(pending).rejects.toBeDefined();
+      expect(terminateSession).toHaveBeenCalledTimes(1);
+      expect(axiosMocks.instance).not.toHaveBeenCalled();
+      expect(hasBearerSession()).toBe(false);
+    } finally {
+      terminateSession.mockRestore();
+    }
   });
 
   it('never replays cookie-session or credential routes', async () => {
@@ -96,7 +257,7 @@ describe('401 refresh-retry transport', () => {
         axiosMocks.interceptors.responseRejected(make401(route)),
       ).rejects.toBeDefined();
 
-      expect(axiosMocks.instance.post).not.toHaveBeenCalled();
+      expect(axiosMocks.rawAuth.post).not.toHaveBeenCalled();
       expect(axiosMocks.instance).not.toHaveBeenCalled();
       expect(hasBearerSession()).toBe(false);
       // Cookie-session endpoints own their failure handling; credential
@@ -107,8 +268,8 @@ describe('401 refresh-retry transport', () => {
 
   it('redirects to login when the refresh itself fails', async () => {
     setBearerSession('expired-token', 'Bearer');
-    axiosMocks.instance.get.mockResolvedValue({});
-    axiosMocks.instance.post.mockRejectedValue(new Error('refresh dead'));
+    axiosMocks.rawAuth.get.mockResolvedValue({});
+    axiosMocks.rawAuth.post.mockRejectedValue(new Error('refresh dead'));
 
     await expect(
       axiosMocks.interceptors.responseRejected(make401()),
@@ -122,11 +283,12 @@ describe('401 refresh-retry transport', () => {
   it('shares a single refresh across concurrent 401 retries', async () => {
     setBearerSession('expired-token', 'Bearer');
     let resolveRefresh: (value: unknown) => void = () => {};
-    axiosMocks.instance.get.mockResolvedValue({});
-    axiosMocks.instance.post.mockImplementation(
-      () => new Promise((resolve) => {
-        resolveRefresh = resolve;
-      }),
+    axiosMocks.rawAuth.get.mockResolvedValue({});
+    axiosMocks.rawAuth.post.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRefresh = resolve;
+        }),
     );
     axiosMocks.instance.mockResolvedValue('replayed');
 
@@ -136,13 +298,14 @@ describe('401 refresh-retry transport', () => {
     const second = axiosMocks.interceptors.responseRejected(
       make401({ url: '/api/clinical-records/list' }),
     );
-    await vi.waitFor(() =>
-      expect(axiosMocks.instance.post).toHaveBeenCalledTimes(1)
-    );
-    resolveRefresh({ accessToken: 'rotated-token', tokenType: 'Bearer' });
+    await vi.waitFor(() => expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1));
+    resolveRefresh({
+      headers: {},
+      data: { accessToken: 'rotated-token', tokenType: 'Bearer' },
+    });
     const results = await Promise.all([first, second]);
 
-    expect(axiosMocks.instance.post).toHaveBeenCalledTimes(1);
+    expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1);
     expect(axiosMocks.instance).toHaveBeenCalledTimes(2);
     expect(results).toEqual(['replayed', 'replayed']);
   });
@@ -156,7 +319,7 @@ describe('401 refresh-retry transport', () => {
       axiosMocks.interceptors.responseRejected(error),
     ).rejects.toBeDefined();
 
-    expect(axiosMocks.instance.post).not.toHaveBeenCalled();
+    expect(axiosMocks.rawAuth.post).not.toHaveBeenCalled();
     expect(hasBearerSession()).toBe(false);
     expect(window.location.href).toBe('/login');
   });
@@ -171,14 +334,14 @@ describe('401 refresh-retry transport', () => {
       }),
     ).rejects.toBeDefined();
 
-    expect(axiosMocks.instance.post).not.toHaveBeenCalled();
+    expect(axiosMocks.rawAuth.post).not.toHaveBeenCalled();
     expect(getBearerSession()).toEqual({ accessToken: 'valid-token', tokenType: 'Bearer' });
     expect(window.location.href).toBe(HOME_URL);
   });
 
   it('clears state without redirecting when an anonymous call gets a 401', async () => {
-    axiosMocks.instance.get.mockRejectedValue(new Error('no cookie session'));
-    axiosMocks.instance.post.mockRejectedValue(new Error('no cookie session'));
+    axiosMocks.rawAuth.get.mockRejectedValue(new Error('no cookie session'));
+    axiosMocks.rawAuth.post.mockRejectedValue(new Error('no cookie session'));
 
     await expect(
       axiosMocks.interceptors.responseRejected(make401()),
@@ -186,7 +349,7 @@ describe('401 refresh-retry transport', () => {
 
     // The refresh is attempted once (the call is retry-eligible) but no
     // redirect or broadcast follows its failure: there was no session.
-    expect(axiosMocks.instance.post).toHaveBeenCalledTimes(1);
+    expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1);
     expect(hasBearerSession()).toBe(false);
     expect(window.location.href).toBe(HOME_URL);
   });

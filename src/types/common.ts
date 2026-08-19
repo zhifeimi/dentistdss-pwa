@@ -98,37 +98,3 @@ export interface FileUpload {
   url?: string;
   error?: string;
 }
-
-// Chatbot and OpenAI types
-export type ChatType = 'help' | 'aidentist' | 'receptionist' | 'triage' | 'documentationSummarize';
-
-export interface ChatMessage {
-  id: string | number;
-  type: 'user' | 'ai';
-  content: string;
-  timestamp: Date;
-  isStreaming?: boolean;
-}
-
-// OpenAI streaming callback types
-export type StreamCallback = (token: string, fullText: string) => void;
-export type TokenCallback = (token: string, fullResponse: string) => void;
-
-// Session management types
-export interface ChatSession {
-  sessionId: string;
-  chatType: ChatType;
-  userId?: number;
-  createdAt: Date;
-  lastActivity: Date;
-  isActive: boolean;
-}
-
-export interface SessionStorageData {
-  sessionId: string;
-  chatType: ChatType;
-  userId?: number;
-  createdAt: string;
-  lastActivity: string;
-  expiresAt: string;
-}

@@ -6,6 +6,11 @@ const axiosMocks = vi.hoisted(() => {
     requestFulfilled: undefined as any,
     responseRejected: undefined as any,
   };
+  const state = { createCount: 0 };
+  const rawAuth: any = {
+    get: vi.fn(),
+    post: vi.fn(),
+  };
   const instance: any = vi.fn();
   instance.get = vi.fn();
   instance.post = vi.fn();
@@ -21,12 +26,18 @@ const axiosMocks = vi.hoisted(() => {
       },
     },
   };
-  return { instance, interceptors };
+  return { state, rawAuth, instance, interceptors };
 });
 
 vi.mock('axios', () => ({
   default: {
-    create: vi.fn(() => axiosMocks.instance),
+    create: vi.fn(() => {
+      const client = axiosMocks.state.createCount % 2 === 0
+        ? axiosMocks.rawAuth
+        : axiosMocks.instance;
+      axiosMocks.state.createCount += 1;
+      return client;
+    }),
   },
 }));
 
@@ -35,9 +46,9 @@ import {
   clearXsrfToken,
   getBearerSession,
   hasBearerSession,
-  redirectToLogin,
   setBearerSession,
-} from '../../src/services/config';
+} from '../../src/services/session';
+import { redirectToLogin } from '../../src/services/config';
 
 const HOME_URL = 'http://localhost:3000/';
 
@@ -188,6 +199,7 @@ describe('snackbar suppression for internal transport requests', () => {
 // dynamically imported instances — re-importing resets module state.
 describe('module initialization', () => {
   beforeEach(() => {
+    axiosMocks.state.createCount = 0;
     localStorage.clear();
     window.location.href = HOME_URL;
     window.location.pathname = '/';

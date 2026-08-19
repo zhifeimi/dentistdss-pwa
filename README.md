@@ -68,18 +68,13 @@ The service worker caches only same-origin navigation and static assets. Request
 
 ## Backend-only AI integration
 
-All OpenAI communication is handled by the Spring AI backend. The browser receives streamed responses from authenticated backend endpoints and does not contain an OpenAI API key.
+All AI communication is handled by the Spring AI backend. The browser receives streamed responses from backend endpoints and does not contain a provider API key.
 
 ```typescript
-const response = await api.chatbot.help(
-  'What are your clinic hours?',
-  onStreamCallback,
-);
-
-const clinicalResponse = await api.chatbot.aidentist(
-  'Patient symptoms...',
-  onStreamCallback,
-);
+const response = await api.chatbot.send('help', prompt, {
+  signal,
+  onText: (text) => updateMessage(text),
+});
 ```
 
 ## Deployment

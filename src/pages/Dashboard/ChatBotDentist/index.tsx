@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import api from '../../../services';
+import { ChatTransportError } from '../../../services/chatbot';
 import MessageBubble from '../../../components/MessageBubble';
 
 
@@ -58,6 +59,10 @@ const ChatInterface: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const loadingRef = useRef(false);
+  const latestTextRef = useRef('');
+  const isMountedRef = useRef(true);
 
   const scrollToBottom = useCallback(() => {
     if (isAtBottom) {
@@ -82,6 +87,14 @@ const ChatInterface: React.FC = () => {
     }
     return undefined;
   }, [handleScroll]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     let dotsInterval: NodeJS.Timeout;
@@ -114,13 +127,17 @@ const ChatInterface: React.FC = () => {
     scrollToBottom();
   }, [messages, thinking, showThinking, scrollToBottom]);
 
-  const processThinkingContent = useCallback((fullText: string, updatedMessages: Message[]) => {
+  const processThinkingContent = useCallback((
+    fullText: string,
+    updatedMessages: Message[],
+    isFinal: boolean,
+  ) => {
     const thinkMatch = fullText.match(new RegExp(`${THINK_TAG_START}(.*?)`, 's'));
     if (!thinkMatch) {
       return {
         updatedMessages: [
           ...updatedMessages.slice(0, -1),
-          { role: 'assistant' as const, content: fullText, isStreaming: true }
+          { role: 'assistant' as const, content: fullText, isStreaming: !isFinal }
         ],
         shouldShowThinking: false
       };
@@ -140,7 +157,7 @@ const ChatInterface: React.FC = () => {
             role: 'assistant' as const,
             content: fullText.substring(0, fullText.indexOf(THINK_TAG_START)).trim(),
             thinking: thinkingText,
-            isStreaming: true
+            isStreaming: !isFinal
           }
         ],
         shouldShowThinking: true
@@ -158,18 +175,25 @@ const ChatInterface: React.FC = () => {
           role: 'assistant' as const,
           content: finalContent,
           thinking: completeThinkingText,
-          isStreaming: false
+          isStreaming: !isFinal
         }
       ],
-      shouldShowThinking: false
+      shouldShowThinking: !isFinal
     };
   }, []);
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    const prompt = input;
+    if (!prompt.trim() || loadingRef.current) return;
 
-    const userMessage: Message = { role: 'user', content: input };
+    loadingRef.current = true;
+    setLoading(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    latestTextRef.current = '';
+
+    const userMessage: Message = { role: 'user', content: prompt };
     setMessages(prev => [...prev, userMessage, { role: 'assistant', content: '', thinking: null, isStreaming: true }]);
     setInput('');
     setThinking('');
@@ -177,28 +201,77 @@ const ChatInterface: React.FC = () => {
     setIsThinkingClosing(false);
 
     try {
-      await api.chatbot.aidentist(
-        input,
-        (token: string, fullText: string) => {
+      const result = await api.chatbot.send('aidentist', prompt, {
+        signal: controller.signal,
+        onText: (fullText: string) => {
+          latestTextRef.current = fullText;
+          if (!isMountedRef.current) return;
           setMessages(prevMessages => {
-            const { updatedMessages } = processThinkingContent(fullText, prevMessages);
-            return updatedMessages;
+            const processed = processThinkingContent(fullText, prevMessages, false);
+            setShowThinking(processed.shouldShowThinking);
+            return processed.updatedMessages;
+          });
+        },
+      });
+
+      if (!isMountedRef.current) return;
+
+      if (result.kind === 'cancelled') {
+        const finalText = result.text || latestTextRef.current;
+        if (!finalText) {
+          setMessages(prev => prev.slice(0, -1));
+          setShowThinking(false);
+        } else {
+          setMessages(prevMessages => {
+            const processed = processThinkingContent(finalText, prevMessages, true);
+            setShowThinking(processed.shouldShowThinking);
+            return processed.updatedMessages;
           });
         }
-      );
+      } else {
+        setMessages(prevMessages => {
+          const processed = processThinkingContent(result.text, prevMessages, true);
+          setShowThinking(processed.shouldShowThinking);
+          return processed.updatedMessages;
+        });
+      }
     } catch (error) {
+      if (!isMountedRef.current) return;
+
       console.error('Error calling ChatBot:', error);
-      setMessages(prev => [
-        ...prev.slice(0, -1),
-        {
-          role: 'assistant',
-          content: "I'm sorry, I encountered an error. Please try again later.",
-          isStreaming: false
+      const partialText = error instanceof ChatTransportError ? error.partialText : undefined;
+      const retainedText = partialText || latestTextRef.current;
+      setMessages(prev => {
+        if (!retainedText) {
+          return [
+            ...prev.slice(0, -1),
+            {
+              role: 'assistant',
+              content: "I'm sorry, I encountered an error. Please try again later.",
+              isStreaming: false
+            }
+          ];
         }
-      ]);
+
+        const processed = processThinkingContent(retainedText, prev, true);
+        return [
+          ...processed.updatedMessages,
+          {
+            role: 'assistant',
+            content: "I'm sorry, I encountered an error. Please try again later.",
+            isStreaming: false
+          }
+        ];
+      });
       setShowThinking(false);
     } finally {
-      setLoading(false);
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+      loadingRef.current = false;
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 

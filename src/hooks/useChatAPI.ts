@@ -1,311 +1,163 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import api from '../services';
-import type { TokenCallback } from '../utils/sseUtils';
+import { ChatTransportError } from '../services/chatbot';
 import type { ChatMessage, UseChatStateReturn } from './useChatState';
 
-/**
- * Chat API Configuration
- */
-interface ChatAPIConfig {
-  readonly maxRetries: number;
-  readonly retryDelay: number;
-  readonly timeout: number;
-}
-
-/**
- * Chat API Error Types
- */
-export enum ChatAPIErrorType {
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  TIMEOUT_ERROR = 'TIMEOUT_ERROR',
-  RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
-}
-
-/**
- * Chat API Error Class
- */
-export class ChatAPIError extends Error {
-  constructor(
-    public readonly type: ChatAPIErrorType,
-    message: string,
-    public readonly originalError?: Error
-  ) {
-    super(message);
-    this.name = 'ChatAPIError';
-  }
-}
-
-/**
- * Default configuration
- */
-const DEFAULT_CONFIG: ChatAPIConfig = {
-  maxRetries: 3,
-  retryDelay: 1000,
-  timeout: 30000,
-} as const;
-
-/**
- * Chat API Hook Interface
- */
 interface UseChatAPIReturn {
   sendMessage: (message: string) => Promise<void>;
   isProcessing: boolean;
-  cancelRequest: () => void;
 }
 
+const GENERIC_BOT_ERROR =
+  "I'm sorry, I encountered an error processing your request. Please try again later.";
+
+const validateMessage = (message: string): string | null => {
+  if (!message || typeof message !== 'string') {
+    return 'Message must be a non-empty string';
+  }
+
+  if (message.trim().length === 0) {
+    return 'Message cannot be empty or whitespace only';
+  }
+
+  if (message.length > 10000) {
+    return 'Message is too long (maximum 10,000 characters)';
+  }
+
+  return null;
+};
+
+const getErrorMessage = (error: unknown): string => {
+  if (!(error instanceof ChatTransportError)) {
+    return 'An unexpected error occurred. Please try again.';
+  }
+
+  switch (error.code) {
+    case 'network':
+      return 'Network connection failed. Please check your internet connection and try again.';
+    case 'rate-limited':
+      return 'You have reached the maximum number of requests. Please try again later.';
+    case 'invalid-input':
+      return error.message;
+    default:
+      return 'An unexpected error occurred. Please try again.';
+  }
+};
+
 /**
- * Custom hook for handling chat API interactions
- * 
- * Follows SOLID principles:
- * - Single Responsibility: Only handles API communication
- * - Open/Closed: Extensible through configuration
- * - Liskov Substitution: Can be replaced with different implementations
- * - Interface Segregation: Focused interface for API operations
- * - Dependency Inversion: Depends on abstractions (chat state hook)
+ * Handles the floating help chat transport and its existing Home message model.
  */
-export const useChatAPI = (
-  chatState: UseChatStateReturn,
-  config: Partial<ChatAPIConfig> = {}
-): UseChatAPIReturn => {
-  const finalConfig = { ...DEFAULT_CONFIG, ...config };
+export const useChatAPI = (chatState: UseChatStateReturn): UseChatAPIReturn => {
   const abortControllerRef = useRef<AbortController | null>(null);
+  const processingRef = useRef(false);
+  const mountedRef = useRef(true);
   const { messageActions, stateActions } = chatState;
 
-  /**
-   * Validate message input
-   */
-  const validateMessage = useCallback((message: string): void => {
-    if (!message || typeof message !== 'string') {
-      throw new ChatAPIError(
-        ChatAPIErrorType.VALIDATION_ERROR,
-        'Message must be a non-empty string'
-      );
-    }
-
-    if (message.trim().length === 0) {
-      throw new ChatAPIError(
-        ChatAPIErrorType.VALIDATION_ERROR,
-        'Message cannot be empty or whitespace only'
-      );
-    }
-
-    if (message.length > 10000) {
-      throw new ChatAPIError(
-        ChatAPIErrorType.VALIDATION_ERROR,
-        'Message is too long (maximum 10,000 characters)'
-      );
-    }
-  }, []);
-
-  /**
-   * Classify error type based on error characteristics
-   */
-  const classifyError = useCallback((error: any): ChatAPIErrorType => {
-    const errorMessage = String(error.message || '').toLowerCase();
-
-    if (error.name === 'AbortError') {
-      return ChatAPIErrorType.NETWORK_ERROR;
-    }
-
-    if (error.name === 'TimeoutError') {
-      return ChatAPIErrorType.TIMEOUT_ERROR;
-    }
-
-    if (errorMessage.includes('rate limit') || errorMessage.includes('maximal inquiries')) {
-      return ChatAPIErrorType.RATE_LIMIT_ERROR;
-    }
-
-    if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-      return ChatAPIErrorType.NETWORK_ERROR;
-    }
-
-    return ChatAPIErrorType.UNKNOWN_ERROR;
-  }, []);
-
-  /**
-   * Create user-friendly error message
-   */
-  const createErrorMessage = useCallback((error: ChatAPIError): string => {
-    switch (error.type) {
-      case ChatAPIErrorType.NETWORK_ERROR:
-        return 'Network connection failed. Please check your internet connection and try again.';
-      
-      case ChatAPIErrorType.TIMEOUT_ERROR:
-        return 'Request timed out. Please try again.';
-      
-      case ChatAPIErrorType.RATE_LIMIT_ERROR:
-        return 'You have reached the maximum number of requests. Please try again later.';
-      
-      case ChatAPIErrorType.VALIDATION_ERROR:
-        return error.message;
-      
-      default:
-        return 'An unexpected error occurred. Please try again.';
-    }
-  }, []);
-
-  /**
-   * Handle streaming response
-   */
-  const handleStreamingResponse = useCallback((
-    userMessage: ChatMessage,
-    botMessage: ChatMessage
-  ): TokenCallback => {
-    return (token: string, fullText: string) => {
-      try {
-        messageActions.updateMessage(botMessage.id, {
-          text: fullText,
-          isStreaming: true,
-        });
-      } catch (error) {
-        console.warn('Failed to update streaming message:', error);
-      }
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      abortControllerRef.current?.abort();
     };
-  }, [messageActions]);
+  }, []);
 
-  /**
-   * Finalize bot response
-   */
-  const finalizeBotResponse = useCallback((
-    botMessage: ChatMessage,
-    finalText: string
-  ): void => {
+  const finalizeBotResponse = useCallback((botMessage: ChatMessage, text: string): void => {
     messageActions.updateMessage(botMessage.id, {
-      text: finalText,
+      text,
       isStreaming: false,
     });
   }, [messageActions]);
 
-  /**
-   * Handle API error
-   */
-  const handleAPIError = useCallback((
-    error: any,
-    botMessage: ChatMessage
-  ): void => {
-    const errorType = classifyError(error);
-    const chatError = new ChatAPIError(errorType, error.message || 'Unknown error', error);
-    const userMessage = createErrorMessage(chatError);
+  const handleAPIError = useCallback((error: unknown, botMessage: ChatMessage): void => {
+    if (
+      error instanceof ChatTransportError &&
+      error.partialText !== undefined &&
+      error.partialText !== ''
+    ) {
+      finalizeBotResponse(botMessage, error.partialText);
+      stateActions.setError(getErrorMessage(error));
+      return;
+    }
 
-    // Remove streaming placeholder
     messageActions.removeMessage(botMessage.id);
-
-    // Add error message
     messageActions.addMessage({
       sender: 'bot',
-      text: "I'm sorry, I encountered an error processing your request. Please try again later.",
+      text: GENERIC_BOT_ERROR,
       error: true,
     });
+    stateActions.setError(getErrorMessage(error));
+  }, [finalizeBotResponse, messageActions, stateActions]);
 
-    // Set error state
-    stateActions.setError(userMessage);
-
-    console.error('Chat API Error:', chatError);
-  }, [classifyError, createErrorMessage, messageActions, stateActions]);
-
-  /**
-   * Cancel current request
-   */
-  const cancelRequest = useCallback((): void => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-  }, []);
-
-  /**
-   * Send message to chat API
-   */
   const sendMessage = useCallback(async (message: string): Promise<void> => {
-    let botMessage: ChatMessage | null = null;
+    const validationError = validateMessage(message);
+    if (validationError) {
+      if (mountedRef.current) {
+        stateActions.setError(validationError);
+      }
+      return;
+    }
+
+    if (processingRef.current) {
+      return;
+    }
+
+    processingRef.current = true;
+    stateActions.clearError();
+    stateActions.setLoading(true);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const trimmedMessage = message.trim();
+    messageActions.addMessage({
+      sender: 'user',
+      text: trimmedMessage,
+    });
+    const botMessage = messageActions.addMessage({
+      sender: 'bot',
+      text: '',
+      isStreaming: true,
+    });
 
     try {
-      // Validate input
-      validateMessage(message);
+      const result = await api.chatbot.send('help', trimmedMessage, {
+        signal: controller.signal,
+        onText: (text) => {
+          if (!mountedRef.current) {
+            return;
+          }
+          messageActions.updateMessage(botMessage.id, {
+            text,
+            isStreaming: true,
+          });
+        },
+      });
 
-      // Check if already processing
-      if (chatState.chatState.isLoading) {
-        throw new ChatAPIError(
-          ChatAPIErrorType.VALIDATION_ERROR,
-          'Another request is already in progress'
-        );
+      if (!mountedRef.current) {
+        return;
       }
 
-      // Clear any previous errors
-      stateActions.clearError();
-      stateActions.setLoading(true);
-
-      // Add user message
-      const userMessage = messageActions.addMessage({
-        sender: 'user',
-        text: message.trim(),
-      });
-
-      // Add streaming bot message placeholder
-      botMessage = messageActions.addMessage({
-        sender: 'bot',
-        text: '',
-        isStreaming: true,
-      });
-
-      // Create abort controller for this request
-      abortControllerRef.current = new AbortController();
-
-      // Create streaming callback
-      const streamingCallback = handleStreamingResponse(userMessage, botMessage);
-
-      // Make API call
-      const finalResponse = await api.chatbot.help(message.trim(), streamingCallback);
-
-      // Finalize bot response
-      finalizeBotResponse(botMessage, finalResponse);
-
-    } catch (error: any) {
-      if (botMessage) {
-        handleAPIError(error, botMessage);
+      if (result.kind === 'cancelled' && result.text === '') {
+        messageActions.removeMessage(botMessage.id);
       } else {
-        // If no streaming message, just set error state
-        const errorType = classifyError(error);
-        const chatError = new ChatAPIError(errorType, error.message || 'Unknown error', error);
-        stateActions.setError(createErrorMessage(chatError));
+        finalizeBotResponse(botMessage, result.text);
+      }
+    } catch (error: unknown) {
+      if (mountedRef.current) {
+        handleAPIError(error, botMessage);
       }
     } finally {
-      stateActions.setLoading(false);
-      abortControllerRef.current = null;
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+        processingRef.current = false;
+        if (mountedRef.current) {
+          stateActions.setLoading(false);
+        }
+      }
     }
-  }, [
-    validateMessage,
-    chatState.chatState.isLoading,
-    chatState.messages,
-    stateActions,
-    messageActions,
-    handleStreamingResponse,
-    finalizeBotResponse,
-    handleAPIError,
-    classifyError,
-    createErrorMessage,
-  ]);
+  }, [finalizeBotResponse, handleAPIError, messageActions, stateActions]);
 
   return {
     sendMessage,
     isProcessing: chatState.chatState.isLoading,
-    cancelRequest,
   } as const;
-};
-
-/**
- * Utility function to check if an error is retryable
- */
-export const isRetryableError = (error: ChatAPIError): boolean => {
-  return error.type === ChatAPIErrorType.NETWORK_ERROR || 
-         error.type === ChatAPIErrorType.TIMEOUT_ERROR;
-};
-
-/**
- * Utility function to get retry delay with exponential backoff
- */
-export const getRetryDelay = (attempt: number, baseDelay: number = 1000): number => {
-  return Math.min(baseDelay * Math.pow(2, attempt), 10000);
 };

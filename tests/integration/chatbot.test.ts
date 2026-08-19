@@ -1,321 +1,456 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { MockedFunction } from 'vitest';
-import chatbotAPI from '../../src/services/chatbot';
-import { clearBearerSession, setBearerSession } from '../../src/services/config';
-import type { TokenCallback } from '../../src/utils/sseUtils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  ChatTransportError,
+  CHATBOT_AGENTS,
+  createChatbotModule,
+  type ChatbotAgent,
+} from '../../src/services/chatbot';
+import type {
+  StreamingExchange,
+  StreamingExchangeRequest,
+} from '../../src/services/chatbotStream';
 
-// Type definitions for mocks
-interface MockLocalStorage {
-  getItem: MockedFunction<(key: string) => string | null>;
-  setItem: MockedFunction<(key: string, value: string) => void>;
-  removeItem: MockedFunction<(key: string) => void>;
-  clear: MockedFunction<() => void>;
-}
+const sessionMocks = vi.hoisted(() => {
+  class SessionRefreshSupersededError extends Error {
+    override readonly name = 'SessionRefreshSupersededError';
+  }
 
-// Mock the enhanced SSE reader
-vi.mock('../../src/utils/sseUtils', () => ({
-  createEnhancedSSEReader: vi.fn(),
-  formatSSEError: vi.fn((error: Error, endpoint: string) => `SSE error for ${endpoint}: ${error.message}`)
+  return {
+    getBearerSession: vi.fn(),
+    refreshSession: vi.fn(),
+    terminateSession: vi.fn(),
+    SessionRefreshSupersededError,
+  };
+});
+
+vi.mock('../../src/services/session', () => ({
+  session: sessionMocks,
+  SessionRefreshSupersededError: sessionMocks.SessionRefreshSupersededError,
 }));
 
-// Mock fetch globally
-(global as any).fetch = vi.fn();
-
-// Mock localStorage
-const localStorageMock: MockLocalStorage = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+const exchange: StreamingExchange = {
+  post: vi.fn(),
 };
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
-});
 
-// Mock window.dispatchEvent
-const mockDispatchEvent: MockedFunction<(event: Event) => boolean> = vi.fn();
-Object.defineProperty(window, 'dispatchEvent', {
-  value: mockDispatchEvent
-});
+const response = (
+  body: string,
+  status = 200,
+  headers: Record<string, string> = { 'content-type': 'text/event-stream' },
+): Response => new Response(body, { status, headers });
 
-describe('Chatbot API Integration', () => {
+const stream = (text: string): Response => response(`data: ${text}\n\n`);
+
+const deferred = <T>() => {
+  let resolve: (value: T) => void = () => {};
+  let reject: (reason?: unknown) => void = () => {};
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+};
+
+const expectTransportError = async (
+  promise: Promise<unknown>,
+  code: ChatTransportError['code'],
+): Promise<ChatTransportError> => {
+  const error = await promise.catch((caught: unknown) => caught);
+  expect(error).toBeInstanceOf(ChatTransportError);
+  expect(error).toMatchObject({ code });
+  return error as ChatTransportError;
+};
+
+describe('ChatbotModule', () => {
+  const chatbot = createChatbotModule(exchange);
+
   beforeEach(() => {
-    vi.clearAllMocks();
-
-    // Reset the in-memory bearer session
-    clearBearerSession();
-
-    // Reset localStorage mocks
-    localStorageMock.getItem.mockReturnValue(null);
-    localStorageMock.setItem.mockImplementation(() => {});
-    localStorageMock.removeItem.mockImplementation(() => {});
-
-    // Reset fetch mock
-    (fetch as MockedFunction<typeof fetch>).mockClear();
-  });
-
-  afterEach(() => {
     vi.resetAllMocks();
+    sessionMocks.getBearerSession.mockReturnValue(undefined);
+    sessionMocks.refreshSession.mockResolvedValue({ accessToken: 'rotated-token' });
+    sessionMocks.terminateSession.mockImplementation(() => {});
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(stream('ok'));
   });
 
-  describe('help endpoint', () => {
-    it('should call help endpoint without authentication', async () => {
-      const mockResponse: Response = new Response('data: Hello\n\ndata: world\n\n', {
-        status: 200,
-        headers: { 'content-type': 'text/event-stream' }
+  it('maps every public agent to its exact backend endpoint', async () => {
+    const expected = {
+      help: '/help',
+      aidentist: '/aidentist',
+      receptionist: '/receptionist',
+      triage: '/triage',
+      documentationSummarize: '/documentation/summarize',
+    } as const;
+    sessionMocks.getBearerSession.mockReturnValue({ accessToken: 'token', tokenType: 'Bearer' });
+
+    for (const agent of CHATBOT_AGENTS) {
+      await chatbot.send(agent, 'question');
+    }
+
+    expect((exchange.post as ReturnType<typeof vi.fn>).mock.calls.map(([endpoint]) => endpoint)).toEqual(
+      CHATBOT_AGENTS.map((agent) => expected[agent]),
+    );
+  });
+
+  it('trims prompts and rejects an empty prompt before I/O', async () => {
+    await expectTransportError(chatbot.send('help', '  '), 'invalid-input');
+    expect(exchange.post).not.toHaveBeenCalled();
+
+    await chatbot.send('help', '\n question \t');
+    expect(exchange.post.mock.calls[0][1]).toMatchObject({ body: 'question' });
+
+    await expectTransportError(chatbot.send('not-an-agent' as ChatbotAgent, 'question'), 'invalid-input');
+    expect(exchange.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends anonymous help without a bearer token', async () => {
+    await chatbot.send('help', 'How do I book?');
+
+    expect(exchange.post).toHaveBeenCalledWith(
+      '/help',
+      expect.objectContaining({
+        body: 'How do I book?',
+        headers: expect.objectContaining({
+          'Content-Type': 'text/plain',
+          Accept: 'text/event-stream',
+          'Cache-Control': 'no-cache',
+        }),
+      }),
+    );
+    expect(exchange.post.mock.calls[0][1].headers).not.toHaveProperty('Authorization');
+  });
+
+  it('opportunistically includes a bearer token on help', async () => {
+    sessionMocks.getBearerSession.mockReturnValue({ accessToken: 'help-token', tokenType: 'Bearer' });
+
+    await chatbot.send('help', 'question');
+
+    expect(exchange.post.mock.calls[0][1].headers).toMatchObject({
+      Authorization: 'Bearer help-token',
+    });
+  });
+
+  it('fails required agents locally when no bearer is available', async () => {
+    for (const agent of ['aidentist', 'receptionist', 'triage', 'documentationSummarize'] as const) {
+      await expectTransportError(chatbot.send(agent, 'question'), 'authentication-required');
+    }
+
+    expect(exchange.post).not.toHaveBeenCalled();
+  });
+
+  it('forwards credentials, headers, body, and the caller signal', async () => {
+    const controller = new AbortController();
+    sessionMocks.getBearerSession.mockReturnValue({ accessToken: 'token', tokenType: 'Token' });
+
+    await chatbot.send('aidentist', '  question  ', { signal: controller.signal });
+
+    const request = exchange.post.mock.calls[0][1] as StreamingExchangeRequest;
+    expect(request).toEqual({
+      body: 'question',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'text/plain',
+        Accept: 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Authorization: 'Token token',
+      },
+    });
+  });
+
+  it('refreshes once after a bearer 401 and replays with the rotated bearer', async () => {
+    const oldBearer = { accessToken: 'old-token', tokenType: 'Bearer' };
+    const rotatedBearer = { accessToken: 'new-token', tokenType: 'Bearer' };
+    sessionMocks.getBearerSession.mockReturnValueOnce(oldBearer).mockReturnValueOnce(rotatedBearer);
+    (exchange.post as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(response('private body', 401, { 'content-type': 'text/plain' }))
+      .mockResolvedValueOnce(stream('replayed'));
+
+    const result = await chatbot.send('aidentist', 'question');
+
+    expect(result).toEqual({ kind: 'completed', text: 'replayed' });
+    expect(sessionMocks.refreshSession).toHaveBeenCalledTimes(1);
+    expect(exchange.post).toHaveBeenCalledTimes(2);
+    expect(exchange.post.mock.calls[1][1].headers).toMatchObject({
+      Authorization: 'Bearer new-token',
+    });
+  });
+
+  it('does not refresh, broadcast, or redirect after anonymous help receives 401', async () => {
+    const failedResponse = response('do not expose this body', 401, { 'content-type': 'text/plain' });
+    const bodySpy = vi.spyOn(failedResponse, 'text');
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(failedResponse);
+
+    const error = await expectTransportError(chatbot.send('help', 'question'), 'unauthorized');
+
+    expect(error.message).not.toContain('do not expose this body');
+    expect(bodySpy).not.toHaveBeenCalled();
+    expect(sessionMocks.refreshSession).not.toHaveBeenCalled();
+    expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
+  });
+
+  it('rejects a superseded request without replaying it under the newer bearer', async () => {
+    const oldBearer = { accessToken: 'old-token', tokenType: 'Bearer' };
+    const newerBearer = { accessToken: 'newer-token', tokenType: 'Bearer' };
+    sessionMocks.getBearerSession
+      .mockReturnValueOnce(oldBearer)
+      .mockReturnValue(newerBearer);
+    sessionMocks.refreshSession.mockRejectedValue(
+      new sessionMocks.SessionRefreshSupersededError('Session refresh superseded.'),
+    );
+    const failedResponse = response('private mutation details', 401);
+    const bodySpy = vi.spyOn(failedResponse, 'text');
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(failedResponse);
+
+    const error = await expectTransportError(chatbot.send('aidentist', 'change password'), 'unauthorized');
+
+    expect(error.status).toBe(401);
+    expect(error.message).not.toContain('private mutation details');
+    expect(bodySpy).not.toHaveBeenCalled();
+    expect(sessionMocks.refreshSession).toHaveBeenCalledTimes(1);
+    expect(exchange.post).toHaveBeenCalledTimes(1);
+    expect(exchange.post.mock.calls[0][1].headers).toMatchObject({
+      Authorization: 'Bearer old-token',
+    });
+    expect(sessionMocks.getBearerSession()).toEqual(newerBearer);
+    expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
+  });
+
+  it('does not repeat termination when a superseded refresh finds no bearer', async () => {
+    sessionMocks.getBearerSession
+      .mockReturnValueOnce({ accessToken: 'old-token', tokenType: 'Bearer' })
+      .mockReturnValueOnce(undefined);
+    sessionMocks.refreshSession.mockRejectedValue(
+      new sessionMocks.SessionRefreshSupersededError('Session refresh superseded.'),
+    );
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(response('private', 401));
+
+    const error = await expectTransportError(chatbot.send('aidentist', 'question'), 'unauthorized');
+
+    expect(error.status).toBe(401);
+    expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
+    expect(exchange.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('terminates immediately when refresh fails', async () => {
+    sessionMocks.getBearerSession.mockReturnValue({ accessToken: 'old-token', tokenType: 'Bearer' });
+    sessionMocks.refreshSession.mockRejectedValue(new Error('secret refresh detail'));
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(response('private', 401));
+
+    const error = await expectTransportError(chatbot.send('aidentist', 'question'), 'session-ended');
+
+    expect(error.message).not.toContain('secret refresh detail');
+    expect(sessionMocks.terminateSession).toHaveBeenCalledWith({ redirect: true });
+    expect(exchange.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('terminates immediately when the replay also receives 401', async () => {
+    sessionMocks.getBearerSession
+      .mockReturnValueOnce({ accessToken: 'old-token', tokenType: 'Bearer' })
+      .mockReturnValueOnce({ accessToken: 'new-token', tokenType: 'Bearer' });
+    (exchange.post as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(response('first', 401))
+      .mockResolvedValueOnce(response('second', 401));
+
+    await expectTransportError(chatbot.send('aidentist', 'question'), 'session-ended');
+
+    expect(sessionMocks.refreshSession).toHaveBeenCalledTimes(1);
+    expect(sessionMocks.terminateSession).toHaveBeenCalledTimes(1);
+    expect(sessionMocks.terminateSession).toHaveBeenCalledWith({ redirect: true });
+  });
+
+  it('cancels before fetch without invoking the exchange', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(chatbot.send('help', 'question', { signal: controller.signal })).resolves.toEqual({
+      kind: 'cancelled',
+      text: '',
+    });
+    expect(exchange.post).not.toHaveBeenCalled();
+  });
+
+  it('cancels during refresh without cancelling the shared refresh promise', async () => {
+    const controller = new AbortController();
+    const refresh = deferred<{ accessToken: string }>();
+    sessionMocks.getBearerSession.mockReturnValue({ accessToken: 'old-token', tokenType: 'Bearer' });
+    sessionMocks.refreshSession.mockReturnValue(refresh.promise);
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(response('first', 401));
+
+    const pending = chatbot.send('aidentist', 'question', { signal: controller.signal });
+    await vi.waitFor(() => expect(sessionMocks.refreshSession).toHaveBeenCalledTimes(1));
+    controller.abort();
+
+    await expect(pending).resolves.toEqual({ kind: 'cancelled', text: '' });
+    refresh.resolve({ accessToken: 'rotated-token' });
+    await refresh.promise;
+    expect(exchange.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels before replay when the caller aborts after refresh', async () => {
+    const controller = new AbortController();
+    sessionMocks.getBearerSession
+      .mockReturnValueOnce({ accessToken: 'old-token', tokenType: 'Bearer' })
+      .mockImplementationOnce(() => {
+        controller.abort();
+        return { accessToken: 'new-token', tokenType: 'Bearer' };
       });
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(response('first', 401));
 
-      (fetch as MockedFunction<typeof fetch>).mockResolvedValue(mockResponse);
-      
-      const { createEnhancedSSEReader } = await import('../../src/utils/sseUtils');
-      (createEnhancedSSEReader as MockedFunction<typeof createEnhancedSSEReader>).mockResolvedValue('Hello world');
-
-      const callback: MockedFunction<TokenCallback> = vi.fn();
-      const result: string = await chatbotAPI.help('Test message', callback);
-
-      expect(fetch as MockedFunction<typeof fetch>).toHaveBeenCalledWith(
-        expect.stringContaining('/api/genai/chatbot/help'),
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'text/plain',
-            'Accept': 'text/event-stream'
-          }),
-          body: 'Test message'
-        })
-      );
-      
-      expect(createEnhancedSSEReader).toHaveBeenCalledWith(mockResponse, callback);
-      expect(result).toBe('Hello world');
+    await expect(chatbot.send('aidentist', 'question', { signal: controller.signal })).resolves.toEqual({
+      kind: 'cancelled',
+      text: '',
     });
-
-    it('should handle help endpoint errors', async () => {
-      const error: Error = new Error('Network error');
-      (fetch as MockedFunction<typeof fetch>).mockRejectedValue(error);
-
-      const callback: MockedFunction<TokenCallback> = vi.fn();
-      
-      await expect(chatbotAPI.help('Test message', callback)).rejects.toThrow('Network error');
-      
-      expect(mockDispatchEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'show-snackbar',
-          detail: expect.objectContaining({
-            severity: 'error'
-          })
-        })
-      );
-    });
+    expect(exchange.post).toHaveBeenCalledTimes(1);
   });
 
-  describe('authenticated endpoints', () => {
-    beforeEach(() => {
-      // Seed the in-memory bearer session shared with the axios transport
-      setBearerSession('mock-jwt-token', 'Bearer');
-    });
+  it('lets a shared refresh continue when one cancelled caller exits', async () => {
+    const firstController = new AbortController();
+    const refresh = deferred<{ accessToken: string }>();
+    sessionMocks.getBearerSession.mockReturnValue({ accessToken: 'old-token', tokenType: 'Bearer' });
+    sessionMocks.refreshSession.mockReturnValue(refresh.promise);
+    (exchange.post as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(response('first', 401))
+      .mockResolvedValueOnce(response('second', 401))
+      .mockResolvedValueOnce(stream('survivor'));
 
-    describe('aidentist endpoint', () => {
-      it('should call aidentist endpoint with authentication', async () => {
-        const mockResponse: Response = new Response('data: Clinical response\n\n', {
-          status: 200,
-          headers: { 'content-type': 'text/event-stream' }
+    const first = chatbot.send('aidentist', 'first', { signal: firstController.signal });
+    const second = chatbot.send('aidentist', 'second');
+    await vi.waitFor(() => expect(sessionMocks.refreshSession).toHaveBeenCalledTimes(2));
+    firstController.abort();
+    await expect(first).resolves.toEqual({ kind: 'cancelled', text: '' });
+
+    sessionMocks.getBearerSession.mockReturnValue({ accessToken: 'new-token', tokenType: 'Bearer' });
+    refresh.resolve({ accessToken: 'new-token' });
+    await expect(second).resolves.toEqual({ kind: 'completed', text: 'survivor' });
+    expect(exchange.post).toHaveBeenCalledTimes(3);
+  });
+
+  it('cancels during streaming and retains partial text', async () => {
+    const controller = new AbortController();
+    let resolveRead: (value: ReadableStreamReadResult<Uint8Array>) => void = () => {};
+    let reads = 0;
+    const reader = {
+      read: vi.fn(() => {
+        reads += 1;
+        if (reads === 1) {
+          return Promise.resolve({ done: false, value: new TextEncoder().encode('data: partial\n\n') });
+        }
+        return new Promise<ReadableStreamReadResult<Uint8Array>>((resolve) => {
+          resolveRead = resolve;
         });
+      }),
+      cancel: vi.fn(async () => resolveRead({ done: true, value: undefined })),
+      releaseLock: vi.fn(),
+    } as unknown as ReadableStreamDefaultReader<Uint8Array>;
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/event-stream' }),
+      body: { getReader: () => reader },
+    } as unknown as Response);
+    const onText = vi.fn(() => controller.abort());
 
-        (fetch as MockedFunction<typeof fetch>).mockResolvedValue(mockResponse);
-        
-        const { createEnhancedSSEReader } = await import('../../src/utils/sseUtils');
-        (createEnhancedSSEReader as MockedFunction<typeof createEnhancedSSEReader>).mockResolvedValue('Clinical response');
-
-        const callback: MockedFunction<TokenCallback> = vi.fn();
-        const result: string = await chatbotAPI.aidentist('Clinical question', callback);
-
-        expect(fetch as MockedFunction<typeof fetch>).toHaveBeenCalledWith(
-          expect.stringContaining('/api/genai/chatbot/aidentist'),
-          expect.objectContaining({
-            method: 'POST',
-            headers: expect.objectContaining({
-              'Authorization': 'Bearer mock-jwt-token'
-            }),
-            body: 'Clinical question'
-          })
-        );
-        
-        expect(result).toBe('Clinical response');
-      });
-
-      it('should reject aidentist request without authentication', async () => {
-        clearBearerSession();
-
-        const callback: MockedFunction<TokenCallback> = vi.fn();
-        
-        await expect(chatbotAPI.aidentist('Clinical question', callback)).rejects.toThrow(
-          'Authentication required to access the AI Dentist'
-        );
-        
-        expect(callback).toHaveBeenCalledWith(
-          expect.stringContaining('Authentication required'),
-          expect.stringContaining('Authentication required')
-        );
-      });
+    await expect(chatbot.send('help', 'question', { signal: controller.signal, onText })).resolves.toEqual({
+      kind: 'cancelled',
+      text: 'partial',
     });
-
-    describe('receptionist endpoint', () => {
-      it('should call receptionist endpoint with authentication', async () => {
-        const mockResponse = new Response('data: Receptionist response\n\n', {
-          status: 200,
-          headers: { 'content-type': 'text/event-stream' }
-        });
-        
-        fetch.mockResolvedValue(mockResponse);
-        
-        const { createEnhancedSSEReader } = await import('../../src/utils/sseUtils');
-        createEnhancedSSEReader.mockResolvedValue('Receptionist response');
-
-        const result = await chatbotAPI.receptionist('Appointment question');
-
-        expect(fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/genai/chatbot/receptionist'),
-          expect.objectContaining({
-            method: 'POST',
-            headers: expect.objectContaining({
-              'Authorization': 'Bearer mock-jwt-token'
-            })
-          })
-        );
-        
-        expect(result).toBe('Receptionist response');
-      });
-    });
-
-    describe('triage endpoint', () => {
-      it('should call triage endpoint with authentication', async () => {
-        const mockResponse = new Response('data: Triage assessment\n\n', {
-          status: 200,
-          headers: { 'content-type': 'text/event-stream' }
-        });
-        
-        fetch.mockResolvedValue(mockResponse);
-        
-        const { createEnhancedSSEReader } = await import('../../src/utils/sseUtils');
-        createEnhancedSSEReader.mockResolvedValue('Triage assessment');
-
-        const result = await chatbotAPI.triage('Symptom description');
-
-        expect(fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/genai/chatbot/triage'),
-          expect.objectContaining({
-            method: 'POST',
-            headers: expect.objectContaining({
-              'Authorization': 'Bearer mock-jwt-token'
-            })
-          })
-        );
-        
-        expect(result).toBe('Triage assessment');
-      });
-    });
-
-    describe('documentationSummarize endpoint', () => {
-      it('should call documentation summarize endpoint with authentication', async () => {
-        const mockResponse = new Response('data: Document summary\n\n', {
-          status: 200,
-          headers: { 'content-type': 'text/event-stream' }
-        });
-        
-        fetch.mockResolvedValue(mockResponse);
-        
-        const { createEnhancedSSEReader } = await import('../../src/utils/sseUtils');
-        createEnhancedSSEReader.mockResolvedValue('Document summary');
-
-        const result = await chatbotAPI.documentationSummarize('Document content');
-
-        expect(fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/genai/chatbot/documentation/summarize'),
-          expect.objectContaining({
-            method: 'POST',
-            headers: expect.objectContaining({
-              'Authorization': 'Bearer mock-jwt-token'
-            })
-          })
-        );
-        
-        expect(result).toBe('Document summary');
-      });
-    });
+    expect(reader.cancel).toHaveBeenCalledTimes(1);
+    expect(reader.releaseLock).toHaveBeenCalledTimes(1);
   });
 
-  describe('legacy methods', () => {
-    it('should support botAssistant legacy method', async () => {
-      const mockResponse = new Response('data: Help response\n\n', {
-        status: 200,
-        headers: { 'content-type': 'text/event-stream' }
-      });
-      
-      fetch.mockResolvedValue(mockResponse);
-      
-      const { createEnhancedSSEReader } = await import('../../src/utils/sseUtils');
-      createEnhancedSSEReader.mockResolvedValue('Help response');
+  it('maps rate limits and ordinary HTTP errors without reading response bodies', async () => {
+    const rateResponse = response('rate body', 429, { 'content-type': 'text/plain' });
+    const httpResponse = response('server secret', 500, { 'content-type': 'text/plain' });
+    const rateText = vi.spyOn(rateResponse, 'text');
+    const httpText = vi.spyOn(httpResponse, 'text');
+    (exchange.post as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(rateResponse)
+      .mockResolvedValueOnce(httpResponse);
 
-      const result = await chatbotAPI.botAssistant('Help question');
-      expect(result).toBe('Help response');
-    });
+    const rateError = await expectTransportError(chatbot.send('help', 'one'), 'rate-limited');
+    const httpError = await expectTransportError(chatbot.send('help', 'two'), 'http');
 
-    it('should support botDentist legacy method', async () => {
-      setBearerSession('mock-jwt-token', 'Bearer');
-
-      const mockResponse = new Response('data: Clinical response\n\n', {
-        status: 200,
-        headers: { 'content-type': 'text/event-stream' }
-      });
-      
-      fetch.mockResolvedValue(mockResponse);
-      
-      const { createEnhancedSSEReader } = await import('../../src/utils/sseUtils');
-      createEnhancedSSEReader.mockResolvedValue('Clinical response');
-
-      const result = await chatbotAPI.botDentist('Clinical question');
-      expect(result).toBe('Clinical response');
-    });
+    expect(rateError.status).toBe(429);
+    expect(httpError.status).toBe(500);
+    expect(rateError.message).not.toContain('rate body');
+    expect(httpError.message).not.toContain('server secret');
+    expect(rateText).not.toHaveBeenCalled();
+    expect(httpText).not.toHaveBeenCalled();
   });
 
-  describe('utility methods', () => {
-    it('should indicate backend integration is enabled', () => {
-      expect(chatbotAPI.isBackendIntegrationEnabled()).toBe(true);
-    });
+  it('maps exchange failures to a sanitized network error', async () => {
+    (exchange.post as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('raw socket secret'));
+
+    const error = await expectTransportError(chatbot.send('help', 'question'), 'network');
+
+    expect(error.message).not.toContain('raw socket secret');
   });
 
-  describe('error handling', () => {
-    it('should handle rate limit errors specifically', async () => {
-      const error = new Error('You have reached the maximal inquiries for today');
-      fetch.mockRejectedValue(error);
+  it('maps protocol errors to a sanitized protocol error', async () => {
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(response('not sse', 200, {
+      'content-type': 'application/json',
+    }));
 
-      const callback = vi.fn();
-      
-      await expect(chatbotAPI.help('Test message', callback)).rejects.toThrow();
-      
-      expect(callback).toHaveBeenCalledWith(
-        expect.stringContaining('maximal inquiries'),
-        expect.stringContaining('maximal inquiries')
-      );
-    });
+    const error = await expectTransportError(chatbot.send('help', 'question'), 'protocol');
 
-    it('should handle SSE streaming errors', async () => {
-      const error = new Error('SSE streaming failed');
-      fetch.mockRejectedValue(error);
+    expect(error.message).not.toContain('not sse');
+  });
 
-      const callback = vi.fn();
-      
-      await expect(chatbotAPI.help('Test message', callback)).rejects.toThrow();
-      
-      expect(mockDispatchEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'show-snackbar',
-          detail: expect.objectContaining({
-            message: expect.stringContaining('connection error'),
-            severity: 'error'
-          })
-        })
-      );
-    });
+  it('retains streamed text when a later chunk violates the protocol', async () => {
+    const validChunk = JSON.stringify({ choices: [{ delta: { content: 'partial' } }] });
+    const malformedChunk = JSON.stringify({ choices: [{ delta: { content: 123 } }] });
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(
+      response(`data: ${validChunk}\n\ndata: ${malformedChunk}\n\n`),
+    );
+
+    const error = await expectTransportError(chatbot.send('help', 'question'), 'protocol');
+
+    expect(error.partialText).toBe('partial');
+    expect(error.message).not.toContain('123');
+  });
+
+  it('maps observer errors and retains partial text', async () => {
+    const cause = new Error('UI observer detail');
+    const error = await expectTransportError(
+      chatbot.send('help', 'question', { onText: () => { throw cause; } }),
+      'observer-failed',
+    );
+
+    expect(error.partialText).toBe('ok');
+    expect(error.message).not.toContain('UI observer detail');
+  });
+
+  it('maps mid-stream reader failures and retains partial text', async () => {
+    let readCount = 0;
+    const cause = new Error('raw stream detail');
+    const reader = {
+      read: vi.fn(() => {
+        readCount += 1;
+        return readCount === 1
+          ? Promise.resolve({ done: false, value: new TextEncoder().encode('data: partial\n\n') })
+          : Promise.reject(cause);
+      }),
+      cancel: vi.fn(async () => {}),
+      releaseLock: vi.fn(),
+    } as unknown as ReadableStreamDefaultReader<Uint8Array>;
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/event-stream' }),
+      body: { getReader: () => reader },
+    } as unknown as Response);
+
+    const error = await expectTransportError(chatbot.send('help', 'question'), 'network');
+
+    expect(error.partialText).toBe('partial');
+    expect(error.message).not.toContain('raw stream detail');
+  });
+
+  it('does not dispatch chatbot snackbars', async () => {
+    const dispatch = vi.spyOn(window, 'dispatchEvent');
+    (exchange.post as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network'));
+
+    await expectTransportError(chatbot.send('help', 'question'), 'network');
+
+    expect(dispatch).not.toHaveBeenCalled();
+    dispatch.mockRestore();
   });
 });

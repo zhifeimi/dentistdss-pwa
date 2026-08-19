@@ -27,7 +27,7 @@ import {
  * AIDentistPage - AI clinical assistant for dentists
  *
  * Features:
- * - Uses api.chatbot.aidentist for dental consultation
+ * - Uses the shared chatbot transport for dental consultation
  * - Real-time SSE streaming responses
  * - Session management for conversation continuity
  * - Clinical decision support interface

@@ -7,21 +7,22 @@ const mocks = vi.hoisted(() => ({
   refreshSession: vi.fn(),
   ensureXsrfBootstrapped: vi.fn(() => Promise.resolve()),
   setBearerSession: vi.fn(),
-  clearBearerSession: vi.fn(),
-  broadcastSessionEnded: vi.fn(),
+  terminateSession: vi.fn(),
 }));
 
 vi.mock('../../src/services/config', () => ({
-  broadcastSessionEnded: mocks.broadcastSessionEnded,
-  clearBearerSession: mocks.clearBearerSession,
-  clearXsrfToken: vi.fn(),
-  CSRF_BOOTSTRAP_PATH: '/api/auth/csrf',
-  ensureXsrfBootstrapped: mocks.ensureXsrfBootstrapped,
-  refreshSession: mocks.refreshSession,
-  setBearerSession: mocks.setBearerSession,
   default: {
     post: mocks.post,
     get: mocks.get,
+  },
+}));
+
+vi.mock('../../src/services/session', () => ({
+  default: {
+    refreshSession: mocks.refreshSession,
+    ensureXsrfBootstrapped: mocks.ensureXsrfBootstrapped,
+    setBearerSession: mocks.setBearerSession,
+    terminateSession: mocks.terminateSession,
   },
 }));
 
@@ -35,9 +36,9 @@ describe('auth onboarding API contracts', () => {
     mocks.post.mockReset();
     mocks.get.mockReset();
     mocks.refreshSession.mockReset();
+    mocks.ensureXsrfBootstrapped.mockReset();
     mocks.setBearerSession.mockReset();
-    mocks.clearBearerSession.mockReset();
-    mocks.broadcastSessionEnded.mockReset();
+    mocks.terminateSession.mockReset();
   });
 
   it('sends the mailbox-selected password with code verification', async () => {
@@ -66,7 +67,8 @@ describe('auth onboarding API contracts', () => {
     await authAPI.bootstrapXsrf();
     const result = await authAPI.refresh();
 
-    expect(mocks.get).toHaveBeenCalledWith('/api/auth/csrf');
+    expect(mocks.get).not.toHaveBeenCalled();
+    expect(mocks.ensureXsrfBootstrapped).toHaveBeenCalledTimes(1);
     expect(mocks.refreshSession).toHaveBeenCalledTimes(1);
     expect(result.accessToken).toBe('access-token');
   });
@@ -83,7 +85,11 @@ describe('auth onboarding API contracts', () => {
 
   it('matches the backend password policy before verification', () => {
     expect(isPasswordStrong(['FinalStrong', '1!'].join(''))).toBe(true);
-    expect(isPasswordStrong(Array.from({ length: 12 }, (_, index) => String.fromCharCode(97 + index)).join('') + '1!')).toBe(false);
+    expect(
+      isPasswordStrong(
+        Array.from({ length: 12 }, (_, index) => String.fromCharCode(97 + index)).join('') + '1!',
+      ),
+    ).toBe(false);
     expect(isPasswordStrong('Final Strong1!')).toBe(false);
     expect(isPasswordStrong(`Aa1!${'x'.repeat(125)}`)).toBe(false);
     expect(calculatePasswordStrength(['FinalStrong', '1!'].join('')).level).toBe('strong');
@@ -119,8 +125,7 @@ describe('auth onboarding API contracts', () => {
     expect(mocks.post).toHaveBeenCalledWith('/api/auth/logout', undefined, {
       suppressErrorSnackbar: true,
     });
-    expect(mocks.clearBearerSession).toHaveBeenCalledTimes(1);
-    expect(mocks.broadcastSessionEnded).toHaveBeenCalledTimes(1);
+    expect(mocks.terminateSession).toHaveBeenCalledWith({ redirect: false });
   });
 
   it('loads the public clinic list from the gateway route', async () => {
