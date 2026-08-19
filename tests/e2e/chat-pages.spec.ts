@@ -122,6 +122,7 @@ test.describe('Authenticated chat pages', () => {
       await expect(page.getByText('triage response', { exact: true })).toBeVisible();
       expect(triageRequestCount).toBe(1);
       await expect(page.getByText(stalePrompt, { exact: true })).not.toBeVisible();
+      await expect(page.getByText('stale receptionist', { exact: true })).not.toBeVisible();
     } finally {
       releaseReceptionist();
     }

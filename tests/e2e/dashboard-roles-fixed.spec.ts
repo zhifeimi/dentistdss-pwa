@@ -21,8 +21,12 @@ test.describe('Dashboard Role Fix Verification', () => {
     // Navigate to dashboard
     await page.goto('/dashboard');
 
-    // Wait for navigation to complete
-    await page.waitForTimeout(2000);
+    // Wait for the dashboard navigation to initialize
+    await expect(
+      page
+        .getByRole('navigation', { name: 'dashboard navigation' })
+        .getByText('Overview', { exact: true }),
+    ).toBeVisible();
 
     // Verify that the "No dashboard roles available" error is NOT shown
     await expect(page.locator('text=No dashboard roles available for your account.')).not
@@ -55,8 +59,12 @@ test.describe('Dashboard Role Fix Verification', () => {
     // Navigate to dashboard
     await page.goto('/dashboard');
 
-    // Wait for navigation to complete
-    await page.waitForTimeout(2000);
+    // Wait for the dashboard navigation to initialize
+    await expect(
+      page
+        .getByRole('navigation', { name: 'dashboard navigation' })
+        .getByText('Overview', { exact: true }),
+    ).toBeVisible();
 
     // Verify that the "No dashboard roles available" error is NOT shown
     await expect(page.locator('text=No dashboard roles available for your account.')).not
@@ -88,8 +96,12 @@ test.describe('Dashboard Role Fix Verification', () => {
     // Navigate to dashboard
     await page.goto('/dashboard');
 
-    // Wait for navigation to complete
-    await page.waitForTimeout(2000);
+    // Wait for the dashboard navigation to initialize
+    await expect(
+      page
+        .getByRole('navigation', { name: 'dashboard navigation' })
+        .getByText('Overview', { exact: true }),
+    ).toBeVisible();
 
     // Verify that the "No dashboard roles available" error is NOT shown
     await expect(page.locator('text=No dashboard roles available for your account.')).not
