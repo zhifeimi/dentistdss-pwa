@@ -123,12 +123,14 @@ const useAIChat = (chatType: ChatType = 'help', initialWelcomeMessage: string = 
         removeAiMessage();
       }
     };
+    let latestText = '';
 
     try {
       const response = await api.chatbot.send(chatType, content, {
         signal: controller.signal,
         onText: (text) => {
           if (!isCurrentRequest()) return;
+          latestText = text;
           updateAiMessage(text, true);
           onText?.(text);
         },
@@ -142,9 +144,13 @@ const useAIChat = (chatType: ChatType = 'help', initialWelcomeMessage: string = 
       }
     } catch (caughtError) {
       if (!isCurrentRequest()) return;
-      if (controller.signal.aborted) {
-        const currentMessage = messages.find(message => message.id === aiMessage.id);
-        finalizeCancellation(currentMessage?.content || '');
+      const isAbortError =
+        typeof caughtError === 'object' &&
+        caughtError !== null &&
+        'name' in caughtError &&
+        caughtError.name === 'AbortError';
+      if (controller.signal.aborted || isAbortError) {
+        finalizeCancellation(latestText);
         return;
       }
 

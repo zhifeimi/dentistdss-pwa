@@ -154,6 +154,25 @@ describe('useAIChat', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
+  it('retains partial content when the transport rejects an AbortError', async () => {
+    mocks.send.mockImplementationOnce(async (_agent, _prompt, options) => {
+      options.onText?.('partial');
+      throw new DOMException('The operation was aborted.', 'AbortError');
+    });
+    const { result } = renderHook(() => useAIChat('help'));
+
+    await act(async () => {
+      await result.current.sendMessage('question');
+    });
+
+    expect(result.current.messages[1]).toMatchObject({
+      content: 'partial',
+      isStreaming: false,
+    });
+    expect(result.current.error).toBe('');
+    expect(result.current.isLoading).toBe(false);
+  });
+
   it('retains typed partial failures and sets the separate page error', async () => {
     mocks.send.mockRejectedValueOnce(
       new ChatTransportError(
