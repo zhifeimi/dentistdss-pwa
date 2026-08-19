@@ -282,7 +282,13 @@ const createModule = (exchange: StreamingExchange): ChatbotModule => ({
     }
     const refreshWasSuperseded = refreshResult.kind === 'rejected' &&
       refreshResult.error instanceof SessionRefreshSupersededError;
-    if (refreshResult.kind === 'rejected' && !refreshWasSuperseded) {
+    if (refreshWasSuperseded) {
+      if (signal?.aborted) {
+        return { kind: 'cancelled', text: '' };
+      }
+      throw new ChatTransportError('unauthorized', errorMessages.unauthorized, 401);
+    }
+    if (refreshResult.kind === 'rejected') {
       session.terminateSession({ redirect: true });
       throw new ChatTransportError('session-ended', errorMessages.sessionEnded, 401);
     }

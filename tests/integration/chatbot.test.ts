@@ -186,27 +186,31 @@ describe('ChatbotModule', () => {
     expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
   });
 
-  it('replays with the newer bearer when refresh is superseded', async () => {
+  it('rejects a superseded request without replaying it under the newer bearer', async () => {
     const oldBearer = { accessToken: 'old-token', tokenType: 'Bearer' };
     const newerBearer = { accessToken: 'newer-token', tokenType: 'Bearer' };
     sessionMocks.getBearerSession
       .mockReturnValueOnce(oldBearer)
-      .mockReturnValueOnce(newerBearer);
+      .mockReturnValue(newerBearer);
     sessionMocks.refreshSession.mockRejectedValue(
       new sessionMocks.SessionRefreshSupersededError('Session refresh superseded.'),
     );
-    (exchange.post as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(response('private', 401))
-      .mockResolvedValueOnce(stream('replayed'));
+    const failedResponse = response('private mutation details', 401);
+    const bodySpy = vi.spyOn(failedResponse, 'text');
+    (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(failedResponse);
 
-    const result = await chatbot.send('aidentist', 'question');
+    const error = await expectTransportError(chatbot.send('aidentist', 'change password'), 'unauthorized');
 
-    expect(result).toEqual({ kind: 'completed', text: 'replayed' });
-    expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
-    expect(exchange.post).toHaveBeenCalledTimes(2);
-    expect(exchange.post.mock.calls[1][1].headers).toMatchObject({
-      Authorization: 'Bearer newer-token',
+    expect(error.status).toBe(401);
+    expect(error.message).not.toContain('private mutation details');
+    expect(bodySpy).not.toHaveBeenCalled();
+    expect(sessionMocks.refreshSession).toHaveBeenCalledTimes(1);
+    expect(exchange.post).toHaveBeenCalledTimes(1);
+    expect(exchange.post.mock.calls[0][1].headers).toMatchObject({
+      Authorization: 'Bearer old-token',
     });
+    expect(sessionMocks.getBearerSession()).toEqual(newerBearer);
+    expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
   });
 
   it('does not repeat termination when a superseded refresh finds no bearer', async () => {
@@ -218,8 +222,9 @@ describe('ChatbotModule', () => {
     );
     (exchange.post as ReturnType<typeof vi.fn>).mockResolvedValue(response('private', 401));
 
-    await expectTransportError(chatbot.send('aidentist', 'question'), 'session-ended');
+    const error = await expectTransportError(chatbot.send('aidentist', 'question'), 'unauthorized');
 
+    expect(error.status).toBe(401);
     expect(sessionMocks.terminateSession).not.toHaveBeenCalled();
     expect(exchange.post).toHaveBeenCalledTimes(1);
   });
