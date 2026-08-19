@@ -126,6 +126,78 @@ describe('401 refresh-retry transport', () => {
     expect(window.location.href).toBe(HOME_URL);
   });
 
+  it.each([
+    {
+      label: 'HTTP 500',
+      createError: (request: any) => ({
+        config: request,
+        response: { status: 500, data: {} },
+      }),
+      message: 'Internal Server Error. Please try again later.',
+    },
+    {
+      label: 'network',
+      createError: (request: any) => ({
+        config: request,
+        request: { readyState: 4 },
+        message: 'network replay failed',
+      }),
+      message: 'No response from server. Please check your connection.',
+    },
+  ])(
+    'propagates a superseded-refresh $label replay failure without terminating the newer bearer',
+    async ({ createError, message }) => {
+      setBearerSession('expired-token', 'Bearer');
+      axiosMocks.rawAuth.get.mockResolvedValue({});
+      let rejectRefresh: (reason?: unknown) => void = () => {};
+      axiosMocks.rawAuth.post.mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejectRefresh = reject;
+          }),
+      );
+      let replayError: any;
+      axiosMocks.instance.mockImplementation(async (request: any) => {
+        const prepared = axiosMocks.interceptors.requestFulfilled(request);
+        expect(prepared.headers.Authorization).toBe('Bearer newer-token');
+        replayError = createError(prepared);
+        return axiosMocks.interceptors.responseRejected(replayError);
+      });
+      const snackbars: unknown[] = [];
+      const dispatchEvent = vi.spyOn(window, 'dispatchEvent').mockImplementation((event: Event) => {
+        if (event.type === 'show-snackbar') {
+          snackbars.push((event as CustomEvent).detail);
+        }
+        return true;
+      });
+      const terminateSession = vi.spyOn(session, 'terminateSession');
+
+      try {
+        const pending = axiosMocks.interceptors.responseRejected(make401());
+        const pendingResult = pending.catch((error: unknown) => error);
+        await vi.waitFor(() => expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1));
+        setBearerSession('newer-token', 'Bearer');
+        rejectRefresh(new Error('stale refresh failure'));
+
+        await vi.waitFor(() => expect(replayError).toBeDefined());
+        const result = await pendingResult;
+        expect(result).toBe(replayError);
+        expect(axiosMocks.instance).toHaveBeenCalledTimes(1);
+        expect(axiosMocks.instance.mock.calls[0][0]._retry).toBe(true);
+        expect(getBearerSession()).toEqual({
+          accessToken: 'newer-token',
+          tokenType: 'Bearer',
+        });
+        expect(terminateSession).not.toHaveBeenCalled();
+        expect(window.location.href).toBe(HOME_URL);
+        expect(snackbars).toEqual([{ message, severity: 'error' }]);
+      } finally {
+        terminateSession.mockRestore();
+        dispatchEvent.mockRestore();
+      }
+    },
+  );
+
   it('does not repeat terminal effects when superseded refresh follows logout', async () => {
     setBearerSession('expired-token', 'Bearer');
     axiosMocks.rawAuth.get.mockResolvedValue({});

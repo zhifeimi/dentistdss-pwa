@@ -214,22 +214,22 @@ api.interceptors.response.use(
       isRefreshRetryEligible(originalRequest)
     ) {
       originalRequest._retry = true;
+      let shouldReplay = false;
       try {
         await session.refreshSession();
-        return await api(originalRequest);
+        shouldReplay = true;
       } catch (refreshError) {
         if (refreshError instanceof SessionRefreshSupersededError) {
           if (session.hasBearerSession()) {
-            try {
-              return await api(originalRequest);
-            } catch (_) {
-              supersededRefreshWithoutBearer = !session.hasBearerSession();
-            }
+            shouldReplay = true;
           } else {
             supersededRefreshWithoutBearer = true;
           }
         }
         // Refresh failed; fall through to terminal session handling.
+      }
+      if (shouldReplay) {
+        return await api(originalRequest);
       }
     }
 
