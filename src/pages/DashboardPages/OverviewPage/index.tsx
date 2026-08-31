@@ -76,42 +76,60 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
       setError('');
 
       try {
+        // Independent requests fire concurrently so the dashboard's first
+        // paint waits on the slowest single request instead of the serial
+        // sum. Each section keeps its own failure fallback: a failed request
+        // warns and leaves that section empty without blocking the others.
+        const tasks: Promise<void>[] = [];
+
         // Load clinic details if available
         if (currentUser?.clinicId) {
-          try {
-            const clinicData = await api.clinic.getClinicById(currentUser.clinicId);
-            setClinicDetails(clinicData);
-          } catch (err) {
-            console.warn('Could not load clinic data:', err);
-          }
+          tasks.push(
+            api.clinic.getClinicById(currentUser.clinicId)
+              .then((clinicData) => setClinicDetails(clinicData))
+              .catch((err) => {
+                console.warn('Could not load clinic data:', err);
+              })
+          );
         }
 
         // Load role-specific data
         if (userRole === 'DENTIST') {
           // Load today's appointments for dentist
-          try {
-            const today = new Date().toISOString().split('T')[0];
-            const appointmentsResponse = await api.appointment.getDentistAppointments(currentUser.id, today);
-            setTodayAppointments(appointmentsResponse || []);
-          } catch (err) {
-            console.warn('Could not load dentist appointments:', err);
-            setTodayAppointments([]);
-          }
+          const today = new Date().toISOString().split('T')[0];
+          tasks.push(
+            api.appointment.getDentistAppointments(currentUser.id, today)
+              .then((appointmentsResponse) => setTodayAppointments(appointmentsResponse || []))
+              .catch((err) => {
+                console.warn('Could not load dentist appointments:', err);
+                setTodayAppointments([]);
+              })
+          );
         } else if (userRole === 'PATIENT') {
-          // Load patient data and appointments
-          try {
-            const appointmentsResponse = await api.appointment.getPatientAppointments(currentUser.id);
-            setTodayAppointments(appointmentsResponse || []);
-
-            // Load patient profile data
-            const profileResponse = await api.user.getProfile(currentUser.id);
-            setPatientData(profileResponse || null);
-          } catch (err) {
-            console.warn('Could not load patient data:', err);
-            setTodayAppointments([]);
-            setPatientData(null);
-          }
+          // Load patient appointments and profile in parallel; each falls
+          // back independently.
+          tasks.push(
+            Promise.allSettled([
+              api.appointment.getPatientAppointments(currentUser.id),
+              api.user.getProfile(currentUser.id),
+            ]).then(([appointmentsResult, profileResult]) => {
+              if (appointmentsResult.status === 'fulfilled') {
+                setTodayAppointments(appointmentsResult.value || []);
+              } else {
+                console.warn('Could not load patient appointments:', appointmentsResult.reason);
+                setTodayAppointments([]);
+              }
+              if (profileResult.status === 'fulfilled') {
+                setPatientData(profileResult.value || null);
+              } else {
+                console.warn('Could not load patient profile:', profileResult.reason);
+                setPatientData(null);
+              }
+            })
+          );
         }
+
+        await Promise.all(tasks);
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
         setError('Failed to load dashboard information. Please try again later.');

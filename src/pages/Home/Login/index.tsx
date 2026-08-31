@@ -22,6 +22,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useMediaQuery } from '@mui/material';
 import AuthBrandPanel from '../../../components/Home/AuthBrandPanel';
+import GoogleAuthProvider from '../../../components/Auth/GoogleAuthProvider';
 
 /**
  * Login - User authentication page
@@ -184,6 +185,7 @@ const Login: React.FC = () => {
   };
 
   return (
+    <GoogleAuthProvider>
     <Container
       component="main"
       maxWidth="lg"
@@ -453,6 +455,7 @@ const Login: React.FC = () => {
         </Box>
       </Box>
     </Container>
+    </GoogleAuthProvider>
   );
 };
 

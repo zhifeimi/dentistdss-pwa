@@ -26,6 +26,7 @@ import { useMediaQuery } from '@mui/material';
 import PasswordStrengthIndicator from '../../../components/PasswordStrengthIndicator';
 import { isPasswordStrong } from '../../../utils/passwordStrength';
 import useFormValidation from '../../../hooks/useFormValidation';
+import GoogleAuthProvider from '../../../components/Auth/GoogleAuthProvider';
 
 /**
  * Signup - User registration page for patients
@@ -159,6 +160,7 @@ const Signup: React.FC = () => {
 
 
   return (
+      <GoogleAuthProvider>
       <Container component="main" maxWidth="lg">
         <Box
           sx={{
@@ -598,6 +600,7 @@ const Signup: React.FC = () => {
           </Box>
         </Box>
       </Container>
+      </GoogleAuthProvider>
   );
 }
 

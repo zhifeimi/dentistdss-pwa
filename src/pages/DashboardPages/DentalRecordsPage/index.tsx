@@ -6,7 +6,7 @@ import {
   useMediaQuery
 } from '@mui/material';
 import { MedicalServices as MedicalIcon } from '@mui/icons-material';
-import { InfoCard } from '../../../components/Dashboard/shared';
+import InfoCard from '../../../components/Dashboard/shared/InfoCard';
 import {
   getResponsivePadding,
   getResponsiveMargin

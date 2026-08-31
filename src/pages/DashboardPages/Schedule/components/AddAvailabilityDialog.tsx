@@ -24,7 +24,8 @@ import {
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from '../../../../utils/dayjs';
 import type {
   AddAvailabilityDialogProps,
   AvailabilityFormData,
@@ -194,7 +195,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Dialog
         open={open}
         onClose={(_event, reason) => {
@@ -262,7 +263,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TimePicker
                   label="Start Time"
-                  value={formData.startTime}
+                  value={formData.startTime ? dayjs(formData.startTime) : null}
                   onChange={(value) => handleChange('startTime', value && 'toDate' in value ? (value as any).toDate() : value)}
                   slotProps={{
                     textField: {
@@ -277,7 +278,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TimePicker
                   label="End Time"
-                  value={formData.endTime}
+                  value={formData.endTime ? dayjs(formData.endTime) : null}
                   onChange={(value) => handleChange('endTime', value && 'toDate' in value ? (value as any).toDate() : value)}
                   slotProps={{
                     textField: {
@@ -293,7 +294,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
               <Grid size={{ xs: 12, sm: 6 }}>
                 <DatePicker
                   label={formData.isRecurring ? "Effective From" : "Date"}
-                  value={formData.effectiveFrom}
+                  value={formData.effectiveFrom ? dayjs(formData.effectiveFrom) : null}
                   onChange={(value) => handleChange('effectiveFrom', value && 'toDate' in value ? (value as any).toDate() : value)}
                   slotProps={{
                     textField: {
@@ -309,7 +310,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <DatePicker
                     label="Effective Until"
-                    value={formData.effectiveUntil}
+                    value={formData.effectiveUntil ? dayjs(formData.effectiveUntil) : null}
                     onChange={(value) => handleChange('effectiveUntil', value && 'toDate' in value ? (value as any).toDate() : value)}
                     slotProps={{
                       textField: {

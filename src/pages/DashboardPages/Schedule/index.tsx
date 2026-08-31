@@ -25,8 +25,8 @@ import {
   CheckCircle as UnblockIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
-import { Calendar, momentLocalizer, View } from 'react-big-calendar';
-import moment from 'moment';
+import { Calendar, dayjsLocalizer, View } from 'react-big-calendar';
+import dayjs from '../../../utils/dayjs';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './Schedule.scss';
 
@@ -75,7 +75,7 @@ const SchedulePage: React.FC = () => {
   } = useSchedule();
 
   // Initialize calendar localizer
-  const localizer = momentLocalizer(moment);
+  const localizer = dayjsLocalizer(dayjs);
 
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState<boolean>(false);

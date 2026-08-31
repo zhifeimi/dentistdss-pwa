@@ -10,7 +10,7 @@ import {
   useTheme,
   TextFieldProps,
 } from '@mui/material';
-import moment from 'moment';
+import dayjs from '../../../../utils/dayjs';
 
 interface TimeSlot {
   value: string;
@@ -48,7 +48,7 @@ interface TimeSelectorProps extends Omit<TextFieldProps, 'value' | 'onChange'> {
  * TimeSelector - Custom time picker component
  *
  * Features:
- * - Uses moment.js for consistency with react-big-calendar
+ * - Uses dayjs for consistency with react-big-calendar's dayjs localizer
  * - Material-UI design integration
  * - 15-minute intervals for appointment scheduling
  * - Business hours focus (8 AM - 6 PM)
@@ -74,16 +74,16 @@ const TimeSelector: React.FC<TimeSelectorProps> = memo(({
   // Generate time slots (15-minute intervals)
   const generateTimeSlots = useCallback((): TimeSlot[] => {
     const slots: TimeSlot[] = [];
-    const startHour = minTime ? moment(minTime, 'HH:mm:ss').hour() : 8;
-    const endHour = maxTime ? moment(maxTime, 'HH:mm:ss').hour() : 18;
+    const startHour = minTime ? dayjs(minTime, 'HH:mm:ss').hour() : 8;
+    const endHour = maxTime ? dayjs(maxTime, 'HH:mm:ss').hour() : 18;
 
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
         // Don't include the last slot if it's exactly at the end hour
         if (hour === endHour && minute > 0) break;
 
-        const timeString = moment().hour(hour).minute(minute).format('HH:mm:ss');
-        const displayString = moment().hour(hour).minute(minute).format('h:mm A');
+        const timeString = dayjs().hour(hour).minute(minute).format('HH:mm:ss');
+        const displayString = dayjs().hour(hour).minute(minute).format('h:mm A');
 
         slots.push({
           value: timeString,
@@ -100,7 +100,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = memo(({
   // Format time for display
   const formatTime = useCallback((timeString?: string): string => {
     if (!timeString) return '';
-    return moment(timeString, 'HH:mm:ss').format('h:mm A');
+    return dayjs(timeString, 'HH:mm:ss').format('h:mm A');
   }, []);
 
   // Handle text field click
@@ -180,7 +180,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = memo(({
                   color="text.secondary" 
                   sx={{ mb: 1, fontWeight: 'medium' }}
                 >
-                  {moment().hour(parseInt(hour)).format('h A')}
+                  {dayjs().hour(parseInt(hour)).format('h A')}
                 </Typography>
                 <Grid container spacing={1} sx={{ mb: 2 }}>
                   {slots.map((slot) => (

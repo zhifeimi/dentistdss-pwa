@@ -1,4 +1,4 @@
-import moment from 'moment';
+import dayjs from '../../../../utils/dayjs';
 import type { Appointment, CalendarEvent, UserRole, CalendarView } from './types';
 
 /**
@@ -129,12 +129,12 @@ export const getCalendarMessages = () => ({
  */
 export const getCalendarFormats = (isMobile: boolean) => ({
   timeGutterFormat: 'HH:mm',
-  eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) => 
-    `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`,
+  eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) =>
+    `${dayjs(start).format('HH:mm')} - ${dayjs(end).format('HH:mm')}`,
   dayHeaderFormat: isMobile ? 'ddd M/D' : 'dddd, MMMM D',
   monthHeaderFormat: 'MMMM YYYY',
   dayRangeHeaderFormat: ({ start, end }: { start: Date; end: Date }) =>
-    `${moment(start).format('MMM D')} - ${moment(end).format('MMM D, YYYY')}`,
+    `${dayjs(start).format('MMM D')} - ${dayjs(end).format('MMM D, YYYY')}`,
 });
 
 /**

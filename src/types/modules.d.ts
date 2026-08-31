@@ -79,24 +79,6 @@ declare module '../pages/Home/FindAClinic' {
   export default FindAClinic;
 }
 
-declare module '../../pages/Dashboard' {
-  export const AppointmentsPage: React.ComponentType<any>;
-  export const MessagesPage: React.ComponentType<any>;
-  export const UserManagementPage: React.ComponentType<any>;
-  export const ApprovalsPage: React.ComponentType<any>;
-  export const SettingsPage: React.ComponentType<any>;
-  export const OverviewPage: React.ComponentType<any>;
-  export const DentalRecordsPage: React.ComponentType<any>;
-  export const PatientRecordsPage: React.ComponentType<any>;
-  export const ProfilePage: React.ComponentType<any>;
-  export const PatientsPage: React.ComponentType<any>;
-  export const CommunicationsPage: React.ComponentType<any>;
-  export const SchedulePage: React.ComponentType<any>;
-  export const AIReceptionistPage: React.ComponentType<any>;
-  export const AIDentistPage: React.ComponentType<any>;
-  export const AISummarizePage: React.ComponentType<any>;
-}
-
 declare module '../utils/httpErrorMessages' {
   export function getHttpErrorMessage(status: number): string;
 }

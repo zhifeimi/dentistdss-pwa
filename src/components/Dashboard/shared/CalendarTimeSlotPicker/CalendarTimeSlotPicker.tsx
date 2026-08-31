@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
-import moment from 'moment';
+import { Calendar, dayjsLocalizer } from 'react-big-calendar';
+import dayjs from '../../../../utils/dayjs';
 import {
   Box,
   Paper,
@@ -32,7 +32,7 @@ import {
 import type { CalendarTimeSlotPickerProps } from './types';
 
 // Setup the localizer for react-big-calendar
-const localizer = momentLocalizer(moment);
+const localizer = dayjsLocalizer(dayjs);
 
 /**
  * Refactored CalendarTimeSlotPicker component

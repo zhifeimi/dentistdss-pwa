@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import moment from 'moment';
+import dayjs from '../../../../utils/dayjs';
 import { getInitialCalendarDate, isDateSelectable, handleDateSelection } from './utils';
 
 /**
@@ -39,12 +39,12 @@ export const useCalendarState = (
 
   // Navigate calendar month
   const navigateMonth = useCallback((direction: number) => {
-    setCalendarDate(prev => prev.clone().add(direction, 'month'));
+    setCalendarDate(prev => prev.add(direction, 'month'));
   }, []);
 
   // Go to today
   const goToToday = useCallback(() => {
-    const today = moment();
+    const today = dayjs();
     setCalendarDate(today);
     
     // If today is within constraints, select it
@@ -54,7 +54,7 @@ export const useCalendarState = (
   }, [minDate, maxDate, handleDateSelect]);
 
   // Check if today is selectable
-  const isTodaySelectable = isDateSelectable(moment().toDate(), minDate, maxDate);
+  const isTodaySelectable = isDateSelectable(dayjs().toDate(), minDate, maxDate);
 
   return {
     anchorEl,

@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { Message as MessageIcon } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
-import { MessageSection } from '../../../components/Dashboard/shared';
+import MessageSection from '../../../components/Dashboard/shared/MessageSection';
 import {
   getResponsivePadding,
   getResponsiveMargin

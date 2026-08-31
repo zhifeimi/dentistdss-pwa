@@ -58,9 +58,14 @@ interface SessionLifecycle {
   terminateSession(options: { redirect: boolean }): void;
 }
 
+// Bounds the render-adjacent CSRF/refresh chain so an unreachable API cannot
+// hold auth bootstrap (and therefore protected-route rendering) indefinitely.
+const AUTH_REQUEST_TIMEOUT_MS = 5000;
+
 const rawAuthClient = axios.create({
   baseURL: config.api.baseUrl,
   withCredentials: true,
+  timeout: AUTH_REQUEST_TIMEOUT_MS,
 });
 
 const readHeader = (headers: unknown, name: string): string | undefined => {

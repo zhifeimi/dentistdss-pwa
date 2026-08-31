@@ -62,7 +62,9 @@ const Header: React.FC<HeaderProps> = ({
 
     const userId = currentUser?.uid || currentUser?.id;
 
-    // Fetch unread message count
+    // Fetch unread message count. The first fetch is deferred to browser idle
+    // time so it doesn't compete with the dashboard's first content paint;
+    // the 30-second poll starts after that first fetch.
     useEffect(() => {
         if (!userId) return;
 
@@ -78,11 +80,21 @@ const Header: React.FC<HeaderProps> = ({
             }
         };
 
-        fetchUnreadCount();
+        let interval: ReturnType<typeof setInterval> | undefined;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        const start = () => {
+            void fetchUnreadCount();
+            interval = setInterval(fetchUnreadCount, 30000);
+        };
+        const idleId = typeof requestIdleCallback === 'function'
+            ? requestIdleCallback(start, { timeout: 2000 })
+            : (timeout = setTimeout(start, 0), undefined);
 
-        // Refresh count every 30 seconds
-        const interval = setInterval(fetchUnreadCount, 30000);
-        return () => clearInterval(interval);
+        return () => {
+            if (idleId !== undefined) cancelIdleCallback(idleId);
+            if (timeout !== undefined) clearTimeout(timeout);
+            if (interval !== undefined) clearInterval(interval);
+        };
     }, [userId]);
 
     // Navigation handlers for menu items

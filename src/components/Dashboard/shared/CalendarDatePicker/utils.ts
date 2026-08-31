@@ -1,4 +1,4 @@
-import moment from 'moment';
+import dayjs, { type Dayjs } from '../../../../utils/dayjs';
 
 /**
  * CalendarDatePicker utility functions
@@ -10,7 +10,7 @@ import moment from 'moment';
  */
 export const formatDate = (date?: Date | null): string => {
   if (!date) return '';
-  return moment(date).format('MMM D, YYYY');
+  return dayjs(date).format('MMM D, YYYY');
 };
 
 /**
@@ -21,9 +21,9 @@ export const isDateSelectable = (
   minDate?: Date | null,
   maxDate?: Date | null
 ): boolean => {
-  const momentDate = moment(date);
-  if (minDate && momentDate.isBefore(moment(minDate), 'day')) return false;
-  if (maxDate && momentDate.isAfter(moment(maxDate), 'day')) return false;
+  const dayjsDate = dayjs(date);
+  if (minDate && dayjsDate.isBefore(dayjs(minDate), 'day')) return false;
+  if (maxDate && dayjsDate.isAfter(dayjs(maxDate), 'day')) return false;
   return true;
 };
 
@@ -32,26 +32,26 @@ export const isDateSelectable = (
  */
 export const isDateSelected = (date: Date, value?: Date | null): boolean => {
   if (!value) return false;
-  return moment(date).isSame(moment(value), 'day');
+  return dayjs(date).isSame(dayjs(value), 'day');
 };
 
 /**
  * Generate calendar days for a given month
  */
-export const generateCalendarDays = (calendarDate: moment.Moment): moment.Moment[] => {
-  const startOfMonth = calendarDate.clone().startOf('month');
-  const endOfMonth = calendarDate.clone().endOf('month');
-  const startOfCalendar = startOfMonth.clone().startOf('week');
-  const endOfCalendar = endOfMonth.clone().endOf('week');
-  
-  const days: moment.Moment[] = [];
-  const current = startOfCalendar.clone();
-  
+export const generateCalendarDays = (calendarDate: Dayjs): Dayjs[] => {
+  const startOfMonth = calendarDate.startOf('month');
+  const endOfMonth = calendarDate.endOf('month');
+  const startOfCalendar = startOfMonth.startOf('week');
+  const endOfCalendar = endOfMonth.endOf('week');
+
+  const days: Dayjs[] = [];
+  let current = startOfCalendar;
+
   while (current.isSameOrBefore(endOfCalendar, 'day')) {
-    days.push(current.clone());
-    current.add(1, 'day');
+    days.push(current);
+    current = current.add(1, 'day');
   }
-  
+
   return days;
 };
 
@@ -61,10 +61,10 @@ export const generateCalendarDays = (calendarDate: moment.Moment): moment.Moment
 export const getInitialCalendarDate = (
   value?: Date | null,
   minDate?: Date | null
-): moment.Moment => {
-  if (value) return moment(value);
-  if (minDate && moment().isBefore(moment(minDate))) return moment(minDate);
-  return moment();
+): Dayjs => {
+  if (value) return dayjs(value);
+  if (minDate && dayjs().isBefore(dayjs(minDate))) return dayjs(minDate);
+  return dayjs();
 };
 
 /**

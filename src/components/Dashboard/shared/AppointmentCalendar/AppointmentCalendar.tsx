@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
-import moment from 'moment';
+import { Calendar, dayjsLocalizer } from 'react-big-calendar';
+import dayjs from '../../../../utils/dayjs';
 import {
   Box,
   Paper,
@@ -23,7 +23,7 @@ import { getEventStyle, getCalendarPaperStyles } from './CalendarStyles';
 import type { AppointmentCalendarProps } from './types';
 
 // Setup the localizer for react-big-calendar
-const localizer = momentLocalizer(moment);
+const localizer = dayjsLocalizer(dayjs);
 
 /**
  * Refactored AppointmentCalendar component

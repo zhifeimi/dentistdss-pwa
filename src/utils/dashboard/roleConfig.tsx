@@ -18,24 +18,26 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { UserRole, DashboardSection } from '../../types';
-// Import page components
-import OverviewPage from '../../pages/DashboardPages/OverviewPage';
-import AppointmentsPage from '../../pages/DashboardPages/AppointmentsPage';
-import MessagesPage from '../../pages/DashboardPages/MessagesPage';
-import SettingsPage from '../../pages/DashboardPages/SettingsPage';
-import AIReceptionistPage from '../../pages/DashboardPages/AIReceptionistPage';
-import AIDentistPage from '../../pages/DashboardPages/AIDentistPage';
-import AISummarizePage from '../../pages/DashboardPages/AISummarizePage';
-import UserManagementPage from '../../pages/DashboardPages/UserManagementPage';
-import ApprovalsPage from '../../pages/DashboardPages/ApprovalsPage';
-import DentalRecordsPage from '../../pages/DashboardPages/DentalRecordsPage';
-import PatientRecordsPage from '../../pages/DashboardPages/PatientRecordsPage';
-import ProfilePage from '../../pages/DashboardPages/ProfilePage';
-import PatientsPage from '../../pages/DashboardPages/PatientsPage';
-import CommunicationsPage from '../../pages/DashboardPages/CommunicationsPage';
-import SchedulePage from '../../pages/DashboardPages/Schedule';
-import HolidayManagementPage from '../../pages/DashboardPages/HolidayManagementPage';
-import WorkingHoursPage from '../../pages/DashboardPages/WorkingHoursPage';
+// Page components are lazy: the registry shape (ids, labels, paths, icons) is
+// unchanged, but each role's pages are only fetched when that route renders.
+// Directory pages import their index.tsx directly to avoid barrel hazards.
+const OverviewPage = React.lazy(() => import('../../pages/DashboardPages/OverviewPage/index.tsx'));
+const AppointmentsPage = React.lazy(() => import('../../pages/DashboardPages/AppointmentsPage/index.tsx'));
+const MessagesPage = React.lazy(() => import('../../pages/DashboardPages/MessagesPage/index.tsx'));
+const SettingsPage = React.lazy(() => import('../../pages/DashboardPages/SettingsPage/index.tsx'));
+const AIReceptionistPage = React.lazy(() => import('../../pages/DashboardPages/AIReceptionistPage/index.tsx'));
+const AIDentistPage = React.lazy(() => import('../../pages/DashboardPages/AIDentistPage/index.tsx'));
+const AISummarizePage = React.lazy(() => import('../../pages/DashboardPages/AISummarizePage/index.tsx'));
+const UserManagementPage = React.lazy(() => import('../../pages/DashboardPages/UserManagementPage/index.tsx'));
+const ApprovalsPage = React.lazy(() => import('../../pages/DashboardPages/ApprovalsPage/index.tsx'));
+const DentalRecordsPage = React.lazy(() => import('../../pages/DashboardPages/DentalRecordsPage/index.tsx'));
+const PatientRecordsPage = React.lazy(() => import('../../pages/DashboardPages/PatientRecordsPage/index.tsx'));
+const ProfilePage = React.lazy(() => import('../../pages/DashboardPages/ProfilePage/index.tsx'));
+const PatientsPage = React.lazy(() => import('../../pages/DashboardPages/PatientsPage/index.tsx'));
+const CommunicationsPage = React.lazy(() => import('../../pages/DashboardPages/CommunicationsPage/index.tsx'));
+const SchedulePage = React.lazy(() => import('../../pages/DashboardPages/Schedule/index.tsx'));
+const HolidayManagementPage = React.lazy(() => import('../../pages/DashboardPages/HolidayManagementPage/index.tsx'));
+const WorkingHoursPage = React.lazy(() => import('../../pages/DashboardPages/WorkingHoursPage/index.tsx'));
 
 
 // Role metadata configuration

@@ -9,9 +9,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useAuth } from '../../../context/auth';
-import {
-  SearchableList,
-} from '../../../components/Dashboard/shared';
+import SearchableList from '../../../components/Dashboard/shared/SearchableList';
 import {
   getResponsivePadding,
   getResponsiveMargin,

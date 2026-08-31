@@ -1,4 +1,4 @@
-import moment from 'moment';
+import dayjs, { type Dayjs } from '../../../../utils/dayjs';
 import type { AvailabilitySlot, CalendarEvent } from './types';
 
 /**
@@ -10,10 +10,10 @@ import type { AvailabilitySlot, CalendarEvent } from './types';
  * Generate date range for availability loading
  */
 export const getDateRange = (navigationDate?: Date | null) => {
-  const baseDate = navigationDate ? moment(navigationDate) : moment('2025-06-01');
-  const startDate = baseDate.clone().startOf('month').format('YYYY-MM-DD');
-  const endDate = baseDate.clone().add(3, 'months').endOf('month').format('YYYY-MM-DD');
-  
+  const baseDate = navigationDate ? dayjs(navigationDate) : dayjs('2025-06-01');
+  const startDate = baseDate.startOf('month').format('YYYY-MM-DD');
+  const endDate = baseDate.add(3, 'months').endOf('month').format('YYYY-MM-DD');
+
   return { startDate, endDate };
 };
 
@@ -27,7 +27,7 @@ export const isValidSlot = (slot: AvailabilitySlot): boolean => {
 /**
  * Validate time range
  */
-export const isValidTimeRange = (startTime: moment.Moment, endTime: moment.Moment): boolean => {
+export const isValidTimeRange = (startTime: Dayjs, endTime: Dayjs): boolean => {
   return startTime.isValid() && endTime.isValid() && startTime.isBefore(endTime);
 };
 
@@ -49,17 +49,17 @@ export const convertToCalendarEvents = (availability: AvailabilitySlot[]): Calen
     console.log('Processing slot:', slot.id, 'date:', slotDate, 'time:', slot.startTime, '-', slot.endTime);
 
     // Generate 30-minute time slots for each availability period
-    const startTime = moment(`${slotDate} ${slot.startTime}`, 'YYYY-MM-DD HH:mm:ss');
-    const endTime = moment(`${slotDate} ${slot.endTime}`, 'YYYY-MM-DD HH:mm:ss');
+    const startTime = dayjs(`${slotDate} ${slot.startTime}`, 'YYYY-MM-DD HH:mm:ss');
+    const endTime = dayjs(`${slotDate} ${slot.endTime}`, 'YYYY-MM-DD HH:mm:ss');
 
     if (!isValidTimeRange(startTime, endTime)) {
       console.warn('Invalid time range for slot:', slot);
       return;
     }
 
-    const current = startTime.clone();
+    let current = startTime;
     while (current.isBefore(endTime)) {
-      const slotEnd = current.clone().add(30, 'minutes');
+      const slotEnd = current.add(30, 'minutes');
 
       // Don't create slots that extend beyond the availability period
       if (slotEnd.isAfter(endTime)) break;
@@ -79,7 +79,7 @@ export const convertToCalendarEvents = (availability: AvailabilitySlot[]): Calen
         }
       });
 
-      current.add(30, 'minutes');
+      current = current.add(30, 'minutes');
     }
   });
 
@@ -91,7 +91,7 @@ export const convertToCalendarEvents = (availability: AvailabilitySlot[]): Calen
  * Format selected time for display
  */
 export const formatSelectedTime = (selectedTime: string): string => {
-  return moment(selectedTime, 'HH:mm:ss').format('h:mm A');
+  return dayjs(selectedTime, 'HH:mm:ss').format('h:mm A');
 };
 
 /**

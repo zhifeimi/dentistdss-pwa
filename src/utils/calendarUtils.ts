@@ -1,4 +1,4 @@
-import moment from 'moment';
+import dayjs from './dayjs';
 
 /**
  * Utility functions for transforming availability data to calendar events
@@ -195,9 +195,9 @@ export const transformSlotsToEvents = (availability: AvailabilitySlot[], viewSta
  * Get calendar view range for data loading
  */
 export const getCalendarViewRange = (currentDate: Date, view: string = 'month'): ViewRange => {
-  const start = moment(currentDate);
-  const end = moment(currentDate);
-  
+  const start = dayjs(currentDate);
+  const end = dayjs(currentDate);
+
   switch (view) {
     case 'month':
       start.startOf('month').subtract(7, 'days'); // Include previous week for month view

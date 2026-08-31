@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import moment from 'moment';
+import dayjs from '../../../../utils/dayjs';
 import type { 
   Appointment, 
   SlotInfo, 
@@ -29,9 +29,9 @@ export const useCalendarEvents = (
       onSelectSlot(slotInfo);
     } else if (onNewAppointment) {
       onNewAppointment({
-        date: moment(slotInfo.start).format('YYYY-MM-DD'),
-        startTime: moment(slotInfo.start).format('HH:mm:ss'),
-        endTime: moment(slotInfo.end).format('HH:mm:ss'),
+        date: dayjs(slotInfo.start).format('YYYY-MM-DD'),
+        startTime: dayjs(slotInfo.start).format('HH:mm:ss'),
+        endTime: dayjs(slotInfo.end).format('HH:mm:ss'),
       });
     }
   }, [onSelectSlot, onNewAppointment]);

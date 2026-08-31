@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
 import { Navigate, Route, Routes } from 'react-router';
 import { useAuth } from '@/context/auth';
@@ -8,9 +8,13 @@ import DashboardErrorBoundary from '../../ErrorBoundary/DashboardErrorBoundary';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
 import PageContainer from '../PageContainer';
-import ChangePasswordPage from '../../../pages/DashboardPages/ChangePasswordPage';
-import UserProfilePage from '../../../pages/DashboardPages/UserProfilePage';
+import RouteFallback from '../../RouteFallback';
 import { UserRole } from '../../../types';
+
+// Lazy standalone pages — keeps @mui/x-date-pickers (UserProfilePage) out of
+// the dashboard shell chunk.
+const ChangePasswordPage = React.lazy(() => import('../../../pages/DashboardPages/ChangePasswordPage'));
+const UserProfilePage = React.lazy(() => import('../../../pages/DashboardPages/UserProfilePage'));
 
 const drawerWidth = 240;
 
@@ -94,52 +98,56 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
 
       {/* Main Content with Routes */}
       <PageContainer drawerWidth={drawerWidth}>
-        <Routes>
-          {/* Standalone routes accessible from any role */}
-          <Route
-            path='/profile'
-            element={<UserProfilePage />}
-          />
-          <Route
-            path='/change-password'
-            element={<ChangePasswordPage />}
-          />
-
-          {/* Generate routes for role-specific sections */}
-          {roleRoutes.map((route) => (
+        {/* Suspense boundary is INSIDE the layout: Header and Sidebar stay
+            mounted while a page chunk loads; only the content area falls back. */}
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            {/* Standalone routes accessible from any role */}
             <Route
-              key={route.key}
-              path={route.path}
+              path='/profile'
+              element={<UserProfilePage />}
+            />
+            <Route
+              path='/change-password'
+              element={<ChangePasswordPage />}
+            />
+
+            {/* Generate routes for role-specific sections */}
+            {roleRoutes.map((route) => (
+              <Route
+                key={route.key}
+                path={route.path}
+                element={
+                  <route.component
+                    clinicId={currentUser?.clinicId}
+                    userRole={activeRoleKey as UserRole}
+                  />
+                }
+              />
+            ))}
+
+            {/* Default redirect */}
+            <Route
+              path='/dashboard'
               element={
-                <route.component
-                  clinicId={currentUser?.clinicId}
-                  userRole={activeRoleKey as UserRole}
+                <Navigate
+                  to='/overview'
+                  replace
                 />
               }
             />
-          ))}
 
-          {/* Default redirect */}
-          <Route
-            path='/dashboard'
-            element={
-              <Navigate
-                to='/overview'
-                replace
-              />
-            }
-          />
-
-          {/* 404 for invalid routes */}
-          <Route
-            path='*'
-            element={
-              <Alert severity='error'>
-                Page not found. Please select a valid section from the sidebar.
-              </Alert>
-            }
-          />
-        </Routes>
+            {/* 404 for invalid routes */}
+            <Route
+              path='*'
+              element={
+                <Alert severity='error'>
+                  Page not found. Please select a valid section from the sidebar.
+                </Alert>
+              }
+            />
+          </Routes>
+        </Suspense>
       </PageContainer>
     </Box>
   );
