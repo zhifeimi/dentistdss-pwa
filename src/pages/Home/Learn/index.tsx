@@ -28,18 +28,28 @@ import CloseIcon from '@mui/icons-material/Close';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import GradientMesh from '../Welcome/sections/GradientMesh';
 
-import img11 from '../../../assets/11.jpg';
-import img22 from '../../../assets/22.jpg';
-import img33 from '../../../assets/33.jpg';
-import img44 from '../../../assets/44.jpg';
-import img55 from '../../../assets/55.jpg';
-import img66 from '../../../assets/66.jpg';
-import img77 from '../../../assets/77.jpg';
+import img11 from '../../../assets/learn/11-card.webp';
+import img22 from '../../../assets/learn/22-card.webp';
+import img33 from '../../../assets/learn/33-card.webp';
+import img44 from '../../../assets/learn/44-card.webp';
+import img55 from '../../../assets/learn/55-card.webp';
+import img66 from '../../../assets/learn/66-card.webp';
+import img77 from '../../../assets/learn/77-card.webp';
+import full11 from '../../../assets/learn/11-full.webp';
+import full22 from '../../../assets/learn/22-full.webp';
+import full33 from '../../../assets/learn/33-full.webp';
+import full44 from '../../../assets/learn/44-full.webp';
+import full55 from '../../../assets/learn/55-full.webp';
+import full66 from '../../../assets/learn/66-full.webp';
+import full77 from '../../../assets/learn/77-full.webp';
 
 interface Article {
   title: string;
   content: string;
+  /** Card grid thumbnail (~800px WebP, lazy-loaded). */
   img: string;
+  /** Reading-dialog image (~1600px WebP), fetched only when an article opens. */
+  fullImg: string;
   tags: string[];
 }
 
@@ -58,6 +68,7 @@ Early symptoms include red, swollen, and bleeding gums. Fortunately, gum disease
 
 If left untreated, gum disease can lead to tooth loss and is even linked to other health problems like heart disease. Treatments vary depending on the severity, from deep cleaning (scaling and root planing) to surgical procedures in advanced stages. Maintaining a consistent dental routine is the best defense against gum disease.`,
     img: img11,
+    fullImg: full11,
     tags: ['Prevention', 'Oral Care', 'Health Tips']
   },
   {
@@ -68,6 +79,7 @@ Frequent snacking, sugary drinks, and poor oral hygiene significantly increase y
 
 Treatment depends on the severity: minor cavities are treated with fillings, while advanced decay may require crowns or root canals. In some cases, extraction may be necessary. Early detection is crucial, making routine dental visits essential.`,
     img: img22,
+    fullImg: full22,
     tags: ['Prevention', 'Treatment', 'Oral Care']
   },
   {
@@ -78,6 +90,7 @@ Impacted wisdom teeth are trapped beneath the gum or in the jaw and can cause pa
 
 Post-extraction recovery involves managing swelling, pain, and preventing dry socket. It's crucial to follow post-op care instructions closely. Not all wisdom teeth require removal — a dentist can monitor their development through X-rays.`,
     img: img33,
+    fullImg: full33,
     tags: ['Treatment', 'Dental Procedures', 'Health Tips']
   },
   {
@@ -88,6 +101,7 @@ Common causes include aggressive brushing, gum disease, tooth grinding, and acid
 
 Using desensitizing toothpaste, avoiding acidic foods, and practicing gentle brushing can help. For severe cases, treatments like fluoride gel or dental bonding may be needed. Regular dental checkups ensure early intervention and long-term comfort.`,
     img: img44,
+    fullImg: full44,
     tags: ['Treatment', 'Oral Care', 'Health Tips']
   },
   {
@@ -98,6 +112,7 @@ Other causes include dry mouth, gum disease, cavities, and infections. Smoking a
 
 To combat bad breath, maintain good oral hygiene by brushing your teeth and tongue twice a day, flossing, and using mouthwash. Stay hydrated and visit your dentist regularly to identify any underlying dental issues. Persistent bad breath should not be ignored — it may indicate more serious health problems.`,
     img: img55,
+    fullImg: full55,
     tags: ['Prevention', 'Oral Care', 'Health Tips']
   },
   {
@@ -108,6 +123,7 @@ Unlike dentures, implants are durable, stable, and mimic natural teeth. The proc
 
 Patients must have healthy gums and sufficient bone to support the implant. Smokers and individuals with chronic illnesses may need additional evaluation. Dental implants require the same care as natural teeth — daily brushing, flossing, and regular dental visits.`,
     img: img66,
+    fullImg: full66,
     tags: ['Treatment', 'Dental Procedures']
   },
   {
@@ -118,6 +134,7 @@ Early symptoms include mouth sores, lumps, or red or white patches that persist.
 
 Early diagnosis dramatically improves survival rates. Prevention includes avoiding tobacco, limiting alcohol, practicing good oral hygiene, and getting HPV vaccinations. Any unusual changes in your mouth should be promptly examined by a dental professional.`,
     img: img77,
+    fullImg: full77,
     tags: ['Prevention', 'Treatment', 'Health Tips']
   }
 ];
@@ -336,7 +353,7 @@ const Learn: React.FC = () => {
 
               <CardMedia
                 component="img"
-                image={selectedArticle.img}
+                image={selectedArticle.fullImg}
                 alt={selectedArticle.title}
                 sx={{
                   width: '100%',
@@ -416,6 +433,8 @@ const Learn: React.FC = () => {
                     height="180"
                     image={article.img}
                     alt={article.title}
+                    loading="lazy"
+                    decoding="async"
                     sx={{ objectFit: 'cover' }}
                   />
                   <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>

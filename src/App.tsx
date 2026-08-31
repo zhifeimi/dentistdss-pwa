@@ -13,15 +13,14 @@ import theme from './context/theme';
 import AppRoutes from './routes';
 
 function App(): React.JSX.Element {
-  const { loading, logout } = useAuth();
+  const { logout } = useAuth();
   const { darkMode, toggleDarkMode } = useDarkMode();
 
   const appTheme = useMemo(() => theme(darkMode ? 'dark' : 'light'), [darkMode]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
+  // No global auth-loading gate here: public routes must paint immediately while
+  // the background auth restore runs. Protected routes handle `loading` locally
+  // (see routes/index.tsx and pages/Dashboard/index.tsx).
   return (
     <ThemeProvider theme={appTheme}>
       <CssBaseline />

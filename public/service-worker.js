@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dentistdss-pwa-v2';
+const CACHE_NAME = 'dentistdss-pwa-v3';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -24,23 +24,14 @@ function canCache(response) {
     !response.headers.get('cache-control')?.toLowerCase().includes('no-store');
 }
 
-async function precacheBuildAssets(cache) {
-  const indexResponse = await cache.match('/index.html');
-  if (!indexResponse) return;
-
-  const html = await indexResponse.text();
-  const assetPaths = [...html.matchAll(/(?:src|href)="(\/assets\/[^"?#]+)[^"\s]*"/g)]
-    .map((match) => match[1]);
-  await Promise.allSettled(assetPaths.map((path) => cache.add(path)));
-}
-
+// Hashed build assets are NOT install-precached: index.html statically
+// references every eagerly-emitted image/font (dozens of MB of Learn media),
+// so install-time HTML scraping forced a multi-MB first-visit download.
+// They are covered by the runtime cacheFirst handler on first use instead.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(async (cache) => {
-        await cache.addAll(CORE_ASSETS);
-        await precacheBuildAssets(cache);
-      }),
+      .then((cache) => cache.addAll(CORE_ASSETS)),
   );
 });
 

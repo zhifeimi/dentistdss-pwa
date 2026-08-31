@@ -1,4 +1,5 @@
 import { TextFieldProps } from '@mui/material';
+import type { Dayjs } from '../../../../utils/dayjs';
 
 /**
  * CalendarDatePicker types
@@ -31,12 +32,12 @@ export interface CalendarDatePickerProps extends Omit<TextFieldProps, 'value' | 
 }
 
 export interface CalendarHeaderProps {
-  calendarDate: moment.Moment;
+  calendarDate: Dayjs;
   onNavigateMonth: (direction: number) => void;
 }
 
 export interface CalendarGridProps {
-  calendarDate: moment.Moment;
+  calendarDate: Dayjs;
   value?: Date | null;
   minDate?: Date | null;
   maxDate?: Date | null;

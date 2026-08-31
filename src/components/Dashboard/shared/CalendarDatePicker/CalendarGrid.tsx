@@ -1,11 +1,11 @@
 import React from 'react';
 import { Grid, Box, Button, useTheme } from '@mui/material';
-import moment from 'moment';
-import { 
-  generateCalendarDays, 
-  isDateSelectable, 
-  isDateSelected, 
-  WEEK_DAYS 
+import dayjs from '../../../../utils/dayjs';
+import {
+  generateCalendarDays,
+  isDateSelectable,
+  isDateSelected,
+  WEEK_DAYS
 } from './utils';
 import type { CalendarGridProps } from './types';
 
@@ -46,7 +46,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
       <Grid container spacing={0}>
         {calendarDays.map((day, index) => {
           const isCurrentMonth = day.month() === calendarDate.month();
-          const isToday = day.isSame(moment(), 'day');
+          const isToday = day.isSame(dayjs(), 'day');
           const isSelected = isDateSelected(day.toDate(), value);
           const isSelectable = isDateSelectable(day.toDate(), minDate, maxDate);
           

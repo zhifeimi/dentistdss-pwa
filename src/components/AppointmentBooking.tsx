@@ -37,10 +37,6 @@ import {
 import { useAuth } from '../context/auth';
 import api from '../services';
 import type { Appointment, ClinicService as Service, Dentist, TimeSlot } from '../types/api';
-// import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
-// import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-// import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-// import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 interface SnackbarState {
   open: boolean;

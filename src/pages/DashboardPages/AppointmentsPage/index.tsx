@@ -21,13 +21,11 @@ import {
 } from '@mui/icons-material';
 import '../Schedule/Schedule.scss';
 import { useAuth } from '../../../context/auth';
-import {
-  AppointmentCalendar,
-  AppointmentCard,
-  AppointmentDialog,
-  BookingWizard,
-  SearchableList,
-} from '../../../components/Dashboard/shared';
+import AppointmentCalendar from '../../../components/Dashboard/shared/AppointmentCalendar';
+import AppointmentCard from '../../../components/Dashboard/shared/AppointmentCard';
+import AppointmentDialog from '../../../components/Dashboard/shared/AppointmentDialog';
+import BookingWizard from '../../../components/Dashboard/shared/BookingWizard';
+import SearchableList from '../../../components/Dashboard/shared/SearchableList';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';
 import useAppointments from '../../../hooks/appointment/useAppointments';
 import useAppointmentActions from '../../../hooks/appointment/useAppointmentActions';

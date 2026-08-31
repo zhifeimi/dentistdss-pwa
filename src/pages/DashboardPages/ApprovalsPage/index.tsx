@@ -7,10 +7,8 @@ import {
   DialogContentText,
 } from '@mui/material';
 import { useAsyncData } from '../../../hooks/dashboard/useAsyncData';
-import {
-  ListCard,
-  ApprovalDialog
-} from '../../../components/Dashboard/shared';
+import ListCard from '../../../components/Dashboard/shared/ListCard';
+import ApprovalDialog from '../../../components/Dashboard/shared/ApprovalDialog';
 import useApprovalDialog from '../../../hooks/dashboard/useApprovalDialog';
 import useConfirmationDialog from '../../../hooks/dashboard/useConfirmationDialog';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';

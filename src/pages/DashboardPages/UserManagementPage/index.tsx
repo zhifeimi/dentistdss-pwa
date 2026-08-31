@@ -16,10 +16,8 @@ import {
   People as PeopleIcon,
   PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
-import {
-  ListCard,
-  ActionButton,
-} from '../../../components/Dashboard/shared';
+import ListCard from '../../../components/Dashboard/shared/ListCard';
+import ActionButton from '../../../components/Dashboard/shared/ActionButton';
 import { roleMapping } from '../../../utils/dictionary';
 import {
   getResponsivePadding,

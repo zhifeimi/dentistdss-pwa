@@ -104,11 +104,16 @@ const removeAuthorizationHeader = (headers: HeaderBag): void => {
   delete headers.authorization;
 };
 
+// Bounds ordinary API requests so a stalled endpoint cannot hang a view
+// indefinitely. Callers can still override per-request via Axios config.
+const API_REQUEST_TIMEOUT_MS = 10000;
+
 // Create the ordinary Axios instance. Session bootstrap and refresh use the
 // raw client owned by session.ts, so they never pass through these interceptors.
 const api: AxiosInstance = axios.create({
   baseURL,
   withCredentials: true,
+  timeout: API_REQUEST_TIMEOUT_MS,
 });
 
 // Request interceptor for API calls
