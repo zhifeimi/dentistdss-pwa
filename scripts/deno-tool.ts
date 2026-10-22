@@ -13,7 +13,7 @@ const tools = {
   // so this does not loosen reproducibility — an exact pin here would add
   // a second specifier the lock must also carry.
   vite: 'npm:vite@^8.1.5',
-  vitest: 'npm:vitest@4.1.12',
+  vitest: 'npm:vitest@5.0.5',
   playwright: 'npm:@playwright/test@1.61.1/cli',
 } as const;
 
