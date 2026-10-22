@@ -56,7 +56,7 @@ export const buildAppointmentData = (
   };
 };
 
-export const handleBookingSuccess = async (
+const handleBookingSuccess = async (
   appointment: Appointment,
   context: BookingSubmissionContext,
 ): Promise<void> => {

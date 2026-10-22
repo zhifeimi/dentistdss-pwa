@@ -20,10 +20,5 @@
  */
 
 export { default } from './CalendarDatePicker';
-export { default as CalendarDatePicker } from './CalendarDatePicker';
-export { CalendarHeader } from './CalendarHeader';
-export { CalendarGrid } from './CalendarGrid';
-export { CalendarFooter } from './CalendarFooter';
-export { useCalendarState } from './useCalendarState';
 export * from './utils';
 export * from './types';

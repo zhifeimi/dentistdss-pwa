@@ -1,8 +1,5 @@
-import React, { createContext, useContext } from 'react';
-import type {
-  NotificationContextType,
-  NotificationProviderProps,
-} from '../../types/components';
+import { createContext, useContext } from 'react';
+import type { NotificationContextType } from '../../types/components';
 
 // Notification Context
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -16,4 +13,4 @@ export const useNotifications = (): NotificationContextType => {
 };
 
 export { NotificationContext };
-export type { NotificationContextType, NotificationProviderProps };
+export type { NotificationContextType };

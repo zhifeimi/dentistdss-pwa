@@ -15,7 +15,6 @@ import {
   Switch,
   Alert,
   CircularProgress,
-  Box,
   Typography,
   useTheme,
   useMediaQuery,
@@ -86,7 +85,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { validateField, getFieldError, hasFieldError, clearValidationErrors } = useFormValidation();
+  const { getFieldError, hasFieldError, clearValidationErrors } = useFormValidation();
 
   // Form state
   const [formData, setFormData] = useState<HolidayFormData>({

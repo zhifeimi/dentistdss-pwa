@@ -17,7 +17,6 @@ import {
   InputLabel,
   Paper,
   useTheme,
-  Divider,
   InputAdornment,
   IconButton,
   SelectChangeEvent
@@ -198,7 +197,7 @@ const ClinicStaff: React.FC = () => {
     }
 
     try {
-      const result = await api.auth.signupClinicStaff(
+      await api.auth.signupClinicStaff(
         {
           email: formData.email,
           password: formData.password,

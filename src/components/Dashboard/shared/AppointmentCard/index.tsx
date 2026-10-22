@@ -25,7 +25,6 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../../../context/auth';
 import { formatDate, formatTime, getStatusColor } from '../../../../utils/dashboard/dashboardUtils';
-import type { UserRole } from '../../../../types/common';
 import type { Appointment } from '../../../../types/api';
 
 type ActionType = 'reschedule' | 'cancel' | 'confirm' | 'no-show' | 'complete' | 'details';
@@ -348,4 +347,3 @@ const AppointmentCard: React.FC<AppointmentCardProps> = memo(({
 AppointmentCard.displayName = 'AppointmentCard';
 
 export default AppointmentCard;
-export type { AppointmentCardProps };

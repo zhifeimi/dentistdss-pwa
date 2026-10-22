@@ -32,7 +32,7 @@ import {
   getAppointmentServiceType
 } from '../../../utils/chatUtils';
 import api from '../../../services';
-import { UserRole, Appointment, Clinic, User } from '../../../types';
+import { UserRole, Appointment, Clinic } from '../../../types';
 
 interface OverviewPageProps {
   userRole?: UserRole;

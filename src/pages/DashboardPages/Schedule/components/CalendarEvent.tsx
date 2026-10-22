@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Box, Typography, Chip } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { Block as BlockIcon, CheckCircle as ActiveIcon } from '@mui/icons-material';
 import type { CalendarEventProps } from '../../../../types/components';
 
@@ -114,39 +114,6 @@ const CalendarEvent: React.FC<CalendarEventProps> = ({ event }) => {
           Recurring
         </Typography>
       )}
-    </Box>
-  );
-};
-
-interface EventWrapperProps {
-  event: {
-    backgroundColor: string;
-    borderColor: string;
-    color: string;
-  };
-  children: ReactNode;
-}
-
-/**
- * Event wrapper component that handles the event styling
- */
-export const EventWrapper: React.FC<EventWrapperProps> = ({ event, children }) => {
-  return (
-    <Box
-      sx={{
-        height: '100%',
-        backgroundColor: event.backgroundColor,
-        borderColor: event.borderColor,
-        color: event.color,
-        border: `1px solid ${event.borderColor}`,
-        borderRadius: '4px',
-        overflow: 'hidden',
-        '&:hover': {
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-        }
-      }}
-    >
-      {children}
     </Box>
   );
 };

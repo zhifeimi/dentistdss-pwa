@@ -15,7 +15,6 @@ import {
   Switch,
   Alert,
   CircularProgress,
-  Box,
   Typography,
   useTheme,
   useMediaQuery,
@@ -85,7 +84,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { validateField, getFieldError, hasFieldError, clearValidationErrors } = useFormValidation();
+  const { clearValidationErrors } = useFormValidation();
 
   // Form state
   const [formData, setFormData] = useState<WorkingHoursFormData>({

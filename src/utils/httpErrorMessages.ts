@@ -1,5 +1,5 @@
 // Dictionary of HTTP error status codes and user-friendly messages
-export const httpErrorMessages: Record<number, string> = {
+const httpErrorMessages: Record<number, string> = {
   400: 'Bad Request. Please check your input and try again.',
   401: 'Unauthorized. Please log in to continue.',
   403: 'Forbidden. You do not have permission to perform this action.',

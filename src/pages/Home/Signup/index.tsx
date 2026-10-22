@@ -52,7 +52,6 @@ const Signup: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const navigate = useNavigate(); // Hook for navigation
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const containerRef = useRef<HTMLDivElement>(null);
   const [googleButtonWidth, setGoogleButtonWidth] = useState<string>(isMobile ? '352px' : '334px');
 
@@ -117,7 +116,7 @@ const Signup: React.FC = () => {
       // The role 'patient' is implicitly handled by this form.
       // The signup function from AuthContext will be called.
       // We need to ensure it doesn't auto-login patients but signals success for redirection.
-      const result = await signup(email, password, firstName, lastName, 'PATIENT' as const);
+      await signup(email, password, firstName, lastName, 'PATIENT' as const);
 
       // Assuming signup now returns something to indicate success without auto-login for patients
       // or that the API call itself was successful and email verification is the next step.

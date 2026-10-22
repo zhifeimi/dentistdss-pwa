@@ -102,34 +102,6 @@ export const formatTimeAgo = (timestamp: Date): string => {
 };
 
 /**
- * Get notification icon type
- */
-export const getNotificationIconType = (type: string): string => {
-  switch (type) {
-    case 'appointment':
-      return 'event';
-    case 'medical':
-      return 'medical';
-    case 'patient':
-      return 'person';
-    case 'system':
-      return 'settings';
-    case 'payment':
-      return 'payment';
-    case 'security':
-      return 'security';
-    case 'warning':
-      return 'warning';
-    case 'error':
-      return 'error';
-    case 'success':
-      return 'success';
-    default:
-      return 'info';
-  }
-};
-
-/**
  * Get notification color
  */
 export const getNotificationColor = (type: string): 'primary' | 'secondary' | 'info' | 'default' | 'success' | 'error' | 'warning' => {

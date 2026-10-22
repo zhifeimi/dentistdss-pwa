@@ -17,28 +17,14 @@
  * - Dependency Inversion: Depends on abstractions, not concretions
  */
 
-// Context and hooks
-export { useNotifications } from './NotificationContext';
+// Context
 export { NotificationProvider } from './NotificationProvider';
 
 // Components
 export { NotificationBell } from './NotificationBell';
-export { SnackbarContainer } from './SnackbarContainer';
-export { NotificationDrawer } from './NotificationDrawer';
-export { NotificationList } from './NotificationList';
-export { NotificationSettings } from './NotificationSettings';
 
 // Utilities
 export * from './NotificationUtils';
 
 // Hooks
 export * from './NotificationHooks';
-
-// Re-export types
-export type {
-  NotificationSettings as NotificationSettingsType,
-  Notification,
-  SnackbarNotification,
-  NotificationContextType,
-  NotificationProviderProps,
-} from '../../types/components';

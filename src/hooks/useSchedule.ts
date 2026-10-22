@@ -4,7 +4,6 @@ import { getCalendarViewRange, transformSlotsToEvents } from '../utils/calendarU
 import {
   AvailabilitySlot,
   CalendarEvent,
-  DateRange,
   CalendarRange,
   CalendarView,
   formatDate,
@@ -51,7 +50,7 @@ interface UseScheduleReturn {
  * Custom hook for schedule management
  * Provides state management and API interactions for dentist availability
  */
-export const useSchedule = (): UseScheduleReturn => {
+const useSchedule = (): UseScheduleReturn => {
   const { currentUser } = useAuth();
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState<boolean>(false);

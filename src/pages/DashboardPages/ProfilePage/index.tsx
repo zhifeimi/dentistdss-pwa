@@ -57,7 +57,6 @@ const ProfilePage: React.FC = () => {
   const { currentUser } = useAuth() || {};
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Load dentist profile data
   useEffect(() => {

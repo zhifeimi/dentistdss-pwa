@@ -8,23 +8,12 @@
  * - URL encoding for safe navigation
  */
 
-interface Location {
-  latitude: number;
-  longitude: number;
-  name?: string;
-}
-
 interface PlatformInfo {
   isIOS: boolean;
   isAndroid: boolean;
   isMacOS: boolean;
   isWindows: boolean;
   isMobile: boolean;
-}
-
-interface CenterPoint {
-  lat: number;
-  lng: number;
 }
 
 interface NavigationParams {
@@ -36,7 +25,7 @@ interface NavigationParams {
 /**
  * Detect if the app is running as a PWA
  */
-export const isPWA = (): boolean => {
+const isPWA = (): boolean => {
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
     (window.navigator as any).standalone === true ||
@@ -47,7 +36,7 @@ export const isPWA = (): boolean => {
 /**
  * Detect the user's platform
  */
-export const detectPlatform = (): PlatformInfo => {
+const detectPlatform = (): PlatformInfo => {
   const ua = window.navigator.userAgent;
   
   return {
@@ -62,7 +51,7 @@ export const detectPlatform = (): PlatformInfo => {
 /**
  * Generate appropriate maps URL based on platform and PWA status
  */
-export const generateMapsURL = ({ latitude, longitude, name }: NavigationParams): string => {
+const generateMapsURL = ({ latitude, longitude, name }: NavigationParams): string => {
   const platform = detectPlatform();
   const isStandalone = isPWA();
   const encodedName = encodeURIComponent(name || 'Dental Clinic');
@@ -116,98 +105,4 @@ export const openDirections = ({ latitude, longitude, name }: NavigationParams):
       alert(`Could not open maps. Coordinates: ${latitude}, ${longitude}`);
     }
   }
-};
-
-/**
- * Calculate the center point of multiple locations
- */
-export const calculateCenter = (locations: Location[]): CenterPoint | null => {
-  const validLocations = locations.filter(
-    loc => loc.latitude && loc.longitude
-  );
-  
-  if (validLocations.length === 0) {
-    return null;
-  }
-  
-  if (validLocations.length === 1) {
-    return {
-      lat: validLocations[0].latitude,
-      lng: validLocations[0].longitude,
-    };
-  }
-  
-  const sum = validLocations.reduce(
-    (acc, loc) => ({
-      lat: acc.lat + loc.latitude,
-      lng: acc.lng + loc.longitude,
-    }),
-    { lat: 0, lng: 0 }
-  );
-  
-  return {
-    lat: sum.lat / validLocations.length,
-    lng: sum.lng / validLocations.length,
-  };
-};
-
-/**
- * Calculate appropriate zoom level based on locations spread
- */
-export const calculateZoom = (locations: Location[]): number => {
-  const validLocations = locations.filter(
-    loc => loc.latitude && loc.longitude
-  );
-  
-  if (validLocations.length === 0) {
-    return 11; // Default zoom
-  }
-  
-  if (validLocations.length === 1) {
-    return 15; // Close zoom for single location
-  }
-  
-  // Calculate the span of coordinates
-  const lats = validLocations.map(loc => loc.latitude);
-  const lngs = validLocations.map(loc => loc.longitude);
-  
-  const latSpan = Math.max(...lats) - Math.min(...lats);
-  const lngSpan = Math.max(...lngs) - Math.min(...lngs);
-  const maxSpan = Math.max(latSpan, lngSpan);
-  
-  // Determine zoom based on coordinate span
-  if (maxSpan > 10) return 6;   // Very wide area
-  if (maxSpan > 5) return 7;    // Wide area
-  if (maxSpan > 2) return 8;    // Large area
-  if (maxSpan > 1) return 9;    // Medium area
-  if (maxSpan > 0.5) return 10; // Small area
-  if (maxSpan > 0.1) return 12; // Very small area
-  return 14; // Tight cluster
-};
-
-/**
- * Validate coordinates
- */
-export const validateCoordinates = (latitude: number, longitude: number): boolean => {
-  return (
-    typeof latitude === 'number' &&
-    typeof longitude === 'number' &&
-    latitude >= -90 &&
-    latitude <= 90 &&
-    longitude >= -180 &&
-    longitude <= 180 &&
-    !isNaN(latitude) &&
-    !isNaN(longitude)
-  );
-};
-
-/**
- * Format coordinates for display
- */
-export const formatCoordinates = (latitude: number, longitude: number, precision: number = 6): string => {
-  if (!validateCoordinates(latitude, longitude)) {
-    return 'Invalid coordinates';
-  }
-  
-  return `${latitude.toFixed(precision)}, ${longitude.toFixed(precision)}`;
 };

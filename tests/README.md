@@ -9,7 +9,6 @@ This directory contains all test files for the Dental Clinic Assistant System. T
 ```
 tests/
 ├── README.md                 # This file
-├── index.ts                  # Test utilities and exports (TypeScript)
 ├── setup.tsx                 # Global test configuration and mocks (TypeScript)
 ├── tsconfig.json             # TypeScript configuration for tests
 ├── unit/                     # Unit tests for individual functions
@@ -101,12 +100,6 @@ Full user workflow tests using Playwright.
 - Provides test utilities and helpers with type safety
 - Configures Material-UI and React Router mocks
 
-### Test Utilities (`index.ts`)
-- Exports common testing utilities with TypeScript types
-- Provides test fixtures and mock data with type definitions
-- Includes helper functions for testing with proper typing
-- Centralizes test configuration with TypeScript support
-
 ## Running Tests
 
 ### All Tests
@@ -148,7 +141,6 @@ deno task test:e2e
 ```typescript
 import { describe, it, expect, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import { testUtils } from '../index';
 
 describe('Feature Name', () => {
   describe('specific functionality', () => {
@@ -164,24 +156,6 @@ describe('Feature Name', () => {
     });
   });
 });
-```
-
-### Using Test Utilities
-```typescript
-import { testUtils, testFixtures } from '../index';
-import type { TestUser, MockAuthData } from '../index';
-
-// Use mock user data with proper typing
-const mockUser: TestUser = testFixtures.users.patient;
-
-// Setup authentication with typed return
-const { mockUser, mockToken }: MockAuthData = testUtils.setupAuthMocks();
-
-// Create mock API response with typing
-const mockResponse: Response = testUtils.createMockApiResponse({ success: true });
-
-// Create mock SSE stream with typed parameters
-const mockStream: Response = testUtils.createMockSSEStream(['Hello', 'world']);
 ```
 
 ### Mocking Guidelines
@@ -217,29 +191,6 @@ vi.mock('../services/api', () => ({
     send: vi.fn().mockResolvedValue({ kind: 'completed', text: 'mock response' }),
   },
 }));
-```
-
-## Test Data and Fixtures
-
-### User Fixtures
-```javascript
-import { testFixtures } from './index.js';
-
-const patient = testFixtures.users.patient;
-const dentist = testFixtures.users.dentist;
-const admin = testFixtures.users.admin;
-```
-
-### API Response Fixtures
-```javascript
-const successResponse = testFixtures.apiResponses.success;
-const errorResponse = testFixtures.apiResponses.error;
-```
-
-### Chat Message Fixtures
-```javascript
-const userMessage = testFixtures.chatMessages.userMessage;
-const aiMessage = testFixtures.chatMessages.aiMessage;
 ```
 
 ## Best Practices

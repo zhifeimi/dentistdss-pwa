@@ -38,7 +38,6 @@ const AIDentistPage: React.FC = () => {
   const { currentUser } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Get welcome message and use AI chat hook
   const welcomeMessage = getWelcomeMessage('aidentist', 'DENTIST', currentUser);

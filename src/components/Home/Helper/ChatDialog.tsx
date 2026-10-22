@@ -6,7 +6,6 @@ import {
   TextField,
   Button,
   useTheme,
-  useMediaQuery,
   Alert,
   IconButton,
   CircularProgress,
@@ -196,7 +195,7 @@ ChatInputForm.displayName = 'ChatInputForm';
  * - Interface Segregation: Focused interface for dialog operations
  * - Dependency Inversion: Depends on abstractions through props
  */
-export const ChatDialog: React.FC<ChatDialogProps> = ({
+const ChatDialog: React.FC<ChatDialogProps> = ({
   isOpen,
   messages,
   chatState,
@@ -208,7 +207,6 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
 }) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive

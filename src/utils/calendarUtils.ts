@@ -46,7 +46,7 @@ interface ViewRange {
 /**
  * Format time string for display
  */
-export const formatTimeForDisplay = (timeString: string): string => {
+const formatTimeForDisplay = (timeString: string): string => {
   if (!timeString) return '';
   const [hours, minutes] = timeString.split(':');
   const hour = parseInt(hours);
@@ -58,7 +58,7 @@ export const formatTimeForDisplay = (timeString: string): string => {
 /**
  * Create a Date object from date string and time string
  */
-export const createDateTime = (dateString: string, timeString: string): Date => {
+const createDateTime = (dateString: string, timeString: string): Date => {
   const [hours, minutes, seconds = '00'] = timeString.split(':');
   const date = new Date(dateString + 'T00:00:00');
   date.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds));
@@ -68,7 +68,7 @@ export const createDateTime = (dateString: string, timeString: string): Date => 
 /**
  * Generate dates for recurring slots within a date range
  */
-export const generateRecurringDates = (slot: AvailabilitySlot, startDate: Date, endDate: Date): string[] => {
+const generateRecurringDates = (slot: AvailabilitySlot, startDate: Date, endDate: Date): string[] => {
   const dates: string[] = [];
   const effectiveFrom = new Date(slot.effectiveFrom);
   const effectiveUntil = new Date(slot.effectiveUntil);
@@ -94,7 +94,7 @@ export const generateRecurringDates = (slot: AvailabilitySlot, startDate: Date, 
 /**
  * Get event color based on slot status
  */
-export const getEventColor = (slot: AvailabilitySlot): EventColor => {
+const getEventColor = (slot: AvailabilitySlot): EventColor => {
   if (slot.isBlocked) {
     return {
       backgroundColor: '#f44336', // Red
@@ -222,37 +222,4 @@ export const getCalendarViewRange = (currentDate: Date, view: string = 'month'):
     startDateTime: start.toDate(),
     endDateTime: end.toDate()
   };
-};
-
-/**
- * Create event style getter for react-big-calendar
- */
-export const createEventStyleGetter = () => {
-  return (event: CalendarEvent) => {
-    const backgroundColor = event.backgroundColor || '#3174ad';
-    const borderColor = event.borderColor || '#3174ad';
-    const color = event.color || '#ffffff';
-
-    return {
-      style: {
-        backgroundColor,
-        borderColor,
-        color,
-        border: `1px solid ${borderColor}`,
-        borderRadius: '4px',
-        fontSize: '12px',
-        padding: '2px 4px'
-      }
-    };
-  };
-};
-
-export default {
-  formatTimeForDisplay,
-  createDateTime,
-  generateRecurringDates,
-  getEventColor,
-  transformSlotsToEvents,
-  getCalendarViewRange,
-  createEventStyleGetter
 };

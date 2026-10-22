@@ -5,12 +5,10 @@ import {
   Grid,
   Card,
   CardContent,
-  Divider,
   Chip,
 } from '@mui/material';
 import {
   Person as PatientIcon,
-  MedicalServices as DentistIcon,
   LocationOn as ClinicIcon,
   Schedule as TimeIcon,
   Assignment as ServiceIcon,
@@ -249,4 +247,3 @@ const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
 };
 
 export default ConfirmationStep;
-export type { ConfirmationStepProps, BookingData, PatientData, Clinic, ServiceType };

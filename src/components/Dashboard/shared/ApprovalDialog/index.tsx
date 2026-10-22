@@ -152,4 +152,3 @@ const ApprovalDialog: React.FC<ApprovalDialogProps> = ({
 };
 
 export default ApprovalDialog;
-export type { ApprovalDialogProps };

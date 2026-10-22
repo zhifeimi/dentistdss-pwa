@@ -19,21 +19,6 @@ interface StatusConfig {
   label: string;
 }
 
-interface LoadingProps {
-  sx: { p: number };
-  children: Array<{
-    component: string;
-    key: string;
-    props?: any;
-  }>;
-}
-
-interface ErrorProps {
-  severity: 'error';
-  sx: { mb: number };
-  children: string;
-}
-
 /**
  * Generate welcome messages for different chat types and user roles
  */
@@ -229,31 +214,3 @@ export const formatAppointmentText = (appointment: Appointment, userRole: UserRo
 export const getAppointmentServiceType = (appointment: Appointment): string => {
   return appointment.serviceType || appointment.reasonForVisit || 'General Appointment';
 };
-
-/**
- * Common loading component props
- */
-export const getLoadingProps = (message: string = 'Loading...'): LoadingProps => ({
-  sx: { p: 3 },
-  children: [
-    { component: 'LinearProgress', key: 'progress' },
-    {
-      component: 'Typography',
-      key: 'text',
-      props: {
-        variant: 'body2',
-        sx: { mt: 1, textAlign: 'center' },
-        children: message,
-      },
-    },
-  ],
-});
-
-/**
- * Common error alert props
- */
-export const getErrorProps = (error: string): ErrorProps => ({
-  severity: 'error',
-  sx: { mb: 2 },
-  children: error,
-});

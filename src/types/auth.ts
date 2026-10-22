@@ -26,12 +26,6 @@ export interface User extends BaseEntity {
   photoURL?: string;
 }
 
-// Authentication credentials
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
 // Signup data
 export interface SignupData {
   email: string;
@@ -70,11 +64,6 @@ export interface AuthContextValue {
   processAuthToken: (token: string, tokenType?: string) => Promise<User>;
 }
 
-// Change password request
-export interface ChangePasswordRequest {
-  newPassword: string;
-}
-
 // Profile update data
 export interface ProfileUpdateData {
   firstName?: string;
@@ -84,13 +73,6 @@ export interface ProfileUpdateData {
   address?: string;
   emergencyContact?: string;
   profilePicture?: string;
-}
-
-// Email verification
-export interface EmailVerificationData {
-  email: string;
-  code: string;
-  newPassword: string;
 }
 
 // Clinic staff signup data

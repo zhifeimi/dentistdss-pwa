@@ -11,7 +11,6 @@ interface User {
   email?: string;
 }
 
-type SortDirection = 'asc' | 'desc';
 type StatusColor = 'default' | 'success' | 'warning' | 'error';
 
 /**
@@ -74,14 +73,6 @@ export const formatTime = (time?: string | Date): string => {
 };
 
 /**
- * Format date and time for display
- */
-export const formatDateTime = (datetime?: string | Date): string => {
-  if (!datetime) return 'N/A';
-  return new Date(datetime).toLocaleString();
-};
-
-/**
  * Get status color based on status string
  */
 export const getStatusColor = (status?: string): StatusColor => {
@@ -135,74 +126,4 @@ export const filterItems = <T extends Record<string, any>>(
  */
 export const getNestedValue = (obj: any, path: string): any => {
   return path.split('.').reduce((current, key) => current?.[key], obj);
-};
-
-/**
- * Sort items by field
- */
-export const sortItems = <T extends Record<string, any>>(
-  items?: T[],
-  field?: string,
-  direction: SortDirection = 'asc'
-): T[] => {
-  if (!items || !field) return items || [];
-
-  return [...items].sort((a, b) => {
-    const aValue = getNestedValue(a, field);
-    const bValue = getNestedValue(b, field);
-
-    if (aValue === bValue) return 0;
-
-    const comparison = aValue < bValue ? -1 : 1;
-    return direction === 'asc' ? comparison : -comparison;
-  });
-};
-
-/**
- * Truncate text to specified length
- */
-export const truncateText = (text?: string, maxLength: number = 100): string => {
-  if (!text || text.length <= maxLength) return text || '';
-  return text.substring(0, maxLength) + '...';
-};
-
-/**
- * Check if user has specific role
- */
-export const hasRole = (userRoles?: string[], requiredRole?: string): boolean => {
-  if (!userRoles || !requiredRole) return false;
-  return userRoles.includes(requiredRole);
-};
-
-/**
- * Get user's primary role (first role in array)
- */
-export const getPrimaryRole = (userRoles?: string[]): string | null => {
-  if (!userRoles || userRoles.length === 0) return null;
-  return userRoles[0];
-};
-
-/**
- * Generate unique ID
- */
-export const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-};
-
-/**
- * Debounce function
- */
-export const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout | undefined;
-  return function executedFunction(...args: Parameters<T>) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
 };

@@ -18,11 +18,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
-import type {
-  SystemSetting,
-  SystemSettingData,
-  SystemSettingValidationErrors
-} from '../../../../types/api';
+import type { SystemSettingData } from '../../../../types/api';
 import type { SettingItemProps } from '../../../../types/components';
 
 /**

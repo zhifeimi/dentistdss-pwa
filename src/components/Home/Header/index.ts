@@ -24,14 +24,6 @@
  */
 
 export { default } from './Header';
-export { default as Header } from './Header';
-export { Logo } from './Logo';
-export { Navigation } from './Navigation';
-export { UserActions } from './UserActions';
-export { ThemeToggle } from './ThemeToggle';
-export { MobileMenu } from './MobileMenu';
-export { ProfileMenu } from './ProfileMenu';
-export { useHeaderState } from './useHeaderState';
 export * from './utils';
 export * from './constants';
 export * from './types';

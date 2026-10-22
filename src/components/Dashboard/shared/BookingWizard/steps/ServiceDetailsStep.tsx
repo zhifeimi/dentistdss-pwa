@@ -8,7 +8,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  SelectChangeEvent,
 } from '@mui/material';
 
 interface ServiceType {
@@ -145,4 +144,3 @@ const ServiceDetailsStep: React.FC<ServiceDetailsStepProps> = ({
 };
 
 export default ServiceDetailsStep;
-export type { ServiceDetailsStepProps, ServiceType };

@@ -4,26 +4,22 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   Chip,
   IconButton,
   Tooltip,
   Alert,
   Collapse,
   useTheme,
-  useMediaQuery,
   Skeleton,
   Divider,
 } from '@mui/material';
 import {
   Edit as EditIcon,
   ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
   Schedule as ScheduleIcon,
   Event as EventIcon,
   Phone as PhoneIcon,
   Repeat as RepeatIcon,
-  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 import { Holiday, HolidayType } from '../../../../types';
 
@@ -64,7 +60,6 @@ const getHolidayTypeColor = (type: HolidayType): 'default' | 'primary' | 'second
  */
 const HolidayCard: React.FC<HolidayCardProps> = ({ holiday, onEdit }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [expanded, setExpanded] = useState<boolean>(false);
 
   const handleExpandClick = () => {
@@ -239,8 +234,6 @@ const HolidayCard: React.FC<HolidayCardProps> = ({ holiday, onEdit }) => {
  * - Visual indicators for upcoming holidays
  */
 const HolidayList: React.FC<HolidayListProps> = ({ holidays, onEditHoliday, loading = false }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Loading skeleton
   if (loading) {

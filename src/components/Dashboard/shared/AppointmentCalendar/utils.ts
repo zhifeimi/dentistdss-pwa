@@ -10,7 +10,7 @@ import type { Appointment, CalendarEvent, UserRole, CalendarView } from './types
  * Parse appointment date and time into a proper Date object
  * Handles timezone issues by creating dates in local timezone
  */
-export const parseAppointmentDateTime = (dateStr: string, timeStr: string): Date => {
+const parseAppointmentDateTime = (dateStr: string, timeStr: string): Date => {
   if (!dateStr || !timeStr) {
     console.warn('Invalid date or time provided:', { dateStr, timeStr });
     return new Date();
@@ -72,7 +72,7 @@ export const convertAppointmentsToEvents = (
 /**
  * Get event title based on user role
  */
-export const getTitleByRole = (
+const getTitleByRole = (
   userRole: UserRole,
   serviceName?: string,
   dentistName?: string,

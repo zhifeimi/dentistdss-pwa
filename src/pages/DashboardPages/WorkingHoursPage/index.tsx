@@ -11,22 +11,18 @@ import {
   Fab,
   useTheme,
   useMediaQuery,
-  Chip,
   IconButton,
   Tooltip,
-  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Schedule as ScheduleIcon,
-  AccessTime as AccessTimeIcon,
   Refresh as RefreshIcon,
-  Edit as EditIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
 import api from '../../../services';
-import { WorkingHours, DayOfWeek } from '../../../types';
+import { WorkingHours } from '../../../types';
 import WorkingHoursForm from './components/WorkingHoursForm';
 import WeeklyScheduleView from './components/WeeklyScheduleView';
 import {

@@ -40,7 +40,7 @@ interface UseFormValidationReturn {
  * - Consistent error messaging
  * - Form validity state management
  */
-export const useFormValidation = (): UseFormValidationReturn => {
+const useFormValidation = (): UseFormValidationReturn => {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [touchedFields, setTouchedFields] = useState<TouchedFields>({});
 

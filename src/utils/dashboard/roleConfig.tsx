@@ -76,7 +76,7 @@ export const roleMeta: Record<UserRole, RoleMeta> = {
 };
 
 // Navigation sections for each role with route paths and components
-export const navigationSections: Record<UserRole, DashboardSection[]> = {
+const navigationSections: Record<UserRole, DashboardSection[]> = {
   PATIENT: [
     {
       id: 'overview',
@@ -313,32 +313,6 @@ export const getRoleNavigationSections = (role: UserRole): DashboardSection[] =>
 };
 
 /**
- * Get role metadata
- * @param role - Role key
- * @returns Role metadata
- */
-export const getRoleMeta = (role: UserRole): RoleMeta => {
-  return roleMeta[role] || { label: role, icon: <PersonIcon />, color: 'default' };
-};
-
-/**
- * Get all available roles
- * @returns Array of role keys
- */
-export const getAllRoles = (): UserRole[] => {
-  return Object.keys(roleMeta) as UserRole[];
-};
-
-/**
- * Check if role exists
- * @param role - Role key
- * @returns Role exists
- */
-export const isValidRole = (role: string): role is UserRole => {
-  return Object.keys(roleMeta).includes(role as UserRole);
-};
-
-/**
  * Get default section for a role
  * @param role - Role key
  * @returns Default section key
@@ -346,39 +320,6 @@ export const isValidRole = (role: string): role is UserRole => {
 export const getDefaultSection = (role: UserRole): string | null => {
   const sections = getRoleNavigationSections(role);
   return sections.length > 0 ? sections[0].id : null;
-};
-
-/**
- * Find section by key in role's navigation
- * @param role - Role key
- * @param sectionKey - Section key
- * @returns Section object or null
- */
-export const findSection = (role: UserRole, sectionKey: string): DashboardSection | null => {
-  const sections = getRoleNavigationSections(role);
-  return sections.find(section => section.id === sectionKey) || null;
-};
-
-/**
- * Get all unique routes for all roles
- * @returns Array of route objects
- */
-export const getAllRoutes = (): any[] => {
-  const routeMap = new Map();
-
-  Object.values(navigationSections).forEach(sections => {
-    sections.forEach(section => {
-      if (!routeMap.has(section.path)) {
-        routeMap.set(section.path, {
-          path: section.path,
-          component: section.component,
-          key: section.id
-        });
-      }
-    });
-  });
-
-  return Array.from(routeMap.values());
 };
 
 /**
@@ -393,15 +334,4 @@ export const getRoleRoutes = (role: UserRole): any[] => {
     component: section.component,
     key: section.id
   }));
-};
-
-/**
- * Check if user has access to a specific route
- * @param role - User role
- * @param path - Route path
- * @returns Has access
- */
-export const hasRouteAccess = (role: UserRole, path: string): boolean => {
-  const sections = getRoleNavigationSections(role);
-  return sections.some(section => section.path === path);
 };

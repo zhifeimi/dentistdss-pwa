@@ -229,4 +229,3 @@ const TimeSelector: React.FC<TimeSelectorProps> = memo(({
 TimeSelector.displayName = 'TimeSelector';
 
 export default TimeSelector;
-export type { TimeSelectorProps, TimeSlot };

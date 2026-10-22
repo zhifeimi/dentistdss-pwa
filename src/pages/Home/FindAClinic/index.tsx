@@ -56,7 +56,6 @@ const FindAClinic: React.FC = React.memo(() => {
     selectedClinic,
     mapCenter,
     mapZoom,
-    map,
     infoWindowOpen,
     handleClinicSelect,
     handleMarkerClick,

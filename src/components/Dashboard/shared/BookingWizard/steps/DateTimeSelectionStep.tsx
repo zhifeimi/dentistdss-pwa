@@ -180,4 +180,3 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
 };
 
 export default DateTimeSelectionStep;
-export type { AvailableSlot, DateTimeSelectionStepProps, ValidationErrors };

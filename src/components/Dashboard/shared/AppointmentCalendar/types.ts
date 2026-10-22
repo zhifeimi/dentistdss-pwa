@@ -62,8 +62,3 @@ export interface AppointmentCalendarProps {
 export interface EventComponentProps {
   event: CalendarEvent;
 }
-
-export interface CalendarStylesProps {
-  isMobile: boolean;
-  theme: any;
-}

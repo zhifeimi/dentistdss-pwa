@@ -120,7 +120,7 @@ export const getSlotsForDate = (
 /**
  * Validate slot data structure
  */
-export const validateSlot = (slot: any): slot is AvailabilitySlot => {
+const validateSlot = (slot: any): slot is AvailabilitySlot => {
   return (
     slot &&
     typeof slot === 'object' &&

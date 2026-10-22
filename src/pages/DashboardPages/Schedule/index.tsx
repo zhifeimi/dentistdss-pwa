@@ -35,7 +35,6 @@ import AddAvailabilityDialog from './components/AddAvailabilityDialog';
 import BlockSlotDialog from './components/BlockSlotDialog';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';
 import CalendarEventComponent from './components/CalendarEvent';
-import { createEventStyleGetter } from '../../../utils/calendarUtils';
 
 // Use the unified AvailabilitySlot type from components
 import type { AvailabilitySlot, AvailabilitySubmitData } from '../../../types/components';

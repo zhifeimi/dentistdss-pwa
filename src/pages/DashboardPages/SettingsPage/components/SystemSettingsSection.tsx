@@ -22,7 +22,6 @@ import type {
   SystemSettingData,
   SystemSettingValidationErrors
 } from '../../../../types/api';
-import type { SystemSettingsSectionProps } from '../../../../types/components';
 
 /**
  * SystemSettingsSection - System administration settings management

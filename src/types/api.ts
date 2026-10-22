@@ -238,43 +238,11 @@ export interface UnreadCountResponse {
   count: number;
 }
 
-// Notification types
-export interface Notification extends BaseEntity {
-  userId: number;
-  title: string;
-  message: string;
-  type: 'appointment' | 'message' | 'system' | 'reminder';
-  isRead: boolean;
-  readAt?: string;
-  relatedEntityId?: number;
-  relatedEntityType?: string;
-}
-
 // Clinic search and booking
-export interface ClinicSearchParams {
-  location?: string;
-  latitude?: number;
-  longitude?: number;
-  radius?: number; // in kilometers
-  services?: string[];
-  availability?: string; // date
-}
-
 export interface ClinicSearchResult extends Clinic {
   distance?: number;
   availableDentists?: Dentist[];
   nextAvailableSlot?: TimeSlot;
-}
-
-// Patient creation for booking
-export interface CreatePatientRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string; // YYYY-MM-DD format
-  address?: string;
-  emergencyContact?: string;
 }
 
 // Clinic update request

@@ -14,7 +14,7 @@ export interface ValidationContext {
 /**
  * Validate clinic selection step
  */
-export const validateClinicSelection = (bookingData: BookingData): BookingErrors => {
+const validateClinicSelection = (bookingData: BookingData): BookingErrors => {
   const errors: BookingErrors = {};
 
   if (!bookingData.clinicId) {
@@ -27,7 +27,7 @@ export const validateClinicSelection = (bookingData: BookingData): BookingErrors
 /**
  * Validate time and dentist selection step
  */
-export const validateTimeSelection = (bookingData: BookingData): BookingErrors => {
+const validateTimeSelection = (bookingData: BookingData): BookingErrors => {
   const errors: BookingErrors = {};
 
   if (!bookingData.startTime) {
@@ -49,7 +49,7 @@ export const validateTimeSelection = (bookingData: BookingData): BookingErrors =
 /**
  * Validate service details step
  */
-export const validateServiceDetails = (bookingData: BookingData): BookingErrors => {
+const validateServiceDetails = (bookingData: BookingData): BookingErrors => {
   const errors: BookingErrors = {};
 
   if (!bookingData.serviceType) {
@@ -65,7 +65,7 @@ export const validateServiceDetails = (bookingData: BookingData): BookingErrors 
 /**
  * Validate patient information step
  */
-export const validatePatientInfo = (patientData: PatientData, currentUser: any): BookingErrors => {
+const validatePatientInfo = (patientData: PatientData, currentUser: any): BookingErrors => {
   const errors: BookingErrors = {};
 
   // Only validate if user is not logged in

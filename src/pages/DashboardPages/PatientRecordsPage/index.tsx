@@ -5,8 +5,6 @@ import {
   CardContent,
   Typography,
   List,
-  ListItem,
-  ListItemText,
   Alert,
   useTheme,
   useMediaQuery,
@@ -52,7 +50,6 @@ const PatientRecordsPage: React.FC = () => {
   const { currentUser } = useAuth() || {};
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Load patient records data
   useEffect(() => {

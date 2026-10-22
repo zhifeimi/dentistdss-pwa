@@ -95,11 +95,6 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     setDialogMode('reschedule');
   }, []);
 
-  const handleEdit = useCallback((appointment: Appointment) => {
-    setSelectedAppointment(appointment);
-    setDialogMode('edit');
-  }, []);
-
   const handleCloseDialog = useCallback(() => {
     setSelectedAppointment(null);
     setDialogMode('view');

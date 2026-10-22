@@ -20,10 +20,6 @@
  */
 
 export { default } from './AppointmentCalendar';
-export { default as AppointmentCalendar } from './AppointmentCalendar';
-export { EventComponent } from './EventComponent';
-export { AddAppointmentFab } from './AddAppointmentFab';
-export { useCalendarEvents } from './useCalendarEvents';
 export * from './utils';
 export * from './types';
 export * from './CalendarStyles';

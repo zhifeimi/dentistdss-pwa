@@ -56,7 +56,6 @@ const InfoCard: React.FC<InfoCardProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <Box>

@@ -11,7 +11,6 @@ import {
   Fab,
   useTheme,
   useMediaQuery,
-  Chip,
   IconButton,
   Tooltip,
 } from '@mui/material';
@@ -20,12 +19,10 @@ import {
   CalendarToday as CalendarIcon,
   Event as EventIcon,
   Refresh as RefreshIcon,
-  Warning as WarningIcon,
-  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
 import api from '../../../services';
-import { Holiday, HolidayType } from '../../../types';
+import { Holiday } from '../../../types';
 import HolidayForm from './components/HolidayForm';
 import HolidayList from './components/HolidayList';
 import {

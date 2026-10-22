@@ -134,4 +134,3 @@ boxShadow: theme.shadows[isDarkMode ? 6 : 3]
 };
 
 export default BookCard;
-export type { BookCardProps, Book };

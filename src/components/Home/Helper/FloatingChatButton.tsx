@@ -27,7 +27,7 @@ interface FloatingChatButtonProps {
  * - Interface Segregation: Focused interface for button operations
  * - Dependency Inversion: Depends on abstractions through props
  */
-export const FloatingChatButton: React.FC<FloatingChatButtonProps> = memo(({
+const FloatingChatButton: React.FC<FloatingChatButtonProps> = memo(({
   isOpen,
   isLoading,
   onClick,

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  ListItem,
   Chip,
   Alert,
   Typography,
@@ -10,14 +9,11 @@ import {
   Button,
   useTheme,
   useMediaQuery,
-  Grid,
 } from '@mui/material';
 import {
   People as PeopleIcon,
   PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
-import ListCard from '../../../components/Dashboard/shared/ListCard';
-import ActionButton from '../../../components/Dashboard/shared/ActionButton';
 import { roleMapping } from '../../../utils/dictionary';
 import {
   getResponsivePadding,
@@ -52,7 +48,6 @@ const UserManagementPage: React.FC<UserManagementPageProps> = ({
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Load users data
   useEffect(() => {

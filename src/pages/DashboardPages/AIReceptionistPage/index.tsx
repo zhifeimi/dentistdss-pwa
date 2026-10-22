@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
   Box,
-  Typography,
   Paper,
   Tabs,
   Tab,
@@ -11,7 +10,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import {
-  SmartToy as SmartToyIcon,
   LocalHospital as TriageIcon,
   SupportAgent as ReceptionistIcon,
 } from '@mui/icons-material';
@@ -46,7 +44,6 @@ const AIReceptionistPage: React.FC = () => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Get current chat type and welcome message
   const currentChatType: ChatType = activeTab === 0 ? 'receptionist' : 'triage';

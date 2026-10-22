@@ -10,9 +10,6 @@ import dictionary from '../../utils/dictionary';
 import Home from '../../pages/Home';
 import RouteFallback from '../RouteFallback';
 
-// Lazy-loaded directly from index.tsx: importing '../../pages/Dashboard' would
-// resolve through the barrel (index.ts) that re-exports every dashboard page,
-// dragging the whole dashboard graph back into the entry chunk.
 const Dashboard = React.lazy(() => import('../../pages/Dashboard/index.tsx'));
 
 interface AppShellProps {

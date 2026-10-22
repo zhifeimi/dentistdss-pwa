@@ -10,7 +10,6 @@ import {
   Tooltip,
   Alert,
   useTheme,
-  useMediaQuery,
   Skeleton,
   Divider,
 } from '@mui/material';
@@ -64,7 +63,6 @@ const dayDisplayNames: Record<DayOfWeek, string> = {
  */
 const DayScheduleCard: React.FC<DayScheduleCardProps> = ({ day, workingHours, onEdit }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Get working hours for this day
   const dayWorkingHours = workingHours.filter(wh => wh.dayOfWeek === day);
@@ -255,8 +253,6 @@ const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
   onEditWorkingHours, 
   loading = false 
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Loading skeleton
   if (loading) {

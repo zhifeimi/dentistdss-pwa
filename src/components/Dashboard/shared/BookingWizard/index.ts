@@ -19,9 +19,5 @@
  */
 
 export { default } from './BookingWizard';
-export { default as BookingWizard } from './BookingWizard';
-export { WizardAppBar } from './WizardAppBar';
-export { WizardStepper } from './WizardStepper';
-export { WizardContent } from './WizardContent';
 export * from './utils';
 export * from './types';

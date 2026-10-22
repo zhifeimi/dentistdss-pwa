@@ -20,10 +20,5 @@
  */
 
 export { default } from './AppointmentDialog';
-export { default as AppointmentDialog } from './AppointmentDialog';
-export { AppointmentInfo } from './AppointmentInfo';
-export { DateTimeSection } from './DateTimeSection';
-export { AppointmentDetails } from './AppointmentDetails';
-export { AppointmentActions } from './AppointmentActions';
 export * from './utils';
 export * from './types';

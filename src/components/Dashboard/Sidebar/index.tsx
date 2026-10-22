@@ -10,11 +10,9 @@ import {
   Typography,
   Avatar,
   Chip,
-  Divider,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import { getDisplayName, getInitials } from '../../../utils/dashboard/dashboardUtils';
 import { roleMeta } from '../../../utils/dashboard/roleConfig';

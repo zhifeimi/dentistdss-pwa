@@ -25,7 +25,6 @@ import { useAuth } from '../../../../context/auth';
 import api from '../../../../services';
 import useFormValidation from '../../../../hooks/useFormValidation';
 import { COUNTRIES } from '../../../../utils/dictionary';
-import type { Clinic } from '../../../../types/api';
 import type { ClinicFormData, ClinicInformationFormProps } from '../../../../types/components';
 
 /**
