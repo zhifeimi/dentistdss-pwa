@@ -48,7 +48,7 @@ const GlobalSnackbar: React.FC = () => {
     };
   }, [shouldSuppressSnackbar]);
 
-  const handleClose = (event?: React.SyntheticEvent | Event, reason?: string): void => {
+  const handleClose = (event?: React.SyntheticEvent | Event | null, reason?: string): void => {
     if (reason === 'clickaway') {
       return;
     }

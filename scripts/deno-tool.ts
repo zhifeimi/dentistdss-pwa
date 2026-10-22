@@ -14,7 +14,7 @@ const tools = {
   // a second specifier the lock must also carry.
   vite: 'npm:vite@^8.1.5',
   vitest: 'npm:vitest@5.0.5',
-  playwright: 'npm:@playwright/test@1.61.1/cli',
+  playwright: 'npm:@playwright/test@1.64.1/cli',
 } as const;
 
 type ToolName = keyof typeof tools;
