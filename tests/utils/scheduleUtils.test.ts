@@ -3,13 +3,13 @@ import { formatDate, getDateRange } from '../../src/hooks/schedule/scheduleUtils
 
 // Local calendar dates must not shift through UTC; check zones on both sides of it
 describe.each(['Australia/Sydney', 'America/New_York'])('schedule dates in %s', (timeZone) => {
-  const originalTimeZone = process.env.TZ;
+  // Restore by name: deleting TZ does not reset the runtime zone on every platform
+  const originalTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   beforeAll(() => {
     process.env.TZ = timeZone;
   });
   afterAll(() => {
-    if (originalTimeZone === undefined) delete process.env.TZ;
-    else process.env.TZ = originalTimeZone;
+    process.env.TZ = originalTimeZone;
   });
 
   test('formatDate keeps the local calendar date', () => {

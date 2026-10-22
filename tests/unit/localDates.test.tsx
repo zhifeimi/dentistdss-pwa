@@ -39,13 +39,13 @@ describe.each([
   { timeZone: 'Australia/Sydney', now: '2026-10-21T21:00:00Z', today: '2026-10-22' },
   { timeZone: 'America/New_York', now: '2026-10-22T02:00:00Z', today: '2026-10-21' },
 ])('local calendar dates in $timeZone', ({ timeZone, now, today }) => {
-  const originalTimeZone = process.env.TZ;
+  // Restore by name: deleting TZ does not reset the runtime zone on every platform
+  const originalTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   beforeAll(() => {
     process.env.TZ = timeZone;
   });
   afterAll(() => {
-    if (originalTimeZone === undefined) delete process.env.TZ;
-    else process.env.TZ = originalTimeZone;
+    process.env.TZ = originalTimeZone;
   });
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });

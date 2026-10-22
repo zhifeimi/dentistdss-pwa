@@ -3,13 +3,13 @@ import { getCalendarViewRange, transformSlotsToEvents } from '../../src/utils/ca
 
 // Date-only API strings are local calendar dates; check zones on both sides of UTC
 describe.each(['Australia/Sydney', 'America/New_York'])('transformSlotsToEvents in %s', (timeZone) => {
-  const originalTimeZone = process.env.TZ;
+  // Restore by name: deleting TZ does not reset the runtime zone on every platform
+  const originalTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   beforeAll(() => {
     process.env.TZ = timeZone;
   });
   afterAll(() => {
-    if (originalTimeZone === undefined) delete process.env.TZ;
-    else process.env.TZ = originalTimeZone;
+    process.env.TZ = originalTimeZone;
   });
 
   const slot = { id: 1, startTime: '09:00:00', endTime: '12:00:00', isBlocked: false, isActive: true };
