@@ -195,25 +195,26 @@ export const transformSlotsToEvents = (availability: AvailabilitySlot[], viewSta
  * Get calendar view range for data loading
  */
 export const getCalendarViewRange = (currentDate: Date, view: string = 'month'): ViewRange => {
-  const start = dayjs(currentDate);
-  const end = dayjs(currentDate);
+  // dayjs is immutable: every manipulation must be reassigned
+  let start = dayjs(currentDate);
+  let end = dayjs(currentDate);
 
   switch (view) {
     case 'month':
-      start.startOf('month').subtract(7, 'days'); // Include previous week for month view
-      end.endOf('month').add(7, 'days'); // Include next week for month view
+      start = start.startOf('month').subtract(7, 'days'); // Include previous week for month view
+      end = end.endOf('month').add(7, 'days'); // Include next week for month view
       break;
     case 'week':
-      start.startOf('week');
-      end.endOf('week');
+      start = start.startOf('week');
+      end = end.endOf('week');
       break;
     case 'day':
-      start.startOf('day');
-      end.endOf('day');
+      start = start.startOf('day');
+      end = end.endOf('day');
       break;
     default:
-      start.startOf('month');
-      end.endOf('month');
+      start = start.startOf('month');
+      end = end.endOf('month');
   }
   
   return {
