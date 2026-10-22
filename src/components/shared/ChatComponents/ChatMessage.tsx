@@ -80,7 +80,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
           {message.content}
           {(message.isStreaming || isStreaming) && (
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', ml: 1 }}>
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', ml: 1 }}>
               <CircularProgress size={16} />
             </Box>
           )}

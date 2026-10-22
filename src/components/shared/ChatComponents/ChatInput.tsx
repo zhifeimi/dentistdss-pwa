@@ -58,7 +58,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           />
           <IconButton
             color="primary"
-            onClick={onSend}
+            onClick={() => onSend()}
             disabled={!value.trim() || isLoading}
             sx={{ mb: 0.5 }}
           >

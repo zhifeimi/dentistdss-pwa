@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -23,6 +23,7 @@ import ChatHeader from '../../../components/shared/ChatComponents/ChatHeader';
 import ChatMessage from '../../../components/shared/ChatComponents/ChatMessage';
 import ChatInput from '../../../components/shared/ChatComponents/ChatInput';
 import { getWelcomeMessage, getQuickActions } from '../../../utils/chatUtils';
+import dayjs from '../../../utils/dayjs';
 
 interface CustomEvent extends Event {
   detail: {
@@ -43,7 +44,6 @@ interface CustomEvent extends Event {
  */
 const AISummarizePage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [lastSummary, setLastSummary] = useState<string>('');
 
   // Get welcome message and use AI chat hook
   const welcomeMessage = getWelcomeMessage('documentationSummarize', 'DENTIST', currentUser);
@@ -62,16 +62,8 @@ const AISummarizePage: React.FC = () => {
   // Get quick actions
   const quickActions = getQuickActions('documentationSummarize', setQuickInput);
 
-  // Capture cumulative summary text while the shared transport streams.
-  const handleSendMessage = useCallback(async () => {
-    await sendMessage(null, setLastSummary);
-  }, [sendMessage]);
-
-  // Clear conversation and reset summary
-  const handleClearConversation = useCallback(() => {
-    clearConversation();
-    setLastSummary('');
-  }, [clearConversation]);
+  // The newest AI reply after the welcome message, however it was sent
+  const lastSummary = messages.slice(1).reverse().find((message) => message.type === 'ai')?.content ?? '';
 
   // Save summary (placeholder - would integrate with patient records)
   const handleSaveSummary = useCallback(() => {
@@ -98,7 +90,7 @@ const AISummarizePage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `appointment-summary-${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `appointment-summary-${dayjs().format('YYYY-MM-DD')}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -117,7 +109,7 @@ const AISummarizePage: React.FC = () => {
           icon={<DocumentIcon color="primary" />}
           title="AI Summarization - Clinical Documentation"
           subtitle="Provide appointment details, clinical notes, or treatment information for AI-powered summarization"
-          onClear={handleClearConversation}
+          onClear={() => clearConversation()}
           additionalActions={
             lastSummary && (
               <>
@@ -165,7 +157,7 @@ const AISummarizePage: React.FC = () => {
                         <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                           {message.content}
                           {message.isStreaming && (
-                            <Box sx={{ display: 'inline-flex', alignItems: 'center', ml: 1 }}>
+                            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', ml: 1 }}>
                               <CircularProgress size={16} />
                             </Box>
                           )}
@@ -210,7 +202,7 @@ const AISummarizePage: React.FC = () => {
         <ChatInput
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onSend={handleSendMessage}
+          onSend={sendMessage}
           onKeyPress={handleKeyPress}
           placeholder="Paste appointment notes, clinical observations, or treatment details for summarization..."
           isLoading={isLoading}
