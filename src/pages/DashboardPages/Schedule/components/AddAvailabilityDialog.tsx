@@ -143,7 +143,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
    */
   const formatDateForAPI = (date: Date | null): string | null => {
     if (!date) return null;
-    return date.toISOString().split('T')[0];
+    return dayjs(date).format('YYYY-MM-DD');
   };
 
   /**

@@ -1,3 +1,5 @@
+import dayjs from '../../utils/dayjs';
+
 /**
  * Schedule utility functions
  * Extracted to follow Single Responsibility Principle
@@ -45,7 +47,7 @@ export type CalendarView = 'month' | 'week' | 'day' | 'agenda';
  * Format date to YYYY-MM-DD string
  */
 export const formatDate = (date: Date): string => {
-  return date.toISOString().split('T')[0];
+  return dayjs(date).format('YYYY-MM-DD');
 };
 
 /**

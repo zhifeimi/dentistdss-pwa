@@ -70,8 +70,9 @@ const createDateTime = (dateString: string, timeString: string): Date => {
  */
 const generateRecurringDates = (slot: AvailabilitySlot, startDate: Date, endDate: Date): string[] => {
   const dates: string[] = [];
-  const effectiveFrom = new Date(slot.effectiveFrom);
-  const effectiveUntil = new Date(slot.effectiveUntil);
+  // Date-only API strings are local calendar dates (new Date() would parse them as UTC)
+  const effectiveFrom = dayjs(slot.effectiveFrom).toDate();
+  const effectiveUntil = dayjs(slot.effectiveUntil).toDate();
 
   // Start from the later of startDate or effectiveFrom
   const iterStart = new Date(Math.max(startDate.getTime(), effectiveFrom.getTime()));
@@ -83,7 +84,7 @@ const generateRecurringDates = (slot: AvailabilitySlot, startDate: Date, endDate
 
   while (current <= iterEnd) {
     if (current.getDay() === slot.dayOfWeek) {
-      dates.push(current.toISOString().split('T')[0]);
+      dates.push(dayjs(current).format('YYYY-MM-DD'));
     }
     current.setDate(current.getDate() + 1);
   }
@@ -160,7 +161,7 @@ export const transformSlotsToEvents = (availability: AvailabilitySlot[], viewSta
       } else {
         // One-time slot
         const eventDate = slot.effectiveFrom;
-        const eventDateTime = new Date(eventDate);
+        const eventDateTime = dayjs(eventDate).toDate();
         
         // Check if the one-time slot falls within the view range
         if (eventDateTime >= viewStart && eventDateTime <= viewEnd) {

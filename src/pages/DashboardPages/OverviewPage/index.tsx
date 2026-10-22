@@ -32,6 +32,7 @@ import {
   getAppointmentServiceType
 } from '../../../utils/chatUtils';
 import api from '../../../services';
+import dayjs from '../../../utils/dayjs';
 import { UserRole, Appointment, Clinic } from '../../../types';
 
 interface OverviewPageProps {
@@ -96,7 +97,7 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
         // Load role-specific data
         if (userRole === 'DENTIST') {
           // Load today's appointments for dentist
-          const today = new Date().toISOString().split('T')[0];
+          const today = dayjs().format('YYYY-MM-DD');
           tasks.push(
             api.appointment.getDentistAppointments(currentUser.id, today)
               .then((appointmentsResponse) => setTodayAppointments(appointmentsResponse || []))

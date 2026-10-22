@@ -1,5 +1,5 @@
 import api from '../../services';
-import type { AvailabilitySlot } from './scheduleUtils';
+import { formatDate, type AvailabilitySlot } from './scheduleUtils';
 
 /**
  * Schedule API functions
@@ -57,8 +57,8 @@ export const createAvailabilitySlot = async (
     startTime: availabilityData.startTime || '09:00',
     endTime: availabilityData.endTime || '17:00',
     isRecurring: availabilityData.isRecurring || false,
-    effectiveFrom: availabilityData.effectiveFrom || new Date().toISOString().split('T')[0],
-    effectiveUntil: availabilityData.effectiveUntil || new Date().toISOString().split('T')[0]
+    effectiveFrom: availabilityData.effectiveFrom || formatDate(new Date()),
+    effectiveUntil: availabilityData.effectiveUntil || formatDate(new Date())
   });
 
   return {

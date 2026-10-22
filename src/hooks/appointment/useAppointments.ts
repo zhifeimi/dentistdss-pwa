@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/auth';
 import api from '../../services';
+import dayjs from '../../utils/dayjs';
 import type { Appointment } from '../../types/api';
 import type { UserRole } from '../../types/common';
 
@@ -49,8 +50,7 @@ const useAppointments = (
 
   // Get today's date in YYYY-MM-DD format if no date provided
   const getFormattedDate = useCallback((date: Date | null): string => {
-    const targetDate = date || new Date();
-    return targetDate.toISOString().split('T')[0];
+    return dayjs(date || new Date()).format('YYYY-MM-DD');
   }, []);
 
   /**
@@ -156,9 +156,8 @@ const useAppointments = (
     // Handle both old and new API data structures
     const dateField = appointment.appointmentDate || appointment.date;
     if (!dateField) return false;
-    const appointmentDate = new Date(dateField).toISOString().split('T')[0];
-    const today = new Date().toISOString().split('T')[0];
-    return appointmentDate === today;
+    // dayjs reads date-only strings as local calendar dates (new Date() would use UTC)
+    return dayjs(dateField).isSame(dayjs(), 'day');
   });
 
   // Get upcoming appointments (next 7 days)
@@ -166,10 +165,9 @@ const useAppointments = (
     // Handle both old and new API data structures
     const dateField = appointment.appointmentDate || appointment.date;
     if (!dateField) return false;
-    const appointmentDate = new Date(dateField);
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return appointmentDate >= today && appointmentDate <= nextWeek;
+    const appointmentDate = dayjs(dateField);
+    const today = dayjs();
+    return appointmentDate.isSameOrAfter(today, 'day') && appointmentDate.isSameOrBefore(today.add(7, 'day'), 'day');
   });
 
   return {

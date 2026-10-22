@@ -6,6 +6,7 @@ import {
   TextField,
 } from '@mui/material';
 import CalendarDatePicker from '../../CalendarDatePicker';
+import dayjs from '../../../../../utils/dayjs';
 
 /**
  * PatientInfoStep - Fourth step for patient information (new patients only)
@@ -82,8 +83,8 @@ const PatientInfoStep = ({
         <Grid size={{ xs: 12, md: 6 }}>
           <CalendarDatePicker
             label="Date of Birth"
-            value={patientData.dateOfBirth ? new Date(patientData.dateOfBirth) : null}
-            onChange={(date) => onUpdatePatientData('dateOfBirth', date?.toISOString().split('T')[0])}
+            value={patientData.dateOfBirth ? dayjs(patientData.dateOfBirth).toDate() : null}
+            onChange={(date) => onUpdatePatientData('dateOfBirth', date ? dayjs(date).format('YYYY-MM-DD') : undefined)}
             maxDate={new Date()}
             fullWidth
             error={!!errors.dateOfBirth}

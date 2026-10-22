@@ -2,6 +2,7 @@ import React from 'react';
 import { Grid, Box, Typography } from '@mui/material';
 import { Schedule as TimeIcon } from '@mui/icons-material';
 import CalendarDatePicker from '../CalendarDatePicker';
+import dayjs from '../../../../utils/dayjs';
 import TimeSelector from '../TimeSelector';
 import { formatDate, formatTime } from '../../../../utils/dashboard/dashboardUtils';
 import { canEdit } from './utils';
@@ -41,8 +42,8 @@ export const DateTimeSection: React.FC<DateTimeSectionProps> = ({
           <Grid size={{ xs: 12, md: 4 }}>
             <CalendarDatePicker
               label="Date"
-              value={editData.date ? new Date(editData.date) : null}
-              onChange={(date) => onFieldChange('date', date?.toISOString().split('T')[0] || '')}
+              value={editData.date ? dayjs(editData.date).toDate() : null}
+              onChange={(date) => onFieldChange('date', date ? dayjs(date).format('YYYY-MM-DD') : '')}
               minDate={new Date()}
               fullWidth
               error={!!errors.date}
