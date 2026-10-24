@@ -202,8 +202,29 @@ describe('service worker caching policy', () => {
       await respondWith.mock.calls[0][0] as Response;
       await flush();
       expect(sw.fetchMock).toHaveBeenCalledTimes(1);
-      // Navigations are network-first: the page is stored for offline use.
+      // Navigations are network-first: the application shell is stored for offline use.
       expect(sw.cache.put).toHaveBeenCalledTimes(1);
+      expect(sw.cache.put).toHaveBeenCalledWith('/index.html', expect.any(Response));
+    });
+
+    it('uses the cached app shell for a failed privacy navigation before offline.html', async () => {
+      sw.fetchMock.mockRejectedValue(new Error('offline'));
+      const appShell = new Response('<h1>DentistDSS Privacy Policy</h1>', { status: 200 });
+      const offline = new Response('<h1>offline</h1>', { status: 200 });
+      sw.caches.match.mockImplementation(async (key: Request | string) => {
+        if (key === '/index.html') return appShell;
+        if (key === '/offline.html') return offline;
+        return undefined;
+      });
+
+      const request = navigationRequest(`${ORIGIN}/terms`);
+      const respondWith = vi.fn();
+      sw.handlers.fetch({ request, respondWith });
+
+      const response = await respondWith.mock.calls[0][0] as Response;
+      expect(await response.text()).toContain('DentistDSS Privacy Policy');
+      expect(sw.caches.match).toHaveBeenCalledWith('/index.html');
+      expect(sw.caches.match).not.toHaveBeenCalledWith('/offline.html');
     });
 
     it('falls back to offline.html for navigations when network and cache miss', async () => {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dentistdss-pwa-v3';
+const CACHE_NAME = 'dentistdss-pwa-v4';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -52,11 +52,14 @@ async function networkFirst(request) {
     const response = await fetch(request);
     if (canCache(response)) {
       const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, response.clone());
+      await cache.put('/index.html', response.clone());
     }
     return response;
   } catch {
-    return (await caches.match(request)) ?? (await caches.match('/offline.html'));
+    return (await caches.match('/index.html')) ??
+      (await caches.match(request)) ??
+      (await caches.match('/')) ??
+      (await caches.match('/offline.html'));
   }
 }
 
