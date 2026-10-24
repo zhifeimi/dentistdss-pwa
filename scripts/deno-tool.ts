@@ -88,10 +88,15 @@ async function copyPath(source: string, destination: string): Promise<void> {
   }
 }
 
-async function stageProject(stageRoot: string): Promise<void> {
+async function stageProject(stageRoot: string, includeBuild = false): Promise<void> {
   for (const entry of stagedEntries) {
     const source = join(projectRoot, entry);
     if (await exists(source)) await copyPath(source, join(stageRoot, entry));
+  }
+
+  if (includeBuild) {
+    const source = join(projectRoot, 'build');
+    if (await exists(source)) await copyPath(source, join(stageRoot, 'build'));
   }
 
   for await (const entry of Deno.readDir(projectRoot)) {
@@ -207,7 +212,7 @@ try {
     'packages:\n  - workspace\n',
     { mode: 0o600 },
   );
-  await stageProject(stageRoot);
+  await stageProject(stageRoot, tool === 'vite' && toolArgs.includes('preview'));
 
   if (shouldMirror(tool, toolArgs)) {
     const watchTargets = ['src', 'public', 'tests', 'index.html']

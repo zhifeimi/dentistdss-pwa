@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router';
 import config from '../../config';
 
 const Footer: React.FC = () => {
@@ -38,6 +39,8 @@ const Footer: React.FC = () => {
         >
           © {new Date().getFullYear()} {config.app.name} by Zhifei Mi - All rights reserved.
           <br />
+          <RouterLink to="/terms" onClick={() => window.scrollTo(0, 0)}>Privacy Policy</RouterLink>
+          {' · '}
           Contact us at: <a href="mailto:dentistdss@gmail.com">dentistdss@gmail.com</a>
         </Typography>
       </Box>
