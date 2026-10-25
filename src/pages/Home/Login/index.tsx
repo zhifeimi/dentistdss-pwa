@@ -19,10 +19,11 @@ import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { CredentialResponse } from '@react-oauth/google';
 import { useMediaQuery } from '@mui/material';
 import AuthBrandPanel from '../../../components/Home/AuthBrandPanel';
 import GoogleAuthProvider from '../../../components/Auth/GoogleAuthProvider';
+import GoogleSignInButton from '../../../components/Auth/GoogleSignInButton';
 
 /**
  * Login - User authentication page
@@ -155,7 +156,7 @@ const Login: React.FC = () => {
     setLoading(false);
   };
 
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse, nonce: string) => {
     try {
       setLoading(true);
       // Clear any email validation errors when using Google login
@@ -171,17 +172,17 @@ const Login: React.FC = () => {
         throw new Error('No credential received from Google');
       }
       
-      await googleIdLogin(credentialResponse.credential);
+      await googleIdLogin(credentialResponse.credential, nonce);
       navigate('/dashboard');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Google login failed');
+      setError(`${err.message || 'Google login failed'} Please retry Google sign-in.`);
     }
     setLoading(false);
   };
 
   const handleGoogleError = () => {
-    setError('Google login failed');
+    setError('Google login failed. Please retry Google sign-in.');
   };
 
   return (
@@ -414,17 +415,11 @@ const Login: React.FC = () => {
                 }}
                 onClick={handleGoogleLoginClick}
               >
-                <GoogleLogin
-                  size="large"
+                <GoogleSignInButton
                   width={googleButtonWidth}
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
-                  useOneTap={false}
-                  text="continue_with"
-                  type="standard"
-                  shape="rectangular"
                   theme={theme.palette.mode === 'dark' ? 'filled_black' : 'filled_blue'}
-                  logo_alignment="left"
                 />
               </Box>
             </Grid>

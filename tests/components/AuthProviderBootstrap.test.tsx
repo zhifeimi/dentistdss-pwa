@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const authMocks = vi.hoisted(() => ({
   me: vi.fn(),
   logout: vi.fn(),
   refresh: vi.fn(),
+  loginWithGoogleIdToken: vi.fn(),
 }));
 
 const sessionMocks = vi.hoisted(() => {
@@ -35,7 +36,16 @@ vi.mock('../../src/services/session', () => ({
   default: sessionMocks,
 }));
 
-import { AuthProvider } from '../../src/context/auth';
+import { AuthProvider, useAuth } from '../../src/context/auth';
+
+const GoogleLoginHarness = () => {
+  const auth = useAuth();
+  return (
+    <button type="button" onClick={() => void auth.googleIdLogin('google-id-token', 'server-nonce')}>
+      Sign in
+    </button>
+  );
+};
 
 describe('AuthProvider session restore wiring', () => {
   beforeEach(() => {
@@ -43,6 +53,7 @@ describe('AuthProvider session restore wiring', () => {
     authMocks.logout.mockReset();
     sessionMocks.ensureXsrfBootstrapped.mockReset();
     authMocks.refresh.mockReset();
+    authMocks.loginWithGoogleIdToken.mockReset();
     sessionMocks.setBearerSession.mockClear();
     sessionMocks.clearBearerSession.mockClear();
     sessionMocks.state.bearer = undefined;
@@ -114,5 +125,28 @@ describe('AuthProvider session restore wiring', () => {
 
     await waitFor(() => expect(authMocks.logout).toHaveBeenCalledTimes(1));
     expect(authMocks.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards the Google credential and nonce through the auth context', async () => {
+    authMocks.loginWithGoogleIdToken.mockResolvedValue({
+      accessToken: 'google-access-token',
+      tokenType: 'Bearer',
+      user: { id: 1, email: 'patient@example.com' },
+    });
+
+    render(
+      <AuthProvider>
+        <GoogleLoginHarness />
+      </AuthProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await waitFor(() =>
+      expect(authMocks.loginWithGoogleIdToken).toHaveBeenCalledWith(
+        'google-id-token',
+        'server-nonce',
+      )
+    );
   });
 });

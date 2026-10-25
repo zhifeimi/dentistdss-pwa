@@ -115,13 +115,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   // Google Identity Services popup. It forwards the token to the backend,
   // then stores & processes the internal JWT returned by our API.
 
-  const googleIdLogin = useCallback(async (idToken: string): Promise<User> => {
+  const googleIdLogin = useCallback(async (idToken: string, nonce: string): Promise<User> => {
     try {
       if (!idToken) throw new Error('Missing Google ID token');
 
-      console.log('Received Google ID token, sending to backend for verification…');
-
-      const backendTokenData = await api.auth.loginWithGoogleIdToken(idToken);
+      const backendTokenData = await api.auth.loginWithGoogleIdToken(idToken, nonce);
 
       if (backendTokenData && backendTokenData.accessToken) {
         await processAuthToken(backendTokenData.accessToken, backendTokenData.tokenType || 'Bearer');

@@ -60,7 +60,7 @@ export interface AuthContextValue {
     existingClinicId?: number
   ) => Promise<any>;
   logout: () => Promise<void>;
-  googleIdLogin: (credential: string) => Promise<User>;
+  googleIdLogin: (credential: string, nonce: string) => Promise<User>;
   processAuthToken: (token: string, tokenType?: string) => Promise<User>;
 }
 

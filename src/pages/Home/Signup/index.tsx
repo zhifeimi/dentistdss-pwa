@@ -21,12 +21,13 @@ import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { CredentialResponse } from '@react-oauth/google';
 import { useMediaQuery } from '@mui/material';
 import PasswordStrengthIndicator from '../../../components/PasswordStrengthIndicator';
 import { isPasswordStrong } from '../../../utils/passwordStrength';
 import useFormValidation from '../../../hooks/useFormValidation';
 import GoogleAuthProvider from '../../../components/Auth/GoogleAuthProvider';
+import GoogleSignInButton from '../../../components/Auth/GoogleSignInButton';
 
 /**
  * Signup - User registration page for patients
@@ -131,7 +132,7 @@ const Signup: React.FC = () => {
     setLoading(false);
   };
 
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse, nonce: string) => {
     try {
       setLoading(true);
 
@@ -143,17 +144,17 @@ const Signup: React.FC = () => {
         throw new Error('No credential received from Google');
       }
 
-      await googleIdLogin(credentialResponse.credential);
+      await googleIdLogin(credentialResponse.credential, nonce);
       navigate('/dashboard');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Google signup failed');
+      setError(`${err.message || 'Google signup failed'} Please retry Google sign-in.`);
     }
     setLoading(false);
   };
 
   const handleGoogleError = () => {
-    setError('Google signup failed');
+    setError('Google signup failed. Please retry Google sign-in.');
   };
 
 
@@ -539,17 +540,11 @@ const Signup: React.FC = () => {
                       }
                     }}
                 >
-                  <GoogleLogin
-                      size="large"
+                  <GoogleSignInButton
                       width={googleButtonWidth}
                       onSuccess={handleGoogleSuccess}
                       onError={handleGoogleError}
-                      useOneTap={false}
-                      text="continue_with"
-                      type="standard"
-                      shape="rectangular"
                       theme={theme.palette.mode === 'dark' ? 'filled_black' : 'filled_blue'}
-                      logo_alignment="left"
                   />
                 </Box>
               </Grid>

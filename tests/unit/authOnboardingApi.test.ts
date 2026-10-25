@@ -166,3 +166,33 @@ describe('auth onboarding API contracts', () => {
     expect(payload).not.toHaveProperty('clinicWebsite');
   });
 });
+
+describe('Google login API contracts', () => {
+  beforeEach(() => {
+    mocks.post.mockReset();
+    mocks.get.mockReset();
+    mocks.setBearerSession.mockReset();
+  });
+
+  it('exchanges a Google ID token with its server-issued nonce', async () => {
+    mocks.post.mockResolvedValue({
+      accessToken: 'google-session-token',
+      tokenType: 'Bearer',
+      user: { id: 1, email: 'patient@example.com' },
+    });
+
+    await authAPI.loginWithGoogleIdToken('google-id-token', 'server-nonce');
+
+    expect(mocks.post).toHaveBeenCalledWith('/oauth2/token', {
+      idToken: 'google-id-token',
+      nonce: 'server-nonce',
+    });
+  });
+
+  it('fetches the Google nonce challenge from the public auth route', async () => {
+    mocks.get.mockResolvedValue({ nonce: 'server-nonce' });
+
+    await expect(authAPI.getGoogleNonce()).resolves.toBe('server-nonce');
+    expect(mocks.get).toHaveBeenCalledWith('/oauth2/nonce');
+  });
+});

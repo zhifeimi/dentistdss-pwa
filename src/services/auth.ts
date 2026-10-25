@@ -85,6 +85,15 @@ const authAPI = {
     }
   },
 
+  /** Fetch a one-time nonce challenge before rendering Google Identity Services. */
+  async getGoogleNonce(): Promise<string> {
+    const response = await api.get('/oauth2/nonce') as { nonce?: string };
+    if (!response?.nonce) {
+      throw new Error('Unable to prepare Google sign-in. Please retry.');
+    }
+    return response.nonce;
+  },
+
   /**
    * Exchange a Google ID token (obtained on the frontend via Google Identity Services)
    * for an internal JWT issued by our backend. The backend validates the token
@@ -93,19 +102,15 @@ const authAPI = {
    * The function stores the returned access token so that subsequent calls to
    * protected endpoints are automatically authenticated.
    */
-  async loginWithGoogleIdToken(idToken: string): Promise<AuthResponse> {
+  async loginWithGoogleIdToken(idToken: string, nonce: string): Promise<AuthResponse> {
     if (!idToken) {
       throw new Error('Missing Google ID token');
     }
+    if (!nonce) {
+      throw new Error('Missing Google sign-in nonce');
+    }
 
-    // NOTE: the gateway is configured to accept POST requests at
-    //       /login/oauth2/code/google with the ID token in the request body.
-    // If your backend expects the token in a different form (e.g. query param
-    // or Authorization header) adjust the request accordingly.
-
-    // const authData = await api.post('/login/oauth2/code/google', { idToken });
-    const authData = await api.post('/oauth2/token', { idToken }) as AuthResponse;
-    // console.log('authData', authData);
+    const authData = await api.post('/oauth2/token', { idToken, nonce }) as AuthResponse;
     // Persist the bearer in memory for future API calls – mirrors the behaviour
     // of the email/password login helper.
     session.setBearerSession(authData.accessToken, authData.tokenType);
