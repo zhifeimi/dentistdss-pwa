@@ -149,4 +149,45 @@ describe('AuthProvider session restore wiring', () => {
       )
     );
   });
+
+  it('clears the authenticated UI before the server logout finishes', async () => {
+    authMocks.refresh.mockImplementation(async () => {
+      sessionMocks.setBearerSession('restored-token', 'Bearer');
+      return { accessToken: 'restored-token', tokenType: 'Bearer' };
+    });
+    let finishLogout: (() => void) | undefined;
+    authMocks.logout.mockImplementation(() => new Promise<void>((resolve) => {
+      finishLogout = resolve;
+    }));
+
+    const LogoutHarness = () => {
+      const { isAuthenticated, logout } = useAuth();
+      return (
+        <>
+          <output data-testid="auth-status">
+            {isAuthenticated ? 'authenticated' : 'anonymous'}
+          </output>
+          <button type="button" onClick={() => void logout()}>Log out</button>
+        </>
+      );
+    };
+
+    render(
+      <AuthProvider>
+        <LogoutHarness />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('auth-status')).toHaveTextContent('authenticated'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
+
+    try {
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('anonymous');
+    } finally {
+      await React.act(async () => {
+        finishLogout?.();
+      });
+    }
+    await waitFor(() => expect(screen.getByTestId('auth-status')).toHaveTextContent('anonymous'));
+  });
 });

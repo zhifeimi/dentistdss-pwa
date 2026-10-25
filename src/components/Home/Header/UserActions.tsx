@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button, IconButton, Badge } from '@mui/material';
+import { Box, Button, IconButton } from '@mui/material';
 import { Mail as MailIcon } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router';
 import type { User } from './types';
@@ -21,14 +21,13 @@ export const UserActions: React.FC<UserActionsProps> = ({
     return (
       <>
         <IconButton
+          aria-label="Messages"
           color="inherit"
           component={RouterLink}
           to="/dashboard/messages"
           sx={{ mr: 1.5 }}
         >
-          <Badge badgeContent={3} color="error">
-            <MailIcon />
-          </Badge>
+          <MailIcon />
         </IconButton>
         <Button
           color="inherit"

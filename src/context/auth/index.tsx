@@ -99,14 +99,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   };
 
   const logout = useCallback(async (): Promise<void> => {
+    setCurrentUser(null);
     try {
       await api.auth.logout();
     } catch (error) {
       console.error('Backend logout error (will proceed with client-side logout):', error);
-    } finally {
-      // The auth service already cleared the in-memory bearer/XSRF state and
-      // broadcast the session end to other tabs.
-      setCurrentUser(null);
     }
   }, []);
 
