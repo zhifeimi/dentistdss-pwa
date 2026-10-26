@@ -1,305 +1,102 @@
-# Test Suite Documentation
+# Tests
 
-This directory contains all test files for the Dental Clinic Assistant System. The tests are organized by category and type to ensure comprehensive coverage and maintainability.
+Vitest covers units, services, hooks, and components in jsdom. Playwright covers browser flows against the Vite dev server with mocked backend responses. Every command runs through Deno; see the [project README](../README.md) for the toolchain.
 
-**🔥 All tests are now written in TypeScript for enhanced type safety and better development experience!**
+## Layout
 
-## Directory Structure
-
-```
+```text
 tests/
-├── README.md                 # This file
-├── setup.tsx                 # Global test configuration and mocks (TypeScript)
-├── tsconfig.json             # TypeScript configuration for tests
-├── unit/                     # Unit tests for individual functions
-│   └── javascript.test.ts    # JavaScript fundamentals tests (TypeScript)
-├── integration/              # Integration tests for services and APIs
-│   └── chatbot.test.ts       # Chatbot service integration tests (TypeScript)
-├── components/               # React component tests
-│   └── components.test.tsx   # Basic React component tests (TypeScript)
-├── utils/                    # Utility function tests
-│   ├── utilities.test.ts     # Dashboard and dictionary utilities (TypeScript)
-│   └── sseUtils.test.ts      # SSE processing utilities tests (TypeScript)
-└── e2e/                      # End-to-end tests (Playwright)
-    ├── basic-dashboard.spec.ts
-    └── dashboard-roles-fixed.spec.ts
+  setup.tsx       # Vitest global setup: mocks and testUtils
+  tsconfig.json
+  unit/           # services, session/auth transport, hooks, booking logic
+  integration/    # chatbot service against mocked fetch/SSE
+  components/     # React components with Testing Library
+  utils/          # pure helpers: calendar, schedule, SSE, dictionary
+  e2e/            # Playwright specs (*.spec.ts)
+    support/      # shared Playwright helpers, e.g. mockAuthenticatedSession
 ```
 
-## Test Categories
+Vitest picks up `tests/**/*.{test,spec}.*` and `src/**/*.{test,spec}.*`, excluding `tests/e2e/`. Name Vitest files `*.test.ts` or `*.test.tsx`, and Playwright files `*.spec.ts`.
 
-### 🔧 Unit Tests (`/unit/`)
-Tests for individual functions, utilities, and isolated components.
+## Running
 
-**Purpose**: Verify that individual units of code work correctly in isolation.
-
-**Examples**:
-- Pure function testing
-- Type validation
-- Algorithm testing
-- Data transformation
-
-**Run**: `deno task test:unit`
-
-### 🔗 Integration Tests (`/integration/`)
-Tests for service interactions, API calls, and component integration.
-
-**Purpose**: Verify that different parts of the system work together correctly.
-
-**Examples**:
-- API service testing
-- Database interactions
-- External service integration
-- Component communication
-
-**Run**: `deno task test:integration`
-
-### 🎨 Component Tests (`/components/`)
-Tests for React components, UI interactions, and rendering.
-
-**Purpose**: Verify that UI components render correctly and handle user interactions.
-
-**Examples**:
-- Component rendering
-- Props handling
-- Event handling
-- State management
-
-**Run**: `deno task test:components`
-
-### 🛠 Utility Tests (`/utils/`)
-Tests for helper functions, utilities, and shared code.
-
-**Purpose**: Verify that utility functions work correctly across different scenarios.
-
-**Examples**:
-- Data formatting
-- Validation functions
-- Helper utilities
-- Configuration processing
-
-**Run**: `deno task test:utils`
-
-### 🌐 End-to-End Tests (`/e2e/`)
-Full user workflow tests using Playwright.
-
-**Purpose**: Verify that complete user workflows work correctly in a real browser environment.
-
-**Examples**:
-- User authentication flows
-- Dashboard navigation
-- Appointment booking
-- Chat interactions
-
-**Run**: `deno task test:e2e`
-
-## Test Configuration
-
-### Global Setup (`setup.tsx`)
-- Configures testing environment with TypeScript support
-- Sets up global mocks (localStorage, fetch, etc.) with proper typing
-- Provides test utilities and helpers with type safety
-- Configures Material-UI and React Router mocks
-
-## Running Tests
-
-### All Tests
 ```bash
-deno task test
+deno task test              # all Vitest suites (what CI runs)
+deno task test:unit         # one folder: test:unit, test:integration, test:components, test:utils
+deno task test:watch        # watch mode
+deno task test:coverage     # v8 coverage: text, json, and html in coverage/
+
+deno task test:e2e:install  # once: download Playwright browsers
+deno task test:e2e          # Chromium, Firefox, and WebKit
+deno task test:e2e:ui       # Playwright UI mode
 ```
 
-### Specific Categories
+Run a single file or test through the wrapper:
+
 ```bash
-deno task test:unit          # Unit tests only
-deno task test:integration   # Integration tests only
-deno task test:components    # Component tests only
-deno task test:utils         # Utility tests only
+deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts vitest --run tests/unit/sessionLifecycle.test.ts
+deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts vitest --run tests/unit/sessionLifecycle.test.ts -t "test name"
+deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts playwright test tests/e2e/auth-logout.spec.ts --grep "test title"
+deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts playwright test tests/e2e --project=chromium
 ```
 
-### Watch Mode
-```bash
-deno task test:watch
-```
+Playwright starts the dev server on `http://localhost:3000`, or reuses one that is already running when not in CI. The HTML report is written to `playwright-report/`.
 
-### Coverage Report
-```bash
-deno task test:coverage
-```
+CI runs only Vitest. Run Playwright locally for routing, auth, chat, or other user-flow changes.
 
-### End-to-End Tests
-```bash
-deno task test:e2e
-```
+## Global setup (`setup.tsx`)
 
-## Writing Tests
+Every Vitest file inherits these mocks. Account for them before you write a test:
 
-### Test File Naming
-- Unit tests: `*.test.ts` (TypeScript)
-- Component tests: `*.test.tsx` (TypeScript with JSX)
-- E2E tests: `*.spec.ts` (TypeScript)
+- `import.meta.env` uses local API defaults and test Google keys.
+- `localStorage` and `sessionStorage` are in-memory `vi.fn()` stores.
+- `window.location` is a static `http://localhost:3000/` object with mocked `assign`, `replace`, and `reload`.
+- `window.dispatchEvent`, `fetch`, `IntersectionObserver`, `ResizeObserver`, `matchMedia`, `scrollIntoView`, and `google.maps` are stubs.
+- `react-router` is mocked: `useNavigate` returns a no-op, `useLocation` is always `/`, and `Link`/`NavLink` render plain `<a>` tags. To test real navigation, `vi.unmock('react-router')` or render a router from `react-router-dom`.
+- `@mui/material/styles` is mocked with a minimal theme.
+- `console.log` is silenced; `error` and `warn` still print.
 
-### Test Structure
+`testUtils` provides `createMockUser`, `createMockAuthToken`, `createMockSSEResponse`, `createMockStreamingResponse`, `setupAuthMocks`, `clearAllMocks`, and `waitFor`.
+
+## Patterns used here
+
+**Mock the backend at the API boundary.** Stub `fetch` or the module in `src/services/`, not the component internals:
+
 ```typescript
-import { describe, it, expect, vi } from 'vitest';
-import type { MockedFunction } from 'vitest';
-
-describe('Feature Name', () => {
-  describe('specific functionality', () => {
-    it('should do something specific', () => {
-      // Arrange
-      const input: string = 'test input';
-
-      // Act
-      const result: string = functionUnderTest(input);
-
-      // Assert
-      expect(result).toBe('expected output');
-    });
-  });
-});
-```
-
-### Mocking Guidelines
-
-#### API Calls
-```javascript
-import { vi } from 'vitest';
-
-// Mock fetch
-global.fetch = vi.fn().mockResolvedValue({
-  ok: true,
-  json: () => Promise.resolve({ data: 'mock data' }),
-});
-```
-
-#### React Components
-```javascript
-// Mock a component
-vi.mock('../components/MyComponent', () => ({
-  default: ({ children, ...props }) => (
-    <div data-testid="mock-my-component" {...props}>
-      {children}
-    </div>
-  ),
+vi.mock('../../src/services', () => ({
+  default: { chatbot: { send: vi.fn().mockResolvedValue({ kind: 'completed', text: 'reply' }) } },
 }));
 ```
 
-#### Services
-```javascript
-// Mock a service
-vi.mock('../services/api', () => ({
-  chatbot: {
-    send: vi.fn().mockResolvedValue({ kind: 'completed', text: 'mock response' }),
-  },
-}));
-```
+**Pin the time zone for date logic.** Date-only API strings are local calendar dates, so run date tests on both sides of UTC. Restore the zone by name, because deleting `TZ` does not reset it on Linux:
 
-## Best Practices
-
-### 1. Test Organization
-- Group related tests using `describe` blocks
-- Use descriptive test names that explain the expected behavior
-- Follow the AAA pattern (Arrange, Act, Assert)
-
-### 2. Mocking Strategy
-- Mock external dependencies (APIs, services, libraries)
-- Use real implementations for internal utilities when possible
-- Keep mocks simple and focused
-
-### 3. Test Data
-- Use test fixtures for consistent test data
-- Avoid hardcoded values in tests
-- Create realistic but minimal test data
-
-### 4. Assertions
-- Use specific assertions (`toBe`, `toEqual`, `toContain`)
-- Test both positive and negative cases
-- Verify error conditions and edge cases
-
-### 5. Cleanup
-- Clean up mocks and state after each test
-- Use `beforeEach` and `afterEach` for setup and cleanup
-- Avoid test interdependencies
-
-## Common Testing Patterns
-
-### Testing Async Functions
-```javascript
-it('should handle async operations', async () => {
-  const result = await asyncFunction();
-  expect(result).toBeDefined();
+```typescript
+describe.each(['Australia/Sydney', 'America/New_York'])('in %s', (timeZone) => {
+  const originalTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  beforeAll(() => { process.env.TZ = timeZone; });
+  afterAll(() => { process.env.TZ = originalTimeZone; });
+  // ...
 });
 ```
 
-### Testing Error Handling
-```javascript
-it('should handle errors gracefully', async () => {
-  const mockError = new Error('Test error');
-  fetch.mockRejectedValue(mockError);
-  
-  await expect(functionThatCallsFetch()).rejects.toThrow('Test error');
-});
+**MUI multiline `TextField`.** The global `ResizeObserver` stub is not constructible. Stub it with a class in that test:
+
+```typescript
+vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
 ```
 
-### Testing React Components
-```javascript
-import { render, screen } from '@testing-library/react';
+**Playwright with a signed-in user.** No real backend or account is used. `tests/e2e/support/authenticatedSession.ts` routes the CSRF, refresh, and `/me` calls so the app restores a session for a given role:
 
-it('should render component correctly', () => {
-  render(<MyComponent prop="value" />);
-  
-  expect(screen.getByText('Expected Text')).toBeInTheDocument();
-});
+```typescript
+import { mockAuthenticatedSession } from './support/authenticatedSession';
+
+await mockAuthenticatedSession(page, patientUser);
+await page.goto('/overview');
 ```
 
-### Testing User Interactions
-```javascript
-import { fireEvent } from '@testing-library/react';
+**Bug fixes start red.** Add a test that fails on the current code, fix it, then watch the test pass.
 
-it('should handle user clicks', () => {
-  const mockHandler = vi.fn();
-  render(<Button onClick={mockHandler}>Click me</Button>);
-  
-  fireEvent.click(screen.getByText('Click me'));
-  expect(mockHandler).toHaveBeenCalledTimes(1);
-});
-```
+## Known limitations
 
-## Debugging Tests
-
-### Console Output
-```javascript
-// Enable console output for debugging
-console.log('Debug info:', debugData);
-```
-
-### Test Isolation
-```javascript
-// Run a single test
-npm test -- --run specific.test.js
-
-// Run tests matching a pattern
-npm test -- --run --grep "specific test name"
-```
-
-### Coverage Analysis
-```javascript
-// Generate detailed coverage report
-npm test -- --coverage --reporter=html
-```
-
-## Continuous Integration
-
-The test suite is configured to run in CI/CD pipelines with:
-- Automated test execution on pull requests
-- Coverage reporting and thresholds
-- E2E test execution in headless browsers
-- Test result reporting and notifications
-
-## Contributing
-
-When adding new features:
-1. Write tests for new functionality
-2. Update existing tests if behavior changes
-3. Ensure all tests pass before submitting
-4. Add appropriate test documentation
-5. Follow the established testing patterns and conventions
+- Firefox may fail to launch in sandboxed environments because Playwright cannot create its profile. Use `--project=chromium --project=webkit` there.
+- If WebKit chat specs are flaky with many workers, run with `--workers=4`.
