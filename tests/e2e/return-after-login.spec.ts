@@ -143,3 +143,22 @@ test('the pending-approval page is public', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Waiting for approval' })).toBeVisible();
   await expect(page.getByRole('banner').getByRole('link', { name: 'Log in', exact: true })).toBeVisible();
 });
+
+test('booking a clinic still opens the booking when the clinic list fails, with a retry', async ({ page }) => {
+  await mockLoggedOutApi(page);
+  let clinicsUp = false;
+  await page.route('**/api/clinic/list/all', (route) =>
+    clinicsUp
+      ? route.fulfill(json({ success: true, message: 'ok', dataObject: [{ id: 7, name: 'Harbour Dental', address: '1 Quay St', city: 'Sydney' }] }))
+      : route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ success: false, message: 'Unavailable' }) }));
+
+  await page.goto('/appointments?book=7');
+  await logIn(page);
+
+  const booking = page.getByRole('dialog');
+  await expect(booking.getByText("Couldn't load clinics")).toBeVisible();
+
+  clinicsUp = true;
+  await booking.getByRole('button', { name: 'Retry' }).click();
+  await expect(booking.getByRole('radio', { name: /Harbour Dental/ })).toBeChecked();
+});

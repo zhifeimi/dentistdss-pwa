@@ -36,6 +36,7 @@ const FindAClinic: React.FC = React.memo(() => {
     setSearchKeywords,
     clinics,
     loading,
+    failed,
     handleSearch,
     clearResults,
   } = useClinicSearch(searchParams.get('q') ?? '');
@@ -88,6 +89,8 @@ const FindAClinic: React.FC = React.memo(() => {
           clinics={clinicsWithCoords.length > 0 ? clinicsWithCoords : clinics}
           selectedClinic={selectedClinicAsSearchResult}
           loading={loading}
+          failed={failed}
+          onRetry={handleSearch}
           hasQuery={searchKeywords.trim() !== ''}
           isMobile={isMobile}
           onClinicSelect={handleClinicSelect}

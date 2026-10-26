@@ -85,21 +85,29 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     setShowBookingWizard(false);
   });
 
-  // "Book a visit" links here with ?book=<clinicId>: open the wizard with that
-  // clinic chosen once the clinic list has loaded (an unknown id, such as the
-  // overview's ?book=new, opens it with no clinic chosen).
+  // "Book a visit" links here with ?book=<clinicId>: open the wizard straight
+  // away (it shows the clinic list loading, or failing with a retry) and choose
+  // that clinic once it's in the list. An unknown id, such as the overview's
+  // ?book=new, leaves the choice to the visitor.
   const [searchParams, setSearchParams] = useSearchParams();
   const bookClinicId = canBookAppointment ? searchParams.get('book') : null;
-  const bookingClinics = bookingWizard.clinics;
+  const [pendingClinicId, setPendingClinicId] = useState<string | null>(null);
   useEffect(() => {
-    if (!bookClinicId || bookingClinics.length === 0) return;
-    const clinic = bookingClinics.find((item) => String(item.id) === bookClinicId);
+    if (!bookClinicId) return;
     bookingWizard.resetBooking();
-    if (clinic) bookingWizard.updateBookingData('clinicId', clinic.id);
+    setPendingClinicId(bookClinicId);
     setShowBookingWizard(true);
     setSearchParams({}, { replace: true });
     // bookingWizard's identity changes every render; the inputs above are the triggers.
-  }, [bookClinicId, bookingClinics]);
+  }, [bookClinicId]);
+
+  const bookingClinics = bookingWizard.clinics;
+  useEffect(() => {
+    const clinic = pendingClinicId && bookingClinics.find((item) => String(item.id) === pendingClinicId);
+    if (!clinic) return;
+    bookingWizard.updateBookingData('clinicId', clinic.id);
+    setPendingClinicId(null);
+  }, [pendingClinicId, bookingClinics]);
 
   // Event handlers
   const handleAppointmentClick = useCallback((appointment: Appointment) => {
@@ -174,6 +182,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
 
   const handleCloseBookingWizard = useCallback(() => {
     bookingWizard.resetBooking();
+    setPendingClinicId(null);
     setShowBookingWizard(false);
   }, [bookingWizard]);
 
@@ -182,6 +191,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     // every booking from a blank wizard so time can only be chosen from the
     // service-specific slots returned by appointment-service.
     bookingWizard.resetBooking();
+    setPendingClinicId(null);
     setShowBookingWizard(true);
   }, [bookingWizard]);
 
@@ -385,6 +395,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
         availableSlots={transformedAvailableSlots}
         serviceTypes={bookingWizard.serviceTypes}
         loading={bookingWizard.loading}
+        onRetryClinics={bookingWizard.loadClinics}
         onUpdateBookingData={bookingWizard.updateBookingData}
         onUpdatePatientData={bookingWizard.updatePatientData}
         onNextStep={bookingWizard.nextStep}

@@ -14,21 +14,12 @@ import AuthLayout from '../../../components/Home/AuthLayout';
 import PasswordStrengthIndicator from '../../../components/PasswordStrengthIndicator';
 import authAPI from '../../../services/auth';
 import { isPasswordStrong } from '../../../utils/passwordStrength';
-import type { Approver } from '../../PendingApproval';
+import type { PendingApprovalState, VerifyEmailState } from '../../../types/routerState';
 
 const MAX_RESEND_ATTEMPTS = 3;
 const RESEND_WINDOW_SECONDS = 90;
 const LOCAL_STORAGE_RESEND_KEY = 'resendVerificationStatus';
 
-// Router state the sign-up pages send here
-export interface VerifyEmailState {
-  email?: string;
-  firstName?: string;
-  // Set by the staff and clinic-admin sign-ups: who approves the account
-  approver?: Approver;
-  // Set by the patient sign-up: the page to return to after logging in
-  from?: unknown;
-}
 
 interface ResendStatus {
   attempts: number;
@@ -134,7 +125,7 @@ const VerifyEmailWithCodePage: React.FC = () => {
       // The backend rejects logins until approval, so staff and clinic admins
       // go to the page that explains the wait instead of to a failing login
       if (approver) {
-        navigate('/pending-approval', { state: { approver, firstName } });
+        navigate('/pending-approval', { state: { approver, firstName } satisfies PendingApprovalState });
       } else {
         navigate('/login?verified=true', { state: { from } });
       }

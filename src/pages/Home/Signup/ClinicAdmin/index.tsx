@@ -27,7 +27,7 @@ import ConfirmationDialog from '../../../../components/ConfirmationDialog';
 import AuthLayout from '../../../../components/Home/AuthLayout';
 import useFormValidation from '../../../../hooks/useFormValidation';
 import { COUNTRIES } from '../../../../utils/dictionary';
-import type { VerifyEmailState } from '../../../VerifyEmail/Code';
+import type { ApprovalSignupState } from '../../../../types/routerState';
 
 interface FormData {
   firstName: string;
@@ -103,7 +103,7 @@ const ClinicAdmin: React.FC = () => {
     const newFormData = { ...formData, [name]: value };
     setFormData(newFormData);
 
-    // Handle validation for email, password, and website fields
+    // Live validation for the email, password and website fields
     if (name === 'email' || name === 'businessEmail' || name === 'password' || name === 'confirmPassword' || name === 'website') {
       handleFieldChange(name, value, newFormData);
     }
@@ -189,7 +189,8 @@ const ClinicAdmin: React.FC = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    navigate('/verify-email-code', {state: {email: formData.email, firstName: formData.firstName, approver: 'dentistdss'} satisfies VerifyEmailState});
+    const state: ApprovalSignupState = { email: formData.email, firstName: formData.firstName, approver: 'dentistdss' };
+    navigate('/verify-email-code', { state });
   };
 
   return (

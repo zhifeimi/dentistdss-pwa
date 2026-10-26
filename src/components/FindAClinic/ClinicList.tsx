@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Skeleton, Typography } from '@mui/material';
+import { Box, Button, Skeleton, Typography } from '@mui/material';
 import ClinicCard from './ClinicCard';
 import type { ClinicSearchResult } from '../../types/api';
 
@@ -7,12 +7,15 @@ interface ClinicListProps {
   clinics: ClinicSearchResult[];
   selectedClinic?: ClinicSearchResult | null;
   loading: boolean;
+  /** The search request failed: say so instead of "no matches" */
+  failed?: boolean;
+  onRetry?: () => void;
   hasQuery: boolean;
   isMobile: boolean;
   onClinicSelect: (clinic: ClinicSearchResult) => void;
 }
 
-const Message: React.FC<{ title: string; text: string }> = ({ title, text }) => (
+const Message: React.FC<{ title: string; text: string; action?: React.ReactNode }> = ({ title, text, action }) => (
   <Box
     sx={{
       p: 3,
@@ -26,6 +29,7 @@ const Message: React.FC<{ title: string; text: string }> = ({ title, text }) => 
     <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
       {text}
     </Typography>
+    {action && <Box sx={{ mt: 1.5 }}>{action}</Box>}
   </Box>
 );
 
@@ -34,6 +38,8 @@ const ClinicList = React.memo<ClinicListProps>(({
   clinics,
   selectedClinic,
   loading,
+  failed = false,
+  onRetry,
   hasQuery,
   onClinicSelect,
 }) => (
@@ -47,6 +53,8 @@ const ClinicList = React.memo<ClinicListProps>(({
     >
       {loading
         ? 'Searching clinics…'
+        : failed
+        ? 'Clinics'
         : hasQuery
         ? `${clinics.length} ${clinics.length === 1 ? 'clinic' : 'clinics'}`
         : 'Clinics'}
@@ -56,6 +64,12 @@ const ClinicList = React.memo<ClinicListProps>(({
       <Box sx={{ display: 'grid', gap: 1.5 }}>
         {[0, 1, 2].map((i) => <Skeleton key={i} variant="rounded" height={148} />)}
       </Box>
+    ) : failed ? (
+      <Message
+        title="Couldn't search clinics"
+        text="Something went wrong on our side or with your connection. Your search is still there; try again."
+        action={onRetry && <Button variant="outlined" size="small" onClick={onRetry}>Retry</Button>}
+      />
     ) : !hasQuery ? (
       <Message
         title="Start with a suburb or clinic name"

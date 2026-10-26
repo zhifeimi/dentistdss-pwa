@@ -73,6 +73,8 @@ export interface BookingWizardProps {
   serviceTypes: ServiceType[];
   /** Loading state */
   loading: boolean;
+  /** Reloads the clinic list after it failed to load */
+  onRetryClinics?: () => void;
   /** Callback to update booking data */
   onUpdateBookingData: (field: keyof BookingData, value: string) => void;
   /** Callback to update patient data */
@@ -117,6 +119,7 @@ export interface WizardContentProps {
   serviceTypes: ServiceType[];
   loading: boolean;
   isLoggedIn: boolean;
+  onRetryClinics?: () => void;
   onUpdateBookingData: (field: keyof BookingData, value: string) => void;
   onUpdatePatientData: (field: keyof PatientData, value: string) => void;
 }

@@ -29,7 +29,7 @@ import { isPasswordStrong } from '../../../../utils/passwordStrength';
 import ConfirmationDialog from '../../../../components/ConfirmationDialog';
 import AuthLayout from '../../../../components/Home/AuthLayout';
 import useFormValidation from '../../../../hooks/useFormValidation';
-import type { VerifyEmailState } from '../../../VerifyEmail/Code';
+import type { ApprovalSignupState } from '../../../../types/routerState';
 
 interface FormData {
   email: string;
@@ -37,7 +37,7 @@ interface FormData {
   confirmPassword: string;
   firstName: string;
   lastName: string;
-  role: string; // 'clinic_admin', 'dentist', 'receptionist'
+  role: string; // 'dentist' or 'receptionist'; clinic admins sign up on their own page
   clinicName: string; // Will hold the human-readable clinic name after selection
   clinicId: string; // Selected clinic ID (for dentists and receptionists)
 }
@@ -66,7 +66,7 @@ const ClinicStaff: React.FC = () => {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: '', // 'clinic_admin', 'dentist', 'receptionist'
+    role: '',
     clinicName: '', // Will hold the human-readable clinic name after selection
     clinicId: '', // Selected clinic ID (for dentists and receptionists)
   });
@@ -205,8 +205,7 @@ const ClinicStaff: React.FC = () => {
         }
       );
 
-      // If signup call completes without error, it means it's pending verification/approval.
-      // The AuthContext signup function returns { emailVerificationPending: true, ... } on success.
+      // Accepted: the account now needs email verification, then clinic admin approval
       setDialogTitle('Sign-up submitted');
       setDialogMessage('Signup request submitted! Please check your email for verification. Your account will also require administrator approval by your clinic administrator.');
       setOpenDialog(true);
@@ -220,7 +219,8 @@ const ClinicStaff: React.FC = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    navigate('/verify-email-code', {state: {email: formData.email, firstName: formData.firstName, approver: 'clinic'} satisfies VerifyEmailState});
+    const state: ApprovalSignupState = { email: formData.email, firstName: formData.firstName, approver: 'clinic' };
+    navigate('/verify-email-code', { state });
   };
 
 

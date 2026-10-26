@@ -25,7 +25,7 @@ import useFormValidation from '../../../hooks/useFormValidation';
 import GoogleAuthProvider from '../../../components/Auth/GoogleAuthProvider';
 import GoogleSignInButton from '../../../components/Auth/GoogleSignInButton';
 import { returnFrom, returnPathAfterLogin } from '../../../utils/returnPath';
-import type { VerifyEmailState } from '../../VerifyEmail/Code';
+import type { PatientSignupState } from '../../../types/routerState';
 
 /**
  * Signup - User registration page for patients
@@ -116,16 +116,11 @@ const Signup: React.FC = () => {
 
     setLoading(true);
     try {
-      // The role 'patient' is implicitly handled by this form.
-      // The signup function from AuthContext will be called.
-      // We need to ensure it doesn't auto-login patients but signals success for redirection.
+      // Signing up doesn't log the patient in: they verify their email first
       await signup(email, password, firstName, lastName, 'PATIENT' as const);
 
-      // Assuming signup now returns something to indicate success without auto-login for patients
-      // or that the API call itself was successful and email verification is the next step.
-      // If signup in AuthContext still auto-logs in, this logic will need adjustment there.
-      // For now, proceed to pending verification page.
-      navigate('/verify-email-code', { state: { email, firstName, from } satisfies VerifyEmailState });
+      const state: PatientSignupState = { email, firstName, from };
+      navigate('/verify-email-code', { state });
 
     } catch (err: any) {
       console.error('Signup failed:', err);

@@ -46,6 +46,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({
   availableSlots,
   serviceTypes,
   loading,
+  onRetryClinics,
   onUpdateBookingData,
   onUpdatePatientData,
   onNextStep,
@@ -122,6 +123,7 @@ const BookingWizard: React.FC<BookingWizardProps> = ({
           serviceTypes={serviceTypes}
           loading={loading}
           isLoggedIn={isLoggedIn}
+          onRetryClinics={onRetryClinics}
           onUpdateBookingData={onUpdateBookingData}
           onUpdatePatientData={onUpdatePatientData}
         />

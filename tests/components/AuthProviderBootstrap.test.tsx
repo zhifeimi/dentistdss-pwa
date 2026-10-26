@@ -36,6 +36,10 @@ vi.mock('../../src/services/session', () => ({
   default: sessionMocks,
 }));
 
+// Records the logout so Back afterwards can't hand the next login this page
+const noteLogout = vi.hoisted(() => vi.fn());
+vi.mock('../../src/utils/returnPath', () => ({ noteLogout }));
+
 import { AuthProvider, useAuth } from '../../src/context/auth';
 
 const GoogleLoginHarness = () => {
@@ -62,6 +66,7 @@ describe('AuthProvider session restore wiring', () => {
     sessionMocks.ensureXsrfBootstrapped.mockResolvedValue(undefined);
     authMocks.refresh.mockRejectedValue(new Error('no refresh cookie'));
     localStorage.clear();
+    noteLogout.mockClear();
   });
 
   it('restores the session from the refresh cookie on load', async () => {
@@ -150,7 +155,7 @@ describe('AuthProvider session restore wiring', () => {
     );
   });
 
-  it('clears the authenticated UI before the server logout finishes', async () => {
+  it('clears the authenticated UI and records the logout before the server logout finishes', async () => {
     authMocks.refresh.mockImplementation(async () => {
       sessionMocks.setBearerSession('restored-token', 'Bearer');
       return { accessToken: 'restored-token', tokenType: 'Bearer' };
@@ -178,8 +183,10 @@ describe('AuthProvider session restore wiring', () => {
       </AuthProvider>,
     );
     await waitFor(() => expect(screen.getByTestId('auth-status')).toHaveTextContent('authenticated'));
+    expect(noteLogout).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
+    expect(noteLogout).toHaveBeenCalledTimes(1);
 
     try {
       expect(screen.getByTestId('auth-status')).toHaveTextContent('anonymous');

@@ -2,14 +2,8 @@ import React from 'react';
 import { Link as RouterLink, useLocation } from 'react-router';
 import { Box, Button, Step, StepContent, StepLabel, Stepper, Typography } from '@mui/material';
 import AuthLayout from '../../components/Home/AuthLayout';
+import type { Approver, PendingApprovalState } from '../../types/routerState';
 
-// Who reviews the sign-up: the clinic's admin (staff) or the DentistDSS team (new clinics)
-export type Approver = 'clinic' | 'dentistdss';
-
-interface LocationState {
-  firstName?: string;
-  approver?: Approver;
-}
 
 const WHO_REVIEWS: Record<Approver, string> = {
   clinic: 'Your clinic admin reviews your account.',
@@ -21,7 +15,7 @@ const WHO_REVIEWS: Record<Approver, string> = {
  * verifying their email. The backend rejects their logins until approval.
  */
 const PendingApproval: React.FC = () => {
-  const { firstName, approver } = (useLocation().state as LocationState | null) ?? {};
+  const { firstName, approver } = (useLocation().state as PendingApprovalState | null) ?? {};
 
   return (
     <AuthLayout
