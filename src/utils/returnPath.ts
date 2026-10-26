@@ -8,9 +8,13 @@ export const hasLoggedOut = (): boolean => loggedOut;
 
 // Protected pages send logged-out visitors to /login with `{ from: location }`,
 // so logging in can take them back to what they asked for (a booking link, say).
+// Sign-up and email verification pass `from` along unchanged.
+export const returnFrom = (state: unknown): unknown => (state as { from?: unknown } | null)?.from;
+
 export const returnPathAfterLogin = (state: unknown): string => {
-  const from = (state as { from?: { pathname?: string; search?: string } } | null)?.from;
+  const from = returnFrom(state) as { pathname?: unknown; search?: unknown } | undefined;
   const path = `${from?.pathname ?? ''}${from?.search ?? ''}`;
-  // In-app paths only; browsers read "//host" and "/\host" as another site
-  return /^\/(?![/\\])/.test(path) ? path : '/dashboard';
+  // In-app paths only. Browsers read "//host" and "/\host" as another site,
+  // and drop tabs and newlines first, so "/\t/host" would become "//host".
+  return /^\/(?![/\\])[^\t\n\r]*$/.test(path) ? path : '/dashboard';
 };

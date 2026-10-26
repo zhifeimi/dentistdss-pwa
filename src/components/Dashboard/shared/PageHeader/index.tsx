@@ -33,7 +33,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, description, actions }) 
         </Typography>
       )}
     </Box>
-    {actions && <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>{actions}</Box>}
+    {actions && <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>{actions}</Box>}
   </Box>
 );
 

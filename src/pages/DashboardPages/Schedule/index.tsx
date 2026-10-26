@@ -36,6 +36,7 @@ import CalendarEventComponent from './components/CalendarEvent';
 // Use the unified AvailabilitySlot type from components
 import type { AvailabilitySlot, AvailabilitySubmitData } from '../../../types/components';
 import type { CalendarView, CalendarEvent as CalendarEventType } from '../../../hooks/schedule/scheduleUtils';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 
 // Remove local AvailabilityData interface since we're using AvailabilitySubmitData
 
@@ -327,32 +328,20 @@ const SchedulePage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        mb: 3,
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? 2 : 0
-      }}>
-        <Box>
-          <Typography variant="h5" component="h1">
-            Your availability
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
-            Patients can book the open slots you add here.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setAddDialogOpen(true)}
-          disabled={loading}
-        >
-          Add availability
-        </Button>
-      </Box>
+      <PageHeader
+        title="Your availability"
+        description="Patients can book the open slots you add here."
+        actions={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setAddDialogOpen(true)}
+            disabled={loading}
+          >
+            Add availability
+          </Button>
+        }
+      />
 
       {/* Loading indicator */}
       {loading && (

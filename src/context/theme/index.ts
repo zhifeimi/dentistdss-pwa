@@ -318,7 +318,7 @@ const theme = (mode: ThemeMode): Theme => {
           },
           // Low elevations are resting surfaces: a hairline instead of a
           // shadow. Menus (8) and dialogs (24) keep their lift.
-          elevation1: { border: `1px solid ${t.divider}` },
+          elevation1: { border: `1px solid ${t.divider}`, boxShadow: 'none' },
           elevation2: { border: `1px solid ${t.divider}`, boxShadow: 'none' },
           elevation3: { border: `1px solid ${t.divider}`, boxShadow: 'none' },
           elevation4: { border: `1px solid ${t.divider}`, boxShadow: 'none' },

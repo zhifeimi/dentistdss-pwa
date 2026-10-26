@@ -29,6 +29,7 @@ import { isPasswordStrong } from '../../../../utils/passwordStrength';
 import ConfirmationDialog from '../../../../components/ConfirmationDialog';
 import AuthLayout from '../../../../components/Home/AuthLayout';
 import useFormValidation from '../../../../hooks/useFormValidation';
+import type { VerifyEmailState } from '../../../VerifyEmail/Code';
 
 interface FormData {
   email: string;
@@ -219,7 +220,7 @@ const ClinicStaff: React.FC = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    navigate('/verify-email-code', {state: {email: formData.email, firstName: formData.firstName, approver: 'clinic'}});
+    navigate('/verify-email-code', {state: {email: formData.email, firstName: formData.firstName, approver: 'clinic'} satisfies VerifyEmailState});
   };
 
 

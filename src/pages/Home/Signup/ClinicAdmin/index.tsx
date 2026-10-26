@@ -27,6 +27,7 @@ import ConfirmationDialog from '../../../../components/ConfirmationDialog';
 import AuthLayout from '../../../../components/Home/AuthLayout';
 import useFormValidation from '../../../../hooks/useFormValidation';
 import { COUNTRIES } from '../../../../utils/dictionary';
+import type { VerifyEmailState } from '../../../VerifyEmail/Code';
 
 interface FormData {
   firstName: string;
@@ -188,7 +189,7 @@ const ClinicAdmin: React.FC = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    navigate('/verify-email-code', {state: {email: formData.email, firstName: formData.firstName, approver: 'dentistdss'}});
+    navigate('/verify-email-code', {state: {email: formData.email, firstName: formData.firstName, approver: 'dentistdss'} satisfies VerifyEmailState});
   };
 
   return (

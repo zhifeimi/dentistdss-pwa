@@ -62,6 +62,25 @@ describe('AISummarizePage', () => {
     expect(snackbarMessages()).toEqual(['Summary copied']);
   });
 
+  test('says so when the summary could not be copied', async () => {
+    mocks.send.mockImplementationOnce(async (_agent, _prompt, options) => {
+      options.onText?.('Summary retained');
+      return { kind: 'completed', text: 'Summary retained' };
+    });
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValueOnce(new Error('denied'));
+    render(<AISummarizePage />);
+
+    await user.type(screen.getByPlaceholderText(/Paste appointment notes/), 'Routine cleaning.{Enter}');
+    await screen.findByText('Summary retained');
+    const copyButtons = screen.getAllByRole('button', { name: 'Copy summary' });
+    await user.click(copyButtons[copyButtons.length - 1]);
+
+    await waitFor(() =>
+      expect(snackbarMessages()).toEqual(["Couldn't copy the summary. Select the text and copy it instead."])
+    );
+  });
+
   test('streaming indicator is valid phrasing content inside the summary paragraph', async () => {
     let finish!: () => void;
     mocks.send.mockImplementationOnce((_agent, _prompt, options) => {

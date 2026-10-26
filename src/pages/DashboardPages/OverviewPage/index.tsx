@@ -192,6 +192,9 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  // A failed appointments request must not read as an empty day
+  const [appointmentsFailed, setAppointmentsFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   const { currentUser } = useAuth() || {};
 
@@ -206,12 +209,13 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
 
       setLoading(true);
       setError('');
+      setAppointmentsFailed(false);
 
       try {
         // Independent requests fire concurrently so the dashboard's first
         // paint waits on the slowest single request instead of the serial
-        // sum. Each section keeps its own failure fallback: a failed request
-        // warns and leaves that section empty without blocking the others.
+        // sum. A failed request doesn't block the others: clinic details are
+        // optional, and failed appointments show an error with a retry.
         const tasks: Promise<void>[] = [];
         const today = dayjs().format('YYYY-MM-DD');
 
@@ -231,7 +235,7 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
               .then((response) => setAppointments(response || []))
               .catch((err) => {
                 console.warn('Could not load dentist appointments:', err);
-                setAppointments([]);
+                setAppointmentsFailed(true);
               })
           );
         } else if ((userRole === 'RECEPTIONIST' || userRole === 'CLINIC_ADMIN') && currentUser.clinicId) {
@@ -240,7 +244,7 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
               .then((response) => setAppointments(response || []))
               .catch((err) => {
                 console.warn('Could not load clinic appointments:', err);
-                setAppointments([]);
+                setAppointmentsFailed(true);
               })
           );
         } else if (userRole === 'PATIENT') {
@@ -253,7 +257,7 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
                 setAppointments(appointmentsResult.value || []);
               } else {
                 console.warn('Could not load patient appointments:', appointmentsResult.reason);
-                setAppointments([]);
+                setAppointmentsFailed(true);
               }
               if (profileResult.status === 'fulfilled') {
                 setPatientData(profileResult.value || null);
@@ -275,7 +279,7 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
     };
 
     loadDashboardData();
-  }, [currentUser?.id, currentUser?.clinicId, userRole]);
+  }, [currentUser?.id, currentUser?.clinicId, userRole, attempt]);
 
   if (loading) {
     return (
@@ -333,7 +337,21 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
         </Box>
       </Box>
 
-      {showsAgenda && (
+      {appointmentsFailed && (
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => setAttempt((n) => n + 1)}>
+              Retry
+            </Button>
+          }
+        >
+          Couldn't load your appointments. Check your connection and retry.
+        </Alert>
+      )}
+
+      {showsAgenda && !appointmentsFailed && (
         <StaffToday
           appointments={appointments}
           showDentist={userRole !== 'DENTIST'}
@@ -342,7 +360,7 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
         />
       )}
 
-      {userRole === 'PATIENT' && (
+      {userRole === 'PATIENT' && !appointmentsFailed && (
         <PatientUpcoming appointments={appointments} lastVisit={patientData?.lastVisit} now={now} />
       )}
 

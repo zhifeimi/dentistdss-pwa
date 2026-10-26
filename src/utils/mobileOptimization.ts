@@ -10,25 +10,6 @@ export const TOUCH_TARGETS = {
   LARGE: 56, // Large touch target for important actions
 } as const;
 
-// Mobile-specific spacing values
-export const MOBILE_SPACING = {
-  CONTAINER_PADDING: {
-    xs: 2,
-    sm: 3,
-    md: 4,
-  },
-  SECTION_MARGIN: {
-    xs: 2,
-    sm: 3,
-    md: 4,
-  },
-  FORM_SPACING: {
-    xs: 2,
-    sm: 2.5,
-    md: 3,
-  },
-} as const;
-
 // Type definitions
 type SizeVariant = 'small' | 'medium' | 'large';
 

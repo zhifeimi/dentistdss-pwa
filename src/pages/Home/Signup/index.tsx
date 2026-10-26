@@ -24,7 +24,8 @@ import { isPasswordStrong } from '../../../utils/passwordStrength';
 import useFormValidation from '../../../hooks/useFormValidation';
 import GoogleAuthProvider from '../../../components/Auth/GoogleAuthProvider';
 import GoogleSignInButton from '../../../components/Auth/GoogleSignInButton';
-import { returnPathAfterLogin } from '../../../utils/returnPath';
+import { returnFrom, returnPathAfterLogin } from '../../../utils/returnPath';
+import type { VerifyEmailState } from '../../VerifyEmail/Code';
 
 /**
  * Signup - User registration page for patients
@@ -52,7 +53,7 @@ const Signup: React.FC = () => {
   // The protected page that sent this visitor to log in (see returnPathAfterLogin);
   // carried through verification so logging in still lands there
   const location = useLocation();
-  const { from } = (location.state as { from?: unknown } | null) ?? {};
+  const from = returnFrom(location.state);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const containerRef = useRef<HTMLDivElement>(null);
   const [googleButtonWidth, setGoogleButtonWidth] = useState<string>(isMobile ? '352px' : '334px');
@@ -124,7 +125,7 @@ const Signup: React.FC = () => {
       // or that the API call itself was successful and email verification is the next step.
       // If signup in AuthContext still auto-logs in, this logic will need adjustment there.
       // For now, proceed to pending verification page.
-      navigate('/verify-email-code', { state: { email: email, firstName: firstName, from } });
+      navigate('/verify-email-code', { state: { email, firstName, from } satisfies VerifyEmailState });
 
     } catch (err: any) {
       console.error('Signup failed:', err);

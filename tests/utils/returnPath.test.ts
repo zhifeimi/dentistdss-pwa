@@ -14,7 +14,7 @@ describe('returnPathAfterLogin', () => {
     expect(returnPathAfterLogin({})).toBe('/dashboard');
   });
 
-  it.each(['//evil.example', '/\\evil.example', 'https://evil.example/x'])(
+  it.each(['//evil.example', '/\\evil.example', '/\t/evil.example', '/\n/evil.example', 'https://evil.example/x'])(
     'never leaves the site for %s',
     (pathname) => {
       expect(returnPathAfterLogin(from(pathname))).toBe('/dashboard');

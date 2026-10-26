@@ -11,7 +11,6 @@ import {
   Tab,
   Tabs,
   TextField,
-  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -27,6 +26,7 @@ import AppointmentCard from '../../../components/Dashboard/shared/AppointmentCar
 import AppointmentDialog from '../../../components/Dashboard/shared/AppointmentDialog';
 import BookingWizard from '../../../components/Dashboard/shared/BookingWizard';
 import SearchableList from '../../../components/Dashboard/shared/SearchableList';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';
 import useAppointments from '../../../hooks/appointment/useAppointments';
 import useAppointmentActions from '../../../hooks/appointment/useAppointmentActions';
@@ -272,63 +272,44 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
 
   return (
     <Box sx={{ pt: 2, height: '100%' }}>
-      {/* Header with View Toggle and Actions */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-          flexWrap: 'wrap',
-          gap: 2,
-        }}
-      >
-        {/* Title and Today's Count */}
-        <Box>
-          <Typography variant='h5' component='h1' sx={{ mb: 0.5 }}>
-            {userRole === 'PATIENT' ? 'Your appointments' : 'Appointments'}
-          </Typography>
-          <Typography variant='body2' color='text.secondary'>
-            {todaysAppointments.length} appointment{todaysAppointments.length !== 1 ? 's' : ''}{' '}
-            today
-          </Typography>
-        </Box>
-
-        {/* Actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {/* View Mode Toggle */}
-          <Tabs
-            value={viewMode}
-            onChange={handleViewModeChange}
-            sx={{ minHeight: 'auto' }}
-          >
-            <Tab
-              icon={<CalendarIcon />}
-              label={!isMobile ? 'Calendar' : ''}
-              value='calendar'
-              sx={{ minHeight: 'auto', py: 1 }}
-            />
-            <Tab
-              icon={<ListIcon />}
-              label={!isMobile ? 'List' : ''}
-              value='list'
-              sx={{ minHeight: 'auto', py: 1 }}
-            />
-          </Tabs>
-
-          {/* New Appointment Button */}
-          {canBookAppointment && (
-            <Button
-              variant='contained'
-              startIcon={<AddIcon />}
-              onClick={() => handleNewAppointment()}
-              size={isMobile ? 'small' : 'medium'}
+      <PageHeader
+        title={userRole === 'PATIENT' ? 'Your appointments' : 'Appointments'}
+        description={`${todaysAppointments.length} appointment${todaysAppointments.length !== 1 ? 's' : ''} today`}
+        actions={
+          <>
+            <Tabs
+              value={viewMode}
+              onChange={handleViewModeChange}
+              sx={{ minHeight: 'auto' }}
             >
-              {isMobile ? 'Book' : 'Book a visit'}
-            </Button>
-          )}
-        </Box>
-      </Box>
+              <Tab
+                icon={<CalendarIcon />}
+                label={!isMobile ? 'Calendar' : ''}
+                value='calendar'
+                sx={{ minHeight: 'auto', py: 1 }}
+              />
+              <Tab
+                icon={<ListIcon />}
+                label={!isMobile ? 'List' : ''}
+                value='list'
+                sx={{ minHeight: 'auto', py: 1 }}
+              />
+            </Tabs>
+
+            {/* New Appointment Button */}
+            {canBookAppointment && (
+              <Button
+                variant='contained'
+                startIcon={<AddIcon />}
+                onClick={() => handleNewAppointment()}
+                size={isMobile ? 'small' : 'medium'}
+              >
+                {isMobile ? 'Book' : 'Book a visit'}
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Main Content */}
       <Box sx={{ height: 'calc(100% - 120px)' }}>

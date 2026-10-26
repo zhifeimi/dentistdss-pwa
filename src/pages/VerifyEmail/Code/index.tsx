@@ -20,7 +20,8 @@ const MAX_RESEND_ATTEMPTS = 3;
 const RESEND_WINDOW_SECONDS = 90;
 const LOCAL_STORAGE_RESEND_KEY = 'resendVerificationStatus';
 
-interface LocationState {
+// Router state the sign-up pages send here
+export interface VerifyEmailState {
   email?: string;
   firstName?: string;
   // Set by the staff and clinic-admin sign-ups: who approves the account
@@ -50,7 +51,7 @@ const VerifyEmailWithCodePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const { email: initialEmail, firstName: initialFirstName, approver, from } = (location.state as LocationState) || {};
+  const { email: initialEmail, firstName: initialFirstName, approver, from } = (location.state as VerifyEmailState | null) || {};
 
   // Persist email and firstName in local state to survive potential state loss on refresh
   const [email, setEmail] = useState<string | undefined>(initialEmail);

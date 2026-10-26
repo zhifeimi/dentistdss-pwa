@@ -42,8 +42,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     return <Navigate to="/login" replace state={forget ? undefined : { from: location }} />;
   }
 
-  // Dashboard component loaded successfully
-
   return (
     <DashboardLayout
       roles={currentUser.roles}

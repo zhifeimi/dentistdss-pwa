@@ -6,6 +6,14 @@ const mocks = vi.hoisted(() => ({
   googleIdLogin: vi.fn(),
   login: vi.fn(),
   signup: vi.fn(),
+  navigate: vi.fn(),
+  locationState: null as unknown,
+}));
+
+vi.mock('react-router', () => ({
+  useNavigate: () => mocks.navigate,
+  useLocation: () => ({ pathname: '/', search: '', hash: '', state: mocks.locationState }),
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 
 vi.mock('../../src/context/auth', () => ({
@@ -43,6 +51,8 @@ describe('Google auth page wiring', () => {
     mocks.googleIdLogin.mockReset().mockResolvedValue({ id: 1, email: 'patient@example.com' });
     mocks.login.mockReset();
     mocks.signup.mockReset();
+    mocks.navigate.mockReset();
+    mocks.locationState = null;
     vi.stubGlobal(
       'ResizeObserver',
       class {
@@ -62,6 +72,21 @@ describe('Google auth page wiring', () => {
 
     await waitFor(() =>
       expect(mocks.googleIdLogin).toHaveBeenCalledWith('google-id-token', 'server-nonce')
+    );
+  });
+
+  // A visitor sent to log in from "Book a visit" may sign up with Google instead
+  it.each([
+    ['login', Login],
+    ['signup', Signup],
+  ])('returns to the page that asked for a login after Google on the %s page', async (_name, Page) => {
+    mocks.locationState = { from: { pathname: '/appointments', search: '?book=7' } };
+    render(<Page />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Google' }));
+
+    await waitFor(() =>
+      expect(mocks.navigate).toHaveBeenCalledWith('/appointments?book=7', { replace: true })
     );
   });
 });
