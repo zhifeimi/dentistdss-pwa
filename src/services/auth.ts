@@ -71,10 +71,11 @@ const authAPI = {
   },
 
   /**
-   * Backend logout + local cleanup. Always clears the in-memory bearer and
-   * XSRF token and notifies other tabs, even if the network request fails.
+   * Blocks cookie-session restoration immediately, then attempts backend logout.
+   * Always clears local credentials and notifies other tabs, even if logout fails.
    */
   async logout(): Promise<void> {
+    session.blockSessionRestore();
     try {
       await session.ensureXsrfBootstrapped();
       await api.post('/api/auth/logout', undefined, { suppressErrorSnackbar: true });

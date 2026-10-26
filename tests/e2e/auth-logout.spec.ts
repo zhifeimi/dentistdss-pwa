@@ -79,3 +79,54 @@ test('logout immediately removes authenticated actions and protects the dashboar
     releaseLogout();
   }
 });
+
+test('logout blocks session restore when reloading before the server responds', async ({ page }) => {
+  let logoutStarted = false;
+  let releaseLogout!: () => void;
+  const logoutGate = new Promise<void>((resolve) => {
+    releaseLogout = resolve;
+  });
+
+  await mockAuthenticatedSession(page, {
+    id: 1,
+    email: 'patient@test.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    roles: ['PATIENT'],
+    isEmailVerified: true,
+    isActive: true,
+    clinicId: 1,
+    clinicName: 'Test Clinic',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  });
+  await page.route('**/api/auth/logout', async (route) => {
+    logoutStarted = true;
+    await logoutGate;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, message: 'User logged out successfully' }),
+    });
+  });
+
+  try {
+    await page.goto('/overview');
+    await expect(page.getByRole('navigation', { name: 'dashboard navigation' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'account menu' }).click();
+    await page.getByRole('menuitem', { name: 'Logout' }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect.poll(() => logoutStarted).toBe(true);
+
+    await page.reload();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('navigation', { name: 'dashboard navigation' })).toHaveCount(0);
+
+    await page.goto('/overview');
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('navigation', { name: 'dashboard navigation' })).toHaveCount(0);
+  } finally {
+    releaseLogout();
+  }
+});

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   refreshSession: vi.fn(),
   ensureXsrfBootstrapped: vi.fn(() => Promise.resolve()),
   setBearerSession: vi.fn(),
+  blockSessionRestore: vi.fn(),
   terminateSession: vi.fn(),
 }));
 
@@ -22,6 +23,7 @@ vi.mock('../../src/services/session', () => ({
     refreshSession: mocks.refreshSession,
     ensureXsrfBootstrapped: mocks.ensureXsrfBootstrapped,
     setBearerSession: mocks.setBearerSession,
+    blockSessionRestore: mocks.blockSessionRestore,
     terminateSession: mocks.terminateSession,
   },
 }));
@@ -38,6 +40,7 @@ describe('auth onboarding API contracts', () => {
     mocks.refreshSession.mockReset();
     mocks.ensureXsrfBootstrapped.mockReset();
     mocks.setBearerSession.mockReset();
+    mocks.blockSessionRestore.mockReset();
     mocks.terminateSession.mockReset();
   });
 
@@ -122,6 +125,10 @@ describe('auth onboarding API contracts', () => {
     mocks.post.mockResolvedValueOnce({});
     await authAPI.logout();
 
+    expect(mocks.blockSessionRestore).toHaveBeenCalledTimes(1);
+    expect(mocks.blockSessionRestore.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.ensureXsrfBootstrapped.mock.invocationCallOrder[0],
+    );
     expect(mocks.post).toHaveBeenCalledWith('/api/auth/logout', undefined, {
       suppressErrorSnackbar: true,
     });

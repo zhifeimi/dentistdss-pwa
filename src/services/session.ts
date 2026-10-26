@@ -54,6 +54,7 @@ interface SessionLifecycle {
   captureXsrfFromHeaders(headers: unknown): void;
   ensureXsrfBootstrapped(): Promise<void>;
   refreshSession(): Promise<SessionTokens>;
+  blockSessionRestore(): void;
   clearLocalSession(): void;
   terminateSession(options: { redirect: boolean }): void;
 }
@@ -108,6 +109,28 @@ const createBrowserEffects = (): BrowserEffects => ({
   },
 });
 
+const SIGNED_OUT_STORAGE_KEY = 'dentistdss-signed-out';
+
+const readSignedOutMarker = (): boolean => {
+  try {
+    return localStorage.getItem(SIGNED_OUT_STORAGE_KEY) === '1';
+  } catch (_) {
+    return false;
+  }
+};
+
+const writeSignedOutMarker = (signedOut: boolean): void => {
+  try {
+    if (signedOut) {
+      localStorage.setItem(SIGNED_OUT_STORAGE_KEY, '1');
+    } else {
+      localStorage.removeItem(SIGNED_OUT_STORAGE_KEY);
+    }
+  } catch (_) {
+    // The lifecycle still retains the marker in memory when storage is unavailable.
+  }
+};
+
 const scrubLegacyBearerStorage = (): void => {
   try {
     localStorage.removeItem('authToken');
@@ -125,6 +148,9 @@ export const createSessionLifecycle = (
   let xsrfBootstrapInFlight: Promise<void> | undefined;
   let refreshInFlight: Promise<SessionTokens> | undefined;
   let sessionEpoch = 0;
+  let signedOut = readSignedOutMarker();
+
+  const isSessionRestoreBlocked = (): boolean => signedOut || readSignedOutMarker();
 
   const channel = browserEffects.createSessionChannel((message) => {
     if (message !== SESSION_ENDED_MESSAGE) {
@@ -138,10 +164,18 @@ export const createSessionLifecycle = (
     }
   });
 
+  const blockSessionRestore = (): void => {
+    signedOut = true;
+    sessionEpoch += 1;
+    writeSignedOutMarker(true);
+  };
+
   const setBearerSession = (accessToken: string, tokenType: string = 'Bearer'): void => {
     if (!accessToken) {
       return;
     }
+    signedOut = false;
+    writeSignedOutMarker(false);
     sessionEpoch += 1;
     bearerSession = {
       accessToken,
@@ -197,11 +231,16 @@ export const createSessionLifecycle = (
   };
 
   const refreshSession = (): Promise<SessionTokens> => {
+    if (isSessionRestoreBlocked()) {
+      return Promise.reject(new SessionRefreshSupersededError());
+    }
     if (!refreshInFlight) {
       const refreshEpoch = sessionEpoch;
+      const refreshWasSuperseded = (): boolean =>
+        refreshEpoch !== sessionEpoch || isSessionRestoreBlocked();
       refreshInFlight = (async (): Promise<SessionTokens> => {
         await ensureXsrfBootstrapped();
-        if (refreshEpoch !== sessionEpoch) {
+        if (refreshWasSuperseded()) {
           throw new SessionRefreshSupersededError();
         }
         const response = await rawAuthClient.post(
@@ -209,7 +248,7 @@ export const createSessionLifecycle = (
           undefined,
           xsrfToken ? { headers: { [XSRF_HEADER]: xsrfToken } } : undefined,
         );
-        if (refreshEpoch !== sessionEpoch) {
+        if (refreshWasSuperseded()) {
           throw new SessionRefreshSupersededError();
         }
         captureXsrfFromHeaders(response.headers);
@@ -217,14 +256,14 @@ export const createSessionLifecycle = (
         if (!tokens?.accessToken) {
           throw new Error('Session refresh did not return an access token.');
         }
-        if (refreshEpoch !== sessionEpoch) {
+        if (refreshWasSuperseded()) {
           throw new SessionRefreshSupersededError();
         }
         setBearerSession(tokens.accessToken, tokens.tokenType);
         return tokens as SessionTokens;
       })()
         .catch((error) => {
-          if (refreshEpoch !== sessionEpoch) {
+          if (refreshWasSuperseded()) {
             throw new SessionRefreshSupersededError();
           }
           clearLocalSession();
@@ -238,6 +277,7 @@ export const createSessionLifecycle = (
   };
 
   const terminateSession = ({ redirect }: { redirect: boolean }): void => {
+    blockSessionRestore();
     clearLocalSession();
     channel?.postMessage(SESSION_ENDED_MESSAGE);
     if (redirect) {
@@ -256,6 +296,7 @@ export const createSessionLifecycle = (
     captureXsrfFromHeaders,
     ensureXsrfBootstrapped,
     refreshSession,
+    blockSessionRestore,
     clearLocalSession,
     terminateSession,
   };
@@ -275,6 +316,7 @@ export const clearXsrfToken = session.clearXsrfToken;
 export const captureXsrfFromHeaders = session.captureXsrfFromHeaders;
 export const ensureXsrfBootstrapped = session.ensureXsrfBootstrapped;
 export const refreshSession = session.refreshSession;
+export const blockSessionRestore = session.blockSessionRestore;
 export const clearLocalSession = session.clearLocalSession;
 export const terminateSession = session.terminateSession;
 

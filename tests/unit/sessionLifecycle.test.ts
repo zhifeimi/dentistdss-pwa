@@ -211,6 +211,67 @@ describe('session lifecycle', () => {
     expect(lifecycle.hasXsrfToken()).toBe(false);
   });
 
+  it('blocks cookie session restore across reloads as soon as logout starts', async () => {
+    const lifecycle = createSessionLifecycle(makeBrowserHarness().browserEffects);
+    lifecycle.setBearerSession('live-token');
+
+    lifecycle.blockSessionRestore();
+
+    expect(localStorage.getItem('dentistdss-signed-out')).toBe('1');
+    expect(lifecycle.hasBearerSession()).toBe(true);
+    const reloadedLifecycle = createSessionLifecycle(makeBrowserHarness().browserEffects);
+    await expect(reloadedLifecycle.refreshSession()).rejects.toMatchObject({
+      name: 'SessionRefreshSupersededError',
+    });
+    expect(axiosMocks.rawAuth.get).not.toHaveBeenCalled();
+    expect(axiosMocks.rawAuth.post).not.toHaveBeenCalled();
+  });
+
+  it('does not let a late refresh override the logged-out marker', async () => {
+    let resolveRefresh: (value: unknown) => void = () => {};
+    axiosMocks.rawAuth.get.mockResolvedValue({ headers: {} });
+    axiosMocks.rawAuth.post.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+    const lifecycle = createSessionLifecycle(makeBrowserHarness().browserEffects);
+
+    const refresh = lifecycle.refreshSession();
+    await vi.waitFor(() => expect(axiosMocks.rawAuth.post).toHaveBeenCalledTimes(1));
+    lifecycle.blockSessionRestore();
+    resolveRefresh({
+      headers: { 'X-XSRF-TOKEN': 'stale-csrf' },
+      data: { accessToken: 'stale-access-token', tokenType: 'Bearer' },
+    });
+    await expect(refresh).rejects.toMatchObject({
+      name: 'SessionRefreshSupersededError',
+    });
+
+    expect(lifecycle.hasBearerSession()).toBe(false);
+    expect(lifecycle.hasXsrfToken()).toBe(false);
+    expect(localStorage.getItem('dentistdss-signed-out')).toBe('1');
+  });
+
+  it('allows session restore again after an explicit new login', async () => {
+    const lifecycle = createSessionLifecycle(makeBrowserHarness().browserEffects);
+    lifecycle.blockSessionRestore();
+
+    lifecycle.setBearerSession('new-login-token', 'Bearer');
+
+    expect(localStorage.getItem('dentistdss-signed-out')).toBeNull();
+    axiosMocks.rawAuth.get.mockResolvedValue({ headers: {} });
+    axiosMocks.rawAuth.post.mockResolvedValue({
+      headers: {},
+      data: { accessToken: 'restored-login-token', tokenType: 'Bearer' },
+    });
+    const reloadedLifecycle = createSessionLifecycle(makeBrowserHarness().browserEffects);
+    await expect(reloadedLifecycle.refreshSession()).resolves.toMatchObject({
+      accessToken: 'restored-login-token',
+    });
+  });
+
   it('does not let a late refresh failure clear a newer bearer', async () => {
     let rejectRefresh: (reason?: unknown) => void = () => {};
     axiosMocks.rawAuth.get.mockResolvedValue({ headers: {} });
