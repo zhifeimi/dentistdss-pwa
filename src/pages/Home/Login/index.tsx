@@ -293,7 +293,7 @@ const Login: React.FC = () => {
 
           <Typography variant="body2" sx={{ mt: 4, color: 'text.secondary' }}>
             New to DentistDSS?{' '}
-            <MuiLink component={RouterLink} to="/signup">
+            <MuiLink component={RouterLink} to="/signup" state={location.state}>
               Create an account
             </MuiLink>
           </Typography>

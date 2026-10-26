@@ -121,8 +121,8 @@ const AIDentistPage: React.FC = () => {
           onSend={sendMessage}
           onKeyPress={handleKeyPress}
           placeholder={isMobile ?
-            "Ask about symptoms, treatments..." :
-            "Ask about patient symptoms, treatment options, clinical guidelines..."
+            "Ask about symptoms, treatments…" :
+            "Ask about patient symptoms, treatment options, clinical guidelines…"
           }
           isLoading={isLoading}
           quickActions={quickActions}

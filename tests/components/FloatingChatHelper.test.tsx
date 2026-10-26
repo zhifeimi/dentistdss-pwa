@@ -156,7 +156,7 @@ describe('FloatingChatHelper Component', () => {
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
 
-      expect(screen.getByPlaceholderText('Type your message...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Type your message…')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /send message/i })).toBeInTheDocument();
     });
   });
@@ -175,7 +175,7 @@ describe('FloatingChatHelper Component', () => {
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
 
-      const input = screen.getByPlaceholderText('Type your message...');
+      const input = screen.getByPlaceholderText('Type your message…');
       await user.type(input, 'Hello');
 
       const sendButton = screen.getByRole('button', { name: /send message/i });
@@ -209,7 +209,7 @@ describe('FloatingChatHelper Component', () => {
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-      const input = screen.getByPlaceholderText('Type your message...');
+      const input = screen.getByPlaceholderText('Type your message…');
       await user.type(input, 'Hi');
       await user.click(screen.getByRole('button', { name: /send message/i }));
 
@@ -223,7 +223,7 @@ describe('FloatingChatHelper Component', () => {
       act(() => {
         response.resolve(completed('Hello there!'));
       });
-      await waitFor(() => expect(screen.queryByText('Typing...')).not.toBeInTheDocument());
+      await waitFor(() => expect(screen.queryByText('Typing…')).not.toBeInTheDocument());
     });
 
     it('should not send empty messages', async () => {
@@ -240,7 +240,7 @@ describe('FloatingChatHelper Component', () => {
       const sendButton = screen.getByRole('button', { name: /send message/i });
       expect(sendButton).toBeDisabled();
 
-      const input = screen.getByPlaceholderText('Type your message...');
+      const input = screen.getByPlaceholderText('Type your message…');
       await user.type(input, '   ');
 
       expect(sendButton).toBeDisabled();
@@ -260,7 +260,7 @@ describe('FloatingChatHelper Component', () => {
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
 
-      const input = screen.getByPlaceholderText('Type your message...');
+      const input = screen.getByPlaceholderText('Type your message…');
       await user.type(input, 'Hello{enter}');
 
       expect(mockChatbotSend).toHaveBeenCalledWith(
@@ -289,7 +289,7 @@ describe('FloatingChatHelper Component', () => {
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-      const input = screen.getByPlaceholderText('Type your message...');
+      const input = screen.getByPlaceholderText('Type your message…');
       await user.type(input, 'Hello');
       await user.click(screen.getByRole('button', { name: /send message/i }));
 
@@ -323,7 +323,7 @@ describe('FloatingChatHelper Component', () => {
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-      const input = screen.getByPlaceholderText('Type your message...');
+      const input = screen.getByPlaceholderText('Type your message…');
       const sendButton = screen.getByRole('button', { name: /send message/i });
 
       await user.type(input, 'Hello');
@@ -364,20 +364,20 @@ describe('FloatingChatHelper Component', () => {
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-      const input = screen.getByPlaceholderText('Type your message...');
+      const input = screen.getByPlaceholderText('Type your message…');
       await user.type(input, 'Hello');
       const sendButton = screen.getByRole('button', { name: /send message/i });
       await user.click(sendButton);
 
-      expect(screen.getByPlaceholderText('Processing...')).toBeInTheDocument();
-      expect(screen.getByText('Typing...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Processing…')).toBeInTheDocument();
+      expect(screen.getByText('Typing…')).toBeInTheDocument();
       expect(sendButton).toBeDisabled();
 
       act(() => {
         response.resolve(completed('Response'));
       });
       await waitFor(() => {
-        expect(screen.queryByPlaceholderText('Processing...')).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText('Processing…')).not.toBeInTheDocument();
       });
     });
 
@@ -394,7 +394,7 @@ describe('FloatingChatHelper Component', () => {
 
       const chatButton = screen.getByRole('button', { name: /chat/i });
       await user.click(chatButton);
-      const input = screen.getByPlaceholderText('Type your message...');
+      const input = screen.getByPlaceholderText('Type your message…');
       await user.type(input, 'Hello');
       const sendButton = screen.getByRole('button', { name: /send message/i });
       await user.click(sendButton);
@@ -426,7 +426,7 @@ describe('FloatingChatHelper Component', () => {
 
     const chatButton = screen.getByRole('button', { name: /chat/i });
     await user.click(chatButton);
-    const input = screen.getByPlaceholderText('Type your message...');
+    const input = screen.getByPlaceholderText('Type your message…');
     await user.type(input, 'Hello');
     await user.click(screen.getByRole('button', { name: /send message/i }));
 

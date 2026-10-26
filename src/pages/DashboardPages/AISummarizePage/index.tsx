@@ -14,7 +14,7 @@ import {
 import {
   Summarize as SummarizeIcon,
   Description as DocumentIcon,
-  Save as SaveIcon,
+  ContentCopy as CopyIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
@@ -65,21 +65,24 @@ const AISummarizePage: React.FC = () => {
   // The newest AI reply after the welcome message, however it was sent
   const lastSummary = messages.slice(1).reverse().find((message) => message.type === 'ai')?.content ?? '';
 
-  // Save summary (placeholder - would integrate with patient records)
-  const handleSaveSummary = useCallback(() => {
+  // Copy the summary so the dentist can paste it into the patient's record.
+  // Saving it to a record directly needs the appointment it belongs to, which
+  // this page doesn't know.
+  const handleCopySummary = useCallback(async () => {
     if (!lastSummary) return;
-    
-    // TODO: Integrate with patient records API
-    console.log('Saving summary:', lastSummary);
-    
-    // Show success notification
-    const event = new CustomEvent('show-snackbar', {
-      detail: {
-        message: 'Summary saved to patient records',
-        severity: 'success',
-      },
-    }) as CustomEvent;
-    window.dispatchEvent(event);
+
+    let copied = true;
+    try {
+      await navigator.clipboard.writeText(lastSummary);
+    } catch {
+      copied = false;
+    }
+
+    window.dispatchEvent(new CustomEvent('show-snackbar', {
+      detail: copied
+        ? { message: 'Summary copied', severity: 'success' }
+        : { message: "Couldn't copy the summary. Select the text and copy it instead.", severity: 'error' },
+    }));
   }, [lastSummary]);
 
   // Download summary
@@ -147,8 +150,8 @@ const AISummarizePage: React.FC = () => {
                       </CardContent>
                       {!message.isStreaming && message.content && (
                         <CardActions>
-                          <Button size="small" startIcon={<SaveIcon />} onClick={handleSaveSummary}>
-                            Save to records
+                          <Button size="small" startIcon={<CopyIcon />} onClick={handleCopySummary}>
+                            Copy summary
                           </Button>
                           <Button size="small" startIcon={<DownloadIcon />} onClick={handleDownloadSummary}>
                             Download
@@ -179,7 +182,7 @@ const AISummarizePage: React.FC = () => {
           onChange={(e) => setInputValue(e.target.value)}
           onSend={sendMessage}
           onKeyPress={handleKeyPress}
-          placeholder="Paste appointment notes, clinical observations, or treatment details for summarization..."
+          placeholder="Paste appointment notes, clinical observations, or treatment details for summarization…"
           isLoading={isLoading}
           quickActions={quickActions}
           maxRows={6}

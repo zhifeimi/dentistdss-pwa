@@ -47,7 +47,7 @@ test.describe('Authenticated chat pages', () => {
     await page.goto('/ai-dentist');
 
     const input = page.getByPlaceholder(
-      'Ask about patient symptoms, treatment options, clinical guidelines...',
+      'Ask about patient symptoms, treatment options, clinical guidelines…',
     );
     await expect(input).toBeVisible();
     await input.fill('What should I consider for tooth pain?');
@@ -98,7 +98,7 @@ test.describe('Authenticated chat pages', () => {
       await page.goto('/ai-receptionist');
 
       const receptionistInput = page.getByPlaceholder(
-        'Ask about appointments, clinic services, or general information...',
+        'Ask about appointments, clinic services, or general information…',
       );
       await expect(receptionistInput).toBeVisible();
       const receptionistRequest = page.waitForRequest('**/api/genai/chatbot/receptionist');
@@ -110,7 +110,7 @@ test.describe('Authenticated chat pages', () => {
 
       await page.getByRole('tab', { name: 'Symptom check' }).click();
 
-      const triageInput = page.getByPlaceholder('Describe your symptoms or dental concerns...');
+      const triageInput = page.getByPlaceholder('Describe your symptoms or dental concerns…');
       await expect(triageInput).toBeVisible();
       await expect(page.getByText(stalePrompt, { exact: true })).not.toBeVisible();
 
@@ -128,7 +128,9 @@ test.describe('Authenticated chat pages', () => {
     }
   });
 
-  test('DENTIST retains the final summary and shows Save success snackbar', async ({ page }) => {
+  test('DENTIST retains the final summary and copies it', async ({ page, context, browserName }) => {
+    // Headless Chromium refuses clipboard writes unless granted; browsers allow them after a click
+    if (browserName === 'chromium') await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.route('**/api/notification/user/*/unread-count', async (route) => {
       await route.fulfill({
         status: 200,
@@ -154,7 +156,7 @@ test.describe('Authenticated chat pages', () => {
     await page.goto('/ai-summarize');
 
     const input = page.getByPlaceholder(
-      'Paste appointment notes, clinical observations, or treatment details for summarization...',
+      'Paste appointment notes, clinical observations, or treatment details for summarization…',
     );
     await expect(input).toBeVisible();
     await input.fill('Patient reports sensitivity after a recent filling.');
@@ -167,11 +169,11 @@ test.describe('Authenticated chat pages', () => {
     const summaryCard = page
       .getByText('Summary retained', { exact: true })
       .locator('xpath=ancestor::div[contains(@class, "MuiCard-root")]');
-    const saveButton = summaryCard.getByRole('button', { name: 'Save to records', exact: true });
-    await expect(saveButton).toBeVisible();
-    await saveButton.click();
-    await expect(
-      page.getByRole('alert').filter({ hasText: 'Summary saved to patient records' }),
-    ).toBeVisible();
+    // Nothing on this page writes to a patient record, so it offers a copy instead
+    await expect(summaryCard.getByRole('button', { name: /save/i })).toHaveCount(0);
+    const copyButton = summaryCard.getByRole('button', { name: 'Copy summary', exact: true });
+    await expect(copyButton).toBeVisible();
+    await copyButton.click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Summary copied' })).toBeVisible();
   });
 });

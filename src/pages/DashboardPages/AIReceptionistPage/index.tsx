@@ -185,12 +185,12 @@ const AIReceptionistPage: React.FC = () => {
           onKeyPress={handleKeyPress}
           placeholder={activeTab === 0 ?
             (isMobile ?
-              "Ask about appointments..." :
-              "Ask about appointments, clinic services, or general information..."
+              "Ask about appointments…" :
+              "Ask about appointments, clinic services, or general information…"
             ) :
             (isMobile ?
-              "Describe symptoms..." :
-              "Describe your symptoms or dental concerns..."
+              "Describe symptoms…" :
+              "Describe your symptoms or dental concerns…"
             )
           }
           isLoading={isLoading}

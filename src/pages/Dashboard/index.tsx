@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Navigate, useLocation } from 'react-router';
+import { Navigate, NavigationType, useLocation, useNavigationType } from 'react-router';
 import { useAuth } from '../../context/auth';
 import DashboardLayout from '../../components/Dashboard/DashboardLayout';
 import RouteFallback from '../../components/RouteFallback';
+import { hasLoggedOut } from '../../utils/returnPath';
 
 interface DashboardProps {
   children?: React.ReactNode;
@@ -19,9 +20,11 @@ const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const { currentUser, loading } = useAuth();
   const location = useLocation();
-  // Logging out drops currentUser while this page is still showing. That
-  // person goes to a plain /login so whoever logs in next starts on their own
-  // overview; a visitor who was never signed in here keeps the page they asked for.
+  const navigationType = useNavigationType();
+  // Logging out drops currentUser while this page is still showing, and Back or
+  // Forward after a logout reopens the previous person's pages. Both go to a
+  // plain /login so whoever logs in next starts on their own overview; a visitor
+  // who asked for this page (a booking link, say) keeps it.
   const wasSignedIn = useRef(false);
   useEffect(() => {
     if (currentUser) wasSignedIn.current = true;
@@ -35,7 +38,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   }
 
   if (!currentUser) {
-    return <Navigate to="/login" replace state={wasSignedIn.current ? undefined : { from: location }} />;
+    const forget = wasSignedIn.current || (hasLoggedOut() && navigationType === NavigationType.Pop);
+    return <Navigate to="/login" replace state={forget ? undefined : { from: location }} />;
   }
 
   // Dashboard component loaded successfully

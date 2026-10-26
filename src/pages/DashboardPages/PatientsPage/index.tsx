@@ -169,7 +169,7 @@ const PatientsPage: React.FC = () => {
             }
           }}
         >
-          Loading patients...
+          Loading patients…
         </Alert>
       </Box>
     );
@@ -202,7 +202,7 @@ const PatientsPage: React.FC = () => {
         renderItem={renderPatientItem}
         searchFields={['name', 'patientName', 'firstName', 'lastName', 'phone', 'phoneNumber', 'email', 'emailAddress']}
         emptyMessage="No patients found."
-        searchPlaceholder={isMobile ? "Search patients..." : "Search patients by name, phone, or email..."}
+        searchPlaceholder={isMobile ? "Search patients…" : "Search patients by name, phone, or email…"}
         sx={{
           '& .MuiTextField-root': {
             minHeight: { xs: TOUCH_TARGETS.MINIMUM, sm: 'auto' }

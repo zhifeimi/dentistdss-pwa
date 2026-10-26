@@ -70,14 +70,14 @@ const MessageItem = memo<{ message: ChatMessage; isDarkMode: boolean }>(({ messa
       }}
     >
       <Typography variant="body2" sx={{ color: 'inherit' }}>
-        {message.text || (message.isStreaming ? 'Thinking...' : '')}
+        {message.text || (message.isStreaming ? 'Thinking…' : '')}
       </Typography>
       
       {message.isStreaming && (
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
           <CircularProgress size={12} sx={{ mr: 1 }} />
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Typing...
+            Typing…
           </Typography>
         </Box>
       )}
@@ -145,7 +145,7 @@ const ChatInputForm = memo<{
       <TextField
         fullWidth
         size="small"
-        placeholder={isLoading ? "Processing..." : "Type your message..."}
+        placeholder={isLoading ? "Processing…" : "Type your message…"}
         variant="outlined"
         value={inputValue}
         onChange={(e) => onInputChange(e.target.value)}

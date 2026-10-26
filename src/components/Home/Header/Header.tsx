@@ -52,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleDarkMode }) => {
           <Wordmark size={isCompact ? 28 : 32} />
         </Box>
 
-        {!isCompact && <Navigation isAuthenticated={isAuthenticated} />}
+        {!isCompact && <Navigation />}
 
         <Box sx={{ flexGrow: 1 }} />
 

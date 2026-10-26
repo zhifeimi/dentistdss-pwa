@@ -382,7 +382,7 @@ const UserProfilePage: React.FC = () => {
                                                     }}
                                                 />
                                             )}
-                                            {loading ? 'Updating...' : 'Update'}
+                                            {loading ? 'Updating…' : 'Update'}
                                         </Button>
                                     </Box>
                                 </Box>

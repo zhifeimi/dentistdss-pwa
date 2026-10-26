@@ -57,11 +57,11 @@ export const getStatusChip = (status: string): React.ReactElement => {
     CONFIRMED: { color: 'success', label: 'Confirmed' },
     REQUESTED: { color: 'warning', label: 'Requested' },
     PENDING: { color: 'warning', label: 'Pending' },
-    IN_PROGRESS: { color: 'info', label: 'In Progress' },
+    IN_PROGRESS: { color: 'info', label: 'In progress' },
     RESCHEDULED: { color: 'info', label: 'Rescheduled' },
     COMPLETED: { color: 'default', label: 'Completed' },
     CANCELLED: { color: 'error', label: 'Cancelled' },
-    NO_SHOW: { color: 'error', label: 'No-Show' },
+    NO_SHOW: { color: 'error', label: 'No-show' },
   };
   const normalizedStatus = status.toUpperCase().replaceAll('-', '_');
   const config = statusConfig[normalizedStatus] || {

@@ -25,6 +25,8 @@ interface LocationState {
   firstName?: string;
   // Set by the staff and clinic-admin sign-ups: who approves the account
   approver?: Approver;
+  // Set by the patient sign-up: the page to return to after logging in
+  from?: unknown;
 }
 
 interface ResendStatus {
@@ -48,7 +50,7 @@ const VerifyEmailWithCodePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const { email: initialEmail, firstName: initialFirstName, approver } = (location.state as LocationState) || {};
+  const { email: initialEmail, firstName: initialFirstName, approver, from } = (location.state as LocationState) || {};
 
   // Persist email and firstName in local state to survive potential state loss on refresh
   const [email, setEmail] = useState<string | undefined>(initialEmail);
@@ -133,11 +135,11 @@ const VerifyEmailWithCodePage: React.FC = () => {
       if (approver) {
         navigate('/pending-approval', { state: { approver, firstName } });
       } else {
-        navigate('/login?verified=true');
+        navigate('/login?verified=true', { state: { from } });
       }
     }
     return () => clearTimeout(countdownTimer);
-  }, [showSuccessMessage, countdown, navigate, approver, firstName]);
+  }, [showSuccessMessage, countdown, navigate, approver, firstName, from]);
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value.replace(/[^0-9]/g, '').substring(0, 6);

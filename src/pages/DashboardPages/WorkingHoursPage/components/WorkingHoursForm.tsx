@@ -430,7 +430,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
             disabled={loading}
             startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
           >
-            {loading ? 'Saving...' : 'Save working hours'}
+            {loading ? 'Saving…' : 'Save working hours'}
           </Button>
         </DialogActions>
       </Dialog>

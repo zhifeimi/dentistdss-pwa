@@ -244,7 +244,7 @@ const useAppointmentActions = (
       }
 
       confirmationDialog.showInfo(
-        'Marked as No-Show',
+        'Marked as no-show',
         'The appointment has been marked as no-show.',
       );
 

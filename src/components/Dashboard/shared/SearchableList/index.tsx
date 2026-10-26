@@ -44,7 +44,7 @@ const SearchableList: React.FC<SearchableListProps> = ({
   items = [],
   renderItem,
   searchFields = [],
-  searchPlaceholder = "Search...",
+  searchPlaceholder = "Search…",
   emptyMessage = "No items found.",
   emptySearchMessage = "No items match your search.",
   showSearch = true,

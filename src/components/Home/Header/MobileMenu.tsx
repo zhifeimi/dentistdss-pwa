@@ -16,7 +16,6 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   onClose,
   isAuthenticated,
 }) => {
-  const visibleItems = NAVIGATION_ITEMS.filter((item) => !item.requiresAuth || isAuthenticated);
   const accountItems = isAuthenticated
     ? [{ label: 'Dashboard', path: '/dashboard' }]
     : [
@@ -33,7 +32,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
       transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       slotProps={{ paper: { sx: { mt: 1, width: 220 } } }}
     >
-      {visibleItems.map((item) => (
+      {NAVIGATION_ITEMS.map((item) => (
         <MenuItem key={item.path} component={RouterLink} to={item.path} onClick={onClose}>
           {item.label}
         </MenuItem>

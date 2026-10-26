@@ -2,7 +2,6 @@ import type { NavigationItem } from './types';
 
 export const NAVIGATION_ITEMS: NavigationItem[] = [
   { label: 'Find a clinic', path: '/find-a-clinic' },
-  { label: 'Ask Dentabot', path: '/chat', requiresAuth: true },
   { label: 'Learn', path: '/learn' },
   { label: 'Quiz', path: '/quiz' },
   { label: 'Reading list', path: '/book' },

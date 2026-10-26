@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   locationState: {
     email: 'patient@example.com',
     firstName: 'Patient',
-  } as { email?: string; firstName?: string; approver?: 'clinic' | 'dentistdss' },
+  } as { email?: string; firstName?: string; approver?: 'clinic' | 'dentistdss'; from?: unknown },
 }));
 
 vi.mock('react-router', () => ({
@@ -46,6 +46,7 @@ describe('email-code verification security contract', () => {
     mocks.locationState.email = 'patient@example.com';
     mocks.locationState.firstName = 'Patient';
     delete mocks.locationState.approver;
+    delete mocks.locationState.from;
     localStorageMock.clear();
     localStorageMock.getItem.mockClear();
     localStorageMock.setItem.mockClear();
@@ -73,7 +74,11 @@ describe('email-code verification security contract', () => {
   });
 
   it.each([
-    { who: 'a patient', approver: undefined, to: ['/login?verified=true'] },
+    {
+      who: 'a patient',
+      approver: undefined,
+      to: ['/login?verified=true', { state: { from: { pathname: '/appointments', search: '?book=7' } } }],
+    },
     {
       who: 'clinic staff',
       approver: 'clinic' as const,
@@ -89,6 +94,8 @@ describe('email-code verification security contract', () => {
     try {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       if (approver) mocks.locationState.approver = approver;
+      // The page a patient was booking before signing up comes back after login
+      else mocks.locationState.from = { pathname: '/appointments', search: '?book=7' };
       mocks.verifySignupWithCode.mockResolvedValue({ success: true });
       render(<VerifyEmailWithCodePage />);
 

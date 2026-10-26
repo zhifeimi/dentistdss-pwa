@@ -200,7 +200,7 @@ describe('appointment API contracts', () => {
   it('renders backend appointment statuses with friendly labels', () => {
     expect(getStatusChip('REQUESTED').props.label).toBe('Requested');
     expect(getStatusChip('RESCHEDULED').props.label).toBe('Rescheduled');
-    expect(getStatusChip('NO_SHOW').props.label).toBe('No-Show');
+    expect(getStatusChip('NO_SHOW').props.label).toBe('No-show');
   });
 
   it('selects a persisted service before requesting duration-aware slots', () => {

@@ -3,17 +3,12 @@ import { Box, Button } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router';
 import { NAVIGATION_ITEMS } from './constants';
 
-interface NavigationProps {
-  isAuthenticated: boolean;
-}
-
-export const Navigation: React.FC<NavigationProps> = ({ isAuthenticated }) => {
+export const Navigation: React.FC = () => {
   const { pathname } = useLocation();
-  const visibleItems = NAVIGATION_ITEMS.filter((item) => !item.requiresAuth || isAuthenticated);
 
   return (
     <Box component="nav" aria-label="Main" sx={{ display: 'flex', gap: 0.5 }}>
-      {visibleItems.map((item) => {
+      {NAVIGATION_ITEMS.map((item) => {
         const active = item.path === pathname;
         return (
           <Button

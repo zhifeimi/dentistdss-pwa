@@ -212,7 +212,7 @@ const Quiz: React.FC = () => {
   if (!currentQuestion) {
     return (
       <Container maxWidth="md" sx={{ py: 4, textAlign: 'center' }}>
-        <Typography variant="h6">Loading quiz...</Typography>
+        <Typography variant="h6">Loading quiz…</Typography>
       </Container>
     );
   }

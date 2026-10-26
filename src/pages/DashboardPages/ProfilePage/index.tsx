@@ -98,7 +98,7 @@ const ProfilePage: React.FC = () => {
             }
           }}
         >
-          Loading profile...
+          Loading profile…
         </Alert>
       </Box>
     );

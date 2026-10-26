@@ -173,7 +173,7 @@ const SettingItem = memo(({
                 size={isMobile ? 'small' : 'medium'}
                 aria-label="Save setting"
               >
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Saving…' : 'Save'}
               </Button>
             </Box>
           </Box>

@@ -233,10 +233,10 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
       : 'No appointments found.';
 
     const searchPlaceholder = userRole === 'PATIENT'
-      ? 'Search by dentist or service type...'
+      ? 'Search by dentist or service type…'
       : userRole === 'DENTIST'
-      ? 'Search by patient or service type...'
-      : 'Search by patient, dentist, or service type...';
+      ? 'Search by patient or service type…'
+      : 'Search by patient, dentist, or service type…';
 
     return (
       <SearchableList
@@ -263,7 +263,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
   };
 
   if (loading) {
-    return <Alert severity='info'>Loading appointments...</Alert>;
+    return <Alert severity='info'>Loading appointments…</Alert>;
   }
 
   if (error) {
@@ -386,7 +386,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
             variant='contained'
             disabled={appointmentActions.loading}
           >
-            {appointmentActions.loading ? 'Cancelling...' : 'Cancel appointment'}
+            {appointmentActions.loading ? 'Cancelling…' : 'Cancel appointment'}
           </Button>
         </DialogActions>
       </Dialog>

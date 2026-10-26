@@ -337,7 +337,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
             disabled={submitting || loading}
             startIcon={submitting && <CircularProgress size={16} />}
           >
-            {submitting ? 'Creating...' : 'Create availability'}
+            {submitting ? 'Creating…' : 'Create availability'}
           </Button>
         </DialogActions>
       </Dialog>

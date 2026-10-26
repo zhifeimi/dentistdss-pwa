@@ -245,7 +245,7 @@ const SettingForm = memo(({
               fullWidth={isMobile}
               aria-label="Save new setting"
             >
-              {saving ? 'Adding...' : 'Add setting'}
+              {saving ? 'Adding…' : 'Add setting'}
             </Button>
           </Box>
         </CardContent>

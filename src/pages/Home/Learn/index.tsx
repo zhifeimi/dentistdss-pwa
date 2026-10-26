@@ -370,7 +370,7 @@ const Learn: React.FC = () => {
                       color="text.secondary"
                       sx={{ mb: 2, flexGrow: 1 }}
                     >
-                      {article.content.split('.')[0] + '...'}
+                      {article.content.split('.')[0] + '…'}
                     </Typography>
                     <Button
                       variant="outlined"

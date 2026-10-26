@@ -19,7 +19,6 @@ export interface HeaderProps {
 export interface NavigationItem {
   label: string;
   path: string;
-  requiresAuth?: boolean;
 }
 
 export interface HeaderState {

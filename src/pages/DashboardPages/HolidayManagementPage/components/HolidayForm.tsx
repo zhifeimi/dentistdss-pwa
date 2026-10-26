@@ -423,7 +423,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             disabled={loading}
             startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
           >
-            {loading ? 'Saving...' : 'Save holiday'}
+            {loading ? 'Saving…' : 'Save holiday'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -367,7 +367,7 @@ const ClinicStaff: React.FC = () => {
                           label="Clinic"
                           onChange={handleSelectChange}
                       >
-                        {clinics.length === 0 && <MenuItem value="" disabled>Loading clinics...</MenuItem>}
+                        {clinics.length === 0 && <MenuItem value="" disabled>Loading clinics…</MenuItem>}
                         {clinics.map((clinic) => (
                             <MenuItem key={clinic.id} value={clinic.id}>{clinic.name}</MenuItem>
                         ))}

@@ -52,7 +52,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await expect(page.getByText('Hi there! How can I help you today?')).toBeVisible();
 
       // Check if input field and send button are visible
-      await expect(page.getByPlaceholder('Type your message...')).toBeVisible();
+      await expect(page.getByPlaceholder('Type your message…')).toBeVisible();
       await expect(page.getByRole('button', { name: /send message/i })).toBeVisible();
     });
 
@@ -76,7 +76,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
 
       // Type a message but don't send
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       await input.fill('Test message');
 
       // Close dialog
@@ -126,7 +126,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
 
       // Type and send message
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       await input.fill('Hi');
 
       const sendButton = page.getByRole('button', { name: /send message/i });
@@ -163,7 +163,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
 
       // Type message and press Enter
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       await input.fill('Test Enter key');
       await input.press('Enter');
 
@@ -182,7 +182,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await expect(sendButton).toBeDisabled();
 
       // Type whitespace only
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       await input.fill('   ');
 
       // Send button should still be disabled
@@ -221,7 +221,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
 
       // Send message. NOTE: the input is located by role, NOT by its
-      // placeholder — the placeholder itself flips to 'Processing...' while
+      // placeholder — the placeholder itself flips to 'Processing…' while
       // loading, which would self-invalidate a placeholder-based locator
       // exactly during the window under test.
       const chat = page.getByRole('dialog', { name: 'Dentabot' });
@@ -232,9 +232,9 @@ test.describe('Floating Chat Helper E2E', () => {
       await sendButton.click();
 
       // Check loading states: the input switches its placeholder to
-      // 'Processing...' and an assistant 'Typing...' indicator appears.
-      await expect(input).toHaveAttribute('placeholder', 'Processing...');
-      await expect(chat.getByText('Typing...')).toBeVisible();
+      // 'Processing…' and an assistant 'Typing…' indicator appears.
+      await expect(input).toHaveAttribute('placeholder', 'Processing…');
+      await expect(chat.getByText('Typing…')).toBeVisible();
       await expect(sendButton).toBeDisabled();
       await expect(input).toBeDisabled();
 
@@ -244,8 +244,8 @@ test.describe('Floating Chat Helper E2E', () => {
       // Check that loading states are cleared. The send button stays
       // disabled while the input is empty (its disabled rule is
       // `isLoading || !input.trim()`) — it re-enables once text is entered.
-      await expect(input).toHaveAttribute('placeholder', 'Type your message...');
-      await expect(chat.getByText('Typing...')).not.toBeVisible();
+      await expect(input).toHaveAttribute('placeholder', 'Type your message…');
+      await expect(chat.getByText('Typing…')).not.toBeVisible();
       await expect(input).not.toBeDisabled();
       await input.fill('again');
       await expect(sendButton).not.toBeDisabled();
@@ -267,7 +267,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
 
       // Send message
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       await input.fill('Test error');
 
       const sendButton = page.getByRole('button', { name: /send message/i });
@@ -296,7 +296,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await chatButton.click();
 
       // Send message
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       await input.fill('Test network error');
 
       const sendButton = page.getByRole('button', { name: /send message/i });
@@ -336,7 +336,7 @@ test.describe('Floating Chat Helper E2E', () => {
       const chatButton = page.getByRole('button', { name: /chat/i });
       await chatButton.click();
 
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       const sendButton = page.getByRole('button', { name: /send message/i });
 
       // Send first message (should fail)
@@ -374,7 +374,7 @@ test.describe('Floating Chat Helper E2E', () => {
       await expect(dialog).toBeVisible();
 
       // Input should be functional
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       await expect(input).toBeVisible();
       await input.fill('Mobile test');
 
@@ -414,7 +414,7 @@ test.describe('Floating Chat Helper E2E', () => {
       // Type message and submit with Enter (the MUI focus-trap's exact tab
       // order is an implementation detail — focus the field directly and
       // drive it with the keyboard)
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       await input.focus();
       await expect(input).toBeFocused();
       await page.keyboard.type('Keyboard test');
@@ -455,7 +455,7 @@ test.describe('Floating Chat Helper E2E', () => {
       const chatButton = page.getByRole('button', { name: /chat/i });
       await chatButton.click();
 
-      const input = page.getByPlaceholder('Type your message...');
+      const input = page.getByPlaceholder('Type your message…');
       const sendButton = page.getByRole('button', { name: /send message/i });
       const chat = page.getByRole('dialog', { name: 'Dentabot' });
 

@@ -1,6 +1,5 @@
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router';
-import { Typography } from '@mui/material';
 import { useAuth } from '../context/auth';
 import RouteFallback from '../components/RouteFallback';
 import { returnPathAfterLogin } from '../utils/returnPath';
@@ -8,7 +7,6 @@ import { returnPathAfterLogin } from '../utils/returnPath';
 // Route-level code splitting: every page is a lazy chunk so the anonymous first
 // view does not pay for dashboard, calendar, maps, markdown, or Learn assets.
 // Directory pages import their index.tsx directly to avoid barrel hazards.
-const ChatInterface = React.lazy(() => import('../pages/Dashboard/ChatBotDentist/index.tsx'));
 const Login = React.lazy(() => import('../pages/Home/Login/index.tsx'));
 const Signup = React.lazy(() => import('../pages/Home/Signup/index.tsx'));
 const Welcome = React.lazy(() => import('../pages/Home/Welcome/index.tsx'));
@@ -36,7 +34,7 @@ const AppRoutes: React.FC = () => {
                 />
                 <Route
                     path="/signup"
-                    element={!isAuthenticated ? <Signup /> : <Navigate to="/dashboard" replace />}
+                    element={!isAuthenticated ? <Signup /> : <Navigate to={returnPathAfterLogin(location.state)} replace />}
                 />
                 <Route
                     path="/signup/clinic-staff"
@@ -65,32 +63,6 @@ const AppRoutes: React.FC = () => {
                 <Route
                     path="/quiz"
                     element={<QuizPage />}
-                />
-                <Route
-                    path="/chat"
-                    element={
-                        loading ? (
-                            <RouteFallback />
-                        ) : isAuthenticated ? (
-                            <>
-                                <Typography
-                                    variant="h4"
-                                    component="h1"
-                                    gutterBottom
-                                    align="center"
-                                    sx={{
-                                        mb: { xs: 2, sm: 3, md: 4 },
-                                        fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' }
-                                    }}
-                                >
-                                    Dentabot - Your Dental Assistant
-                                </Typography>
-                                <ChatInterface />
-                            </>
-                        ) : (
-                            <Navigate to="/login" replace />
-                        )
-                    }
                 />
                 {/* Dashboard routes are now handled by AppShell based on public location dictionary */}
                 <Route

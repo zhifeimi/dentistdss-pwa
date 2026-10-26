@@ -64,6 +64,79 @@ test('logging out and back in starts from the overview, not the last page', asyn
   await expect(page).toHaveURL(/\/overview$/);
 });
 
+test('a visitor who books a clinic and signs up instead gets the booking back after logging in', async ({ page }) => {
+  await mockLoggedOutApi(page);
+  await page.route('**/api/auth/signup', (route) => route.fulfill(json({ success: true, message: 'ok', dataObject: null })));
+  await page.route('**/api/auth/signup/verify/code', (route) =>
+    route.fulfill(json({ success: true, message: 'ok', dataObject: null })));
+
+  await page.goto('/appointments?book=7');
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByRole('link', { name: 'Create an account' }).click();
+
+  await page.locator('input[name="firstName"]').fill(patient.firstName);
+  await page.locator('input[name="lastName"]').fill(patient.lastName);
+  await page.locator('input[name="email"]').fill(patient.email);
+  await page.locator('input[name="password"]').fill('CorrectHorse1!');
+  await page.locator('input[name="confirmPassword"]').fill('CorrectHorse1!');
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
+
+  await expect(page).toHaveURL(/\/verify-email-code$/);
+  await page.locator('input[name="verificationCode"]').fill('123456');
+  await page.locator('input[name="newPassword"]').fill('CorrectHorse1!');
+  await page.locator('input[name="confirmPassword"]').fill('CorrectHorse1!');
+  await page.getByRole('button', { name: 'Verify email', exact: true }).click();
+
+  await expect(page).toHaveURL(/\/login\?verified=true$/);
+  await logIn(page);
+
+  await expect(page).toHaveURL(/\/appointments/);
+  await expect(page.getByRole('dialog').getByText('Harbour Dental').first()).toBeVisible();
+});
+
+test('after logging out, going Back does not hand the last page to the next login', async ({ page }) => {
+  await mockLoggedOutApi(page);
+
+  await page.goto('/login');
+  await logIn(page);
+  await expect(page).toHaveURL(/\/overview$/);
+  // Two pages, so Back after logout lands on one that isn't the overview
+  await page.getByRole('button', { name: 'Dental records' }).click();
+  await expect(page).toHaveURL(/\/dental-records$/);
+  await page.getByRole('button', { name: 'My appointments' }).click();
+  await expect(page).toHaveURL(/\/appointments$/);
+
+  await page.getByRole('button', { name: 'account menu' }).click();
+  await page.getByRole('menuitem', { name: 'Log out' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/login$/);
+  await logIn(page);
+  await expect(page).toHaveURL(/\/overview$/);
+});
+
+test('after logging out, booking a clinic still comes back after logging in', async ({ page }) => {
+  await mockLoggedOutApi(page);
+  await page.route('**/api/clinic-admin/clinics/search', (route) =>
+    route.fulfill(json({ success: true, message: 'ok', dataObject: [{ id: 7, name: 'Harbour Dental', address: '1 Quay St', city: 'Sydney' }] })));
+
+  await page.goto('/login');
+  await logIn(page);
+  await page.getByRole('button', { name: 'account menu' }).click();
+  await page.getByRole('menuitem', { name: 'Log out' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  await page.getByRole('banner').getByRole('link', { name: 'Find a clinic' }).click();
+  await page.getByRole('searchbox', { name: 'Search for dental clinics' }).fill('Sydney');
+  await page.getByRole('link', { name: 'Book a visit' }).first().click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  await logIn(page);
+  await expect(page).toHaveURL(/\/appointments/);
+  await expect(page.getByRole('dialog').getByText('Harbour Dental').first()).toBeVisible();
+});
+
 test('the pending-approval page is public', async ({ page }) => {
   await page.goto('/pending-approval');
 

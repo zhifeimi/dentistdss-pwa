@@ -310,7 +310,7 @@ const ChangePasswordPage: React.FC = () => {
                                             }}
                                         />
                                     )}
-                                    {loading ? 'Changing...' : 'Save changes'}
+                                    {loading ? 'Changing…' : 'Save changes'}
                                 </Button>
                             </Box>
                         </Box>

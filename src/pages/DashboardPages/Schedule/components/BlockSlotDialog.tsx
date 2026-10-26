@@ -177,7 +177,7 @@ const BlockSlotDialog: React.FC<BlockSlotDialogProps> = ({ open, onClose, onSubm
           disabled={submitting || loading}
           startIcon={submitting && <CircularProgress size={16} />}
         >
-          {submitting ? 'Blocking...' : 'Block slot'}
+          {submitting ? 'Blocking…' : 'Block slot'}
         </Button>
       </DialogActions>
     </Dialog>

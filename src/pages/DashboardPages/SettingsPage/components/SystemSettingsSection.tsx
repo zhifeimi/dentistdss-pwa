@@ -177,7 +177,7 @@ const SystemSettingsSection = memo((): React.ReactElement => {
             fullWidth
             variant="outlined"
             size={isMobile ? 'small' : 'medium'}
-            placeholder="Search by key, value, or description..."
+            placeholder="Search by key, value, or description…"
             slotProps={{
               input: {
                 startAdornment: (
