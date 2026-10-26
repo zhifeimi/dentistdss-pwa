@@ -195,7 +195,7 @@ const UserProfilePage: React.FC = () => {
                                             mb: 1
                                         }}
                                     >
-                                        Personal Information
+                                        Personal information
                                     </Typography>
                                     <Typography
                                         variant="body2"
@@ -223,7 +223,7 @@ const UserProfilePage: React.FC = () => {
                                             <TextField
                                                 fullWidth
                                                 name="firstName"
-                                                label="First Name"
+                                                label="First name"
                                                 value={formData.firstName}
                                                 onChange={handleInputChange}
                                                 required
@@ -243,7 +243,7 @@ const UserProfilePage: React.FC = () => {
                                             <TextField
                                                 fullWidth
                                                 name="lastName"
-                                                label="Last Name"
+                                                label="Last name"
                                                 value={formData.lastName}
                                                 onChange={handleInputChange}
                                                 required
@@ -262,7 +262,7 @@ const UserProfilePage: React.FC = () => {
                                         <Grid size={{ xs: 12, md: 6 }}>
                                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                                 <DatePicker
-                                                    label="Date of Birth"
+                                                    label="Date of birth"
                                                     value={formData.dateOfBirth}
                                                     onChange={(value) => handleDateChange(value as Dayjs | null)}
                                                     disabled={loading}
@@ -288,7 +288,7 @@ const UserProfilePage: React.FC = () => {
                                             <TextField
                                                 fullWidth
                                                 name="phone"
-                                                label="Phone Number"
+                                                label="Phone number"
                                                 value={formData.phone}
                                                 onChange={handleInputChange}
                                                 disabled={loading}
@@ -364,15 +364,9 @@ const UserProfilePage: React.FC = () => {
                                             startIcon={loading ? null : <SaveIcon />}
                                             sx={{
                                                 minHeight: 48,
-                                                borderRadius: 2,
                                                 px: 3,
                                                 order: { xs: 1, sm: 2 },
                                                 position: 'relative',
-                                                background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-                                                boxShadow: `0 3px 5px 2px ${theme.palette.primary.main}30`,
-                                                '&:hover': {
-                                                    background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
-                                                },
                                             }}
                                         >
                                             {loading && (

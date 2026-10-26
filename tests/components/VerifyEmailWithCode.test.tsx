@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { localStorageMock } from '../setup';
@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   locationState: {
     email: 'patient@example.com',
     firstName: 'Patient',
-  } as { email?: string; firstName?: string },
+  } as { email?: string; firstName?: string; approver?: 'clinic' | 'dentistdss' },
 }));
 
 vi.mock('react-router', () => ({
@@ -45,6 +45,7 @@ describe('email-code verification security contract', () => {
     mocks.resendVerificationCode.mockReset();
     mocks.locationState.email = 'patient@example.com';
     mocks.locationState.firstName = 'Patient';
+    delete mocks.locationState.approver;
     localStorageMock.clear();
     localStorageMock.getItem.mockClear();
     localStorageMock.setItem.mockClear();
@@ -56,10 +57,10 @@ describe('email-code verification security contract', () => {
     mocks.verifySignupWithCode.mockResolvedValue({ success: true });
     render(<VerifyEmailWithCodePage />);
 
-    await user.type(screen.getByLabelText('Verification Code'), '123456');
-    await user.type(screen.getByLabelText('Choose Your Password'), ['FinalStrong', '1!'].join(''));
-    await user.type(screen.getByLabelText('Confirm Password'), ['FinalStrong', '1!'].join(''));
-    await user.click(screen.getByRole('button', { name: 'Verify Account' }));
+    await user.type(screen.getByLabelText('Verification code'), '123456');
+    await user.type(screen.getByLabelText('Choose a password'), ['FinalStrong', '1!'].join(''));
+    await user.type(screen.getByLabelText('Confirm password'), ['FinalStrong', '1!'].join(''));
+    await user.click(screen.getByRole('button', { name: 'Verify email' }));
 
     await waitFor(() => {
       expect(mocks.verifySignupWithCode).toHaveBeenCalledWith(
@@ -71,6 +72,42 @@ describe('email-code verification security contract', () => {
     expect(localStorageMock.setItem).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { who: 'a patient', approver: undefined, to: ['/login?verified=true'] },
+    {
+      who: 'clinic staff',
+      approver: 'clinic' as const,
+      to: ['/pending-approval', { state: { approver: 'clinic', firstName: 'Patient' } }],
+    },
+    {
+      who: 'a clinic admin',
+      approver: 'dentistdss' as const,
+      to: ['/pending-approval', { state: { approver: 'dentistdss', firstName: 'Patient' } }],
+    },
+  ])('sends $who to the right next step after verifying', async ({ approver, to }) => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      if (approver) mocks.locationState.approver = approver;
+      mocks.verifySignupWithCode.mockResolvedValue({ success: true });
+      render(<VerifyEmailWithCodePage />);
+
+      await user.type(screen.getByLabelText('Verification code'), '123456');
+      await user.type(screen.getByLabelText('Choose a password'), ['FinalStrong', '1!'].join(''));
+      await user.type(screen.getByLabelText('Confirm password'), ['FinalStrong', '1!'].join(''));
+      await user.click(screen.getByRole('button', { name: 'Verify email' }));
+      await screen.findByRole('heading', { name: 'Email verified' });
+
+      // The countdown schedules each tick after a re-render
+      for (let second = 0; second < 4; second++) {
+        await act(() => vi.advanceTimersByTimeAsync(1000));
+      }
+      expect(mocks.navigate).toHaveBeenCalledWith(...to);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('allows verification after route state is lost without storing the password', async () => {
     const user = userEvent.setup();
     delete mocks.locationState.email;
@@ -78,11 +115,11 @@ describe('email-code verification security contract', () => {
     mocks.verifySignupWithCode.mockResolvedValue({ success: true });
     render(<VerifyEmailWithCodePage />);
 
-    await user.type(screen.getByLabelText('Email Address'), 'patient@example.com');
-    await user.type(screen.getByLabelText('Verification Code'), '123456');
-    await user.type(screen.getByLabelText('Choose Your Password'), ['FinalStrong', '1!'].join(''));
-    await user.type(screen.getByLabelText('Confirm Password'), ['FinalStrong', '1!'].join(''));
-    await user.click(screen.getByRole('button', { name: 'Verify Account' }));
+    await user.type(screen.getByLabelText('Email'), 'patient@example.com');
+    await user.type(screen.getByLabelText('Verification code'), '123456');
+    await user.type(screen.getByLabelText('Choose a password'), ['FinalStrong', '1!'].join(''));
+    await user.type(screen.getByLabelText('Confirm password'), ['FinalStrong', '1!'].join(''));
+    await user.click(screen.getByRole('button', { name: 'Verify email' }));
 
     await waitFor(() => {
       expect(mocks.verifySignupWithCode).toHaveBeenCalledWith(
@@ -99,10 +136,10 @@ describe('email-code verification security contract', () => {
     mocks.verifySignupWithCode.mockResolvedValue({ success: true });
     render(<VerifyEmailPage />);
 
-    await user.type(screen.getByLabelText('6-Digit Verification Code'), '123456');
-    await user.type(screen.getByLabelText('Choose Your Password'), ['FinalStrong', '1!'].join(''));
-    await user.type(screen.getByLabelText('Confirm Password'), ['FinalStrong', '1!'].join(''));
-    await user.click(screen.getByRole('button', { name: 'Verify Email' }));
+    await user.type(screen.getByLabelText('Verification code'), '123456');
+    await user.type(screen.getByLabelText('Choose a password'), ['FinalStrong', '1!'].join(''));
+    await user.type(screen.getByLabelText('Confirm password'), ['FinalStrong', '1!'].join(''));
+    await user.click(screen.getByRole('button', { name: 'Verify email' }));
 
     await waitFor(() => {
       expect(mocks.verifySignupWithCode).toHaveBeenCalledWith(
@@ -120,7 +157,7 @@ describe('email-code verification security contract', () => {
     render(<VerifyEmailWithCodePage />);
 
     await user.click(
-      screen.getByRole('button', { name: 'Resend Verification Code' }),
+      screen.getByRole('button', { name: 'Send a new code' }),
     );
 
     await waitFor(() => {
@@ -142,17 +179,17 @@ describe('email-code verification security contract', () => {
     const user = userEvent.setup();
     render(<VerifyEmailWithCodePage />);
 
-    await user.type(screen.getByLabelText('Verification Code'), '123456');
-    await user.type(screen.getByLabelText('Choose Your Password'), 'weakpass');
-    await user.type(screen.getByLabelText('Confirm Password'), 'weakpass');
+    await user.type(screen.getByLabelText('Verification code'), '123456');
+    await user.type(screen.getByLabelText('Choose a password'), 'weakpass');
+    await user.type(screen.getByLabelText('Confirm password'), 'weakpass');
 
-    const verifyButton = screen.getByRole('button', { name: 'Verify Account' });
+    const verifyButton = screen.getByRole('button', { name: 'Verify email' });
     expect(verifyButton).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText('Choose Your Password'), {
+    fireEvent.change(screen.getByLabelText('Choose a password'), {
       target: { value: ['FinalStrong', '1!'].join('') },
     });
-    fireEvent.change(screen.getByLabelText('Confirm Password'), {
+    fireEvent.change(screen.getByLabelText('Confirm password'), {
       target: { value: 'OtherStrong2!' },
     });
 

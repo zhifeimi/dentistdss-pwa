@@ -66,8 +66,8 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = memo(({
 
   // Custom event style getter
   const eventStyleGetter = useCallback((event: any) => {
-    return getEventStyle(event.status, isMobile);
-  }, [isMobile]);
+    return getEventStyle(event.status, isMobile, theme);
+  }, [isMobile, theme]);
 
   // Event handlers
   const { handleSelectEvent, handleSelectSlot } = useCalendarEvents(

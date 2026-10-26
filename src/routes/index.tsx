@@ -1,8 +1,9 @@
 import React, { Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { Typography } from '@mui/material';
 import { useAuth } from '../context/auth';
 import RouteFallback from '../components/RouteFallback';
+import { returnPathAfterLogin } from '../utils/returnPath';
 
 // Route-level code splitting: every page is a lazy chunk so the anonymous first
 // view does not pay for dashboard, calendar, maps, markdown, or Learn assets.
@@ -20,16 +21,18 @@ const QuizPage = React.lazy(() => import('../pages/Home/Quiz/index.tsx'));
 const FindAClinic = React.lazy(() => import('../pages/Home/FindAClinic/index.tsx'));
 const ClinicAdminSignup = React.lazy(() => import('../pages/Home/Signup/ClinicAdmin/index.tsx'));
 const TermsAndConditions = React.lazy(() => import('../pages/TermsAndConditions/index.tsx'));
+const PendingApproval = React.lazy(() => import('../pages/PendingApproval/index.tsx'));
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, loading } = useAuth();
+    const location = useLocation();
 
     return (
         <Suspense fallback={<RouteFallback />}>
             <Routes>
                 <Route
                     path="/login"
-                    element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />}
+                    element={!isAuthenticated ? <Login /> : <Navigate to={returnPathAfterLogin(location.state)} replace />}
                 />
                 <Route
                     path="/signup"
@@ -96,8 +99,7 @@ const AppRoutes: React.FC = () => {
                 />
                 <Route
                     path="/pending-approval"
-                    element={<Typography variant="h5" align="center" sx={{ mt: 4 }}>Your account is pending approval. Please check
-                        your email or contact support.</Typography>}
+                    element={<PendingApproval />}
                 />
                 <Route
                     path="/find-a-clinic"

@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from 'react-router';
 import {
   Box,
   Typography,
-  Container,
-  Paper,
   Alert,
   TextField,
   Button,
@@ -12,9 +10,7 @@ import {
   Stack,
   useTheme
 } from '@mui/material';
-import EmailIcon from '@mui/icons-material/Email';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
+import AuthLayout from '../../../components/Home/AuthLayout';
 import PasswordStrengthIndicator from '../../../components/PasswordStrengthIndicator';
 import authAPI from '../../../services/auth';
 import { isPasswordStrong } from '../../../utils/passwordStrength';
@@ -110,157 +106,125 @@ const VerifyEmailPage: React.FC = () => {
 
   if (verificationStatus === 'verifying') {
     return (
-      <Container component="main" maxWidth="xs" sx={{ mt: 8, textAlign: 'center' }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <CircularProgress sx={{ mb: 2 }} />
-          <Typography variant="h6">Verifying your email...</Typography>
-        </Paper>
-      </Container>
+      <AuthLayout title="Verifying your email…">
+        <CircularProgress aria-label="Verifying" />
+      </AuthLayout>
     );
   }
 
   if (verificationStatus === 'success') {
     return (
-      <Container component="main" maxWidth="sm" sx={{ mt: 8, textAlign: 'center' }}>
-        <Paper elevation={3} sx={{ p: 4, backgroundColor: 'success.light' }}>
-          <CheckCircleOutlineIcon sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
-          <Typography variant="h4" component="h1" gutterBottom sx={{ color: 'success.dark' }}>
-            Email Verified Successfully!
+      <AuthLayout title="Email verified" subtitle="Staff and clinic admin accounts stay pending until they are approved.">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'text.secondary' }}>
+          <CircularProgress size={18} color="inherit" />
+          <Typography variant="body2">
+            Opening the login page in {countdown} second{countdown !== 1 ? 's' : ''}…
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Your email is verified. Staff and clinic administrator accounts remain pending until approved.
-          </Typography>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            You will be redirected to the login page in {countdown} seconds...
-          </Typography>
-        </Paper>
-      </Container>
+        </Box>
+      </AuthLayout>
     );
   }
 
   if (verificationStatus === 'error') {
     return (
-      <Container component="main" maxWidth="sm" sx={{ mt: 8, textAlign: 'center' }}>
-        <Paper elevation={3} sx={{ p: 4, backgroundColor: 'error.light' }}>
-          <ErrorOutlineIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
-          <Typography variant="h5" component="h1" gutterBottom sx={{ color: 'error.dark' }}>
-            Verification Failed
-          </Typography>
-          <Alert severity="error" sx={{ mb: 2, justifyContent: 'center' }}>{errorMessage}</Alert>
-          <Typography variant="body1">
-            Please try again or contact support if the issue persists.
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{ mt: 2 }}
-            onClick={() => setVerificationStatus('pending')}
-          >
-            Try Again
-          </Button>
-        </Paper>
-      </Container>
+      <AuthLayout title="Your email isn't verified yet">
+        <Alert severity="error">{errorMessage}</Alert>
+        <Typography sx={{ mt: 2, color: 'text.secondary' }}>
+          Check the code and try again. If it keeps failing, sign up again to get a new code.
+        </Typography>
+        <Button variant="contained" sx={{ mt: 3 }} onClick={() => setVerificationStatus('pending')}>
+          Try again
+        </Button>
+      </AuthLayout>
     );
   }
 
   // verificationStatus === 'pending'
   return (
-    <Container component="main" maxWidth="md" sx={{ mt: 8 }}>
-      <Paper elevation={3}
-        sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-        <EmailIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-        <Typography variant="h4" component="h1" gutterBottom>
-          Almost there{firstName ? `, ${firstName}` : ''}!
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          Enter the email address used to sign up, your 6-digit code, and the password you want to use.
-        </Typography>
+    <AuthLayout
+      title={`Almost there${firstName ? `, ${firstName}` : ''}`}
+      subtitle="Enter the email you signed up with, the 6-digit code we sent you and the password you want to use."
+    >
+      <Box component="form">
+        <Stack spacing={2}>
+          <TextField
+            fullWidth
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setErrorMessage('');
+            }}
+            autoComplete="email"
+          />
 
-        <Box component="form" sx={{ mt: 1, width: '100%', maxWidth: '360px' }}>
-          <Stack spacing={2}>
-            <TextField
-              fullWidth
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                setErrorMessage('');
-              }}
-              autoComplete="email"
-            />
-
-            <TextField
-              fullWidth
-              label="6-Digit Verification Code"
-              value={verificationCode}
-              onChange={handleVerificationCodeChange}
-              margin="normal"
-              variant="outlined"
-              placeholder="Enter 6-digit code"
-              slotProps={{
-                htmlInput: {
-                  maxLength: 6,
-                  inputMode: 'numeric',
-                  pattern: '[0-9]*'
-                }
-              }}
-              error={!!errorMessage}
-              helperText={errorMessage}
-            />
-
-            <TextField
-              fullWidth
-              label="Choose Your Password"
-              type="password"
-              value={newPassword}
-              onChange={(event) => {
-                setNewPassword(event.target.value);
-                setErrorMessage('');
-              }}
-              autoComplete="new-password"
-              slotProps={{ htmlInput: { maxLength: 128 } }}
-            />
-
-            <PasswordStrengthIndicator password={newPassword} theme={theme} />
-
-            <TextField
-              fullWidth
-              label="Confirm Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => {
-                setConfirmPassword(event.target.value);
-                setErrorMessage('');
-              }}
-              autoComplete="new-password"
-              error={confirmPassword.length > 0 && newPassword !== confirmPassword}
-              slotProps={{ htmlInput: { maxLength: 128 } }}
-            />
-
-            <Button
-              fullWidth
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={handleVerify}
-              disabled={
-                verificationCode.length !== 6 ||
-                !isPasswordStrong(newPassword) ||
-                newPassword !== confirmPassword
+          <TextField
+            fullWidth
+            label="Verification code"
+            value={verificationCode}
+            onChange={handleVerificationCodeChange}
+            slotProps={{
+              htmlInput: {
+                maxLength: 6,
+                inputMode: 'numeric',
+                pattern: '[0-9]*',
+                autoComplete: 'one-time-code',
               }
-            >
-              Verify Email
-            </Button>
-          </Stack>
+            }}
+            error={!!errorMessage}
+            helperText={errorMessage}
+          />
 
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-            Didn't receive the code? Please check your spam or junk folder, or try signing up again after a few
-            minutes.
-          </Typography>
-        </Box>
-      </Paper>
-    </Container>
+          <TextField
+            fullWidth
+            label="Choose a password"
+            type="password"
+            value={newPassword}
+            onChange={(event) => {
+              setNewPassword(event.target.value);
+              setErrorMessage('');
+            }}
+            autoComplete="new-password"
+            slotProps={{ htmlInput: { maxLength: 128 } }}
+          />
+
+          <PasswordStrengthIndicator password={newPassword} theme={theme} />
+
+          <TextField
+            fullWidth
+            label="Confirm password"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
+              setErrorMessage('');
+            }}
+            autoComplete="new-password"
+            error={confirmPassword.length > 0 && newPassword !== confirmPassword}
+            slotProps={{ htmlInput: { maxLength: 128 } }}
+          />
+
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            onClick={handleVerify}
+            disabled={
+              verificationCode.length !== 6 ||
+              !isPasswordStrong(newPassword) ||
+              newPassword !== confirmPassword
+            }
+          >
+            Verify email
+          </Button>
+        </Stack>
+
+        <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+          No code? Check your spam or junk folder, or sign up again after a few minutes.
+        </Typography>
+      </Box>
+    </AuthLayout>
   );
 };
 

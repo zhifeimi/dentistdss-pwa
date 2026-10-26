@@ -35,6 +35,6 @@ export const getNextButtonText = (
   isLast: boolean,
   loading: boolean,
 ): string => {
-  if (loading) return 'Processing...';
-  return isLast ? 'Book Appointment' : 'Next';
+  if (loading) return 'Booking…';
+  return isLast ? 'Confirm booking' : 'Continue';
 };

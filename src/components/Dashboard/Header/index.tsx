@@ -8,53 +8,46 @@ import {
     Box,
     Menu,
     MenuItem,
+    ListItemIcon,
+    Divider,
     Avatar,
-    useTheme,
-    useMediaQuery,
     Tooltip,
     Badge,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import MailIcon from '@mui/icons-material/Mail';
-import PersonIcon from '@mui/icons-material/Person';
+import MailOutlinedIcon from '@mui/icons-material/MailOutlined';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import LockResetIcon from '@mui/icons-material/LockReset';
-import { TOUCH_TARGETS } from '../../../utils/mobileOptimization';
+import ThemeToggleButton from '../../shared/ThemeToggleButton';
 import { useAuth } from '../../../context/auth';
+import { getDisplayName, getInitials } from '../../../utils/dashboard/dashboardUtils';
 import api from '../../../services';
 
 interface HeaderProps {
-    isSmUp: boolean;
     handleDrawerToggle: () => void;
     activeSectionLabel: string;
+    drawerWidth: number;
     userMenuAnchorEl: HTMLElement | null;
     handleUserMenuOpen: (event: React.MouseEvent<HTMLElement>) => void;
     handleUserMenuClose: () => void;
     darkMode?: boolean;
     toggleDarkMode?: () => void;
     logout: () => void;
-    hasMultipleRoles: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
-    isSmUp,
     handleDrawerToggle,
     activeSectionLabel,
+    drawerWidth,
     userMenuAnchorEl,
     handleUserMenuOpen,
     handleUserMenuClose,
     darkMode,
     toggleDarkMode,
     logout,
-    hasMultipleRoles,
 }) => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
     // Get current user and unread message count
     const { currentUser } = useAuth();
     const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -97,247 +90,101 @@ const Header: React.FC<HeaderProps> = ({
         };
     }, [userId]);
 
-    // Navigation handlers for menu items
-    const handleProfileClick = () => {
+    const goTo = (path: string) => () => {
         handleUserMenuClose();
-        navigate('/profile');
+        navigate(path);
     };
 
-    const handleChangePasswordClick = () => {
-        handleUserMenuClose();
-        navigate('/change-password');
-    };
+    const messagesLabel = unreadCount > 0 ? `Messages, ${unreadCount} unread` : 'Messages';
 
     return (
         <AppBar
             position="fixed"
-            elevation={darkMode ? 2 : 1}
             sx={{
-                width: { sm: `calc(100% - ${240}px)` },
-                ml: { sm: `${240}px` },
-                backgroundColor: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-                borderBottom: `1px solid ${theme.palette.divider}`,
-                transition: theme.transitions.create(['background-color', 'box-shadow'], {
-                    duration: theme.transitions.duration.standard,
-                }),
-                minHeight: { xs: 56, sm: 64 },
+                width: { sm: `calc(100% - ${drawerWidth}px)` },
+                ml: { sm: `${drawerWidth}px` },
             }}
         >
-            <Toolbar
-                sx={{
-                    justifyContent: 'space-between',
-                    minHeight: { xs: 56, sm: 64 },
-                    px: { xs: 1, sm: 2 }
-                }}
-            >
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, gap: 1, px: { xs: 1, sm: 3 } }}>
+                <IconButton
+                    aria-label="open drawer"
+                    edge="start"
+                    onClick={handleDrawerToggle}
+                    sx={{ display: { sm: 'none' } }}
+                >
+                    <MenuIcon />
+                </IconButton>
+                <Typography variant="h6" component="div" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                    {activeSectionLabel}
+                </Typography>
+
+                <Tooltip title={messagesLabel}>
                     <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        edge="start"
-                        onClick={handleDrawerToggle}
-                        sx={{
-                            mr: { xs: 1, sm: 2 },
-                            display: { sm: 'none' },
-                            minWidth: TOUCH_TARGETS.MINIMUM,
-                            minHeight: TOUCH_TARGETS.MINIMUM
-                        }}
+                        onClick={() => navigate('/messages')}
+                        aria-label={messagesLabel}
+                        sx={{ color: 'text.secondary' }}
                     >
-                        <MenuIcon />
+                        <Badge badgeContent={unreadCount} color="secondary">
+                            <MailOutlinedIcon fontSize="small" />
+                        </Badge>
                     </IconButton>
-                    <Typography
-                        variant={isMobile ? "subtitle1" : "h6"}
-                        noWrap
-                        component="div"
-                        sx={{
-                            fontWeight: 600,
-                            fontSize: { xs: '1rem', sm: '1.25rem' }
-                        }}
+                </Tooltip>
+
+                {toggleDarkMode && <ThemeToggleButton darkMode={Boolean(darkMode)} onToggle={toggleDarkMode} />}
+
+                <IconButton
+                    edge="end"
+                    aria-label="account menu"
+                    aria-controls="menu-appbar"
+                    aria-haspopup="true"
+                    onClick={handleUserMenuOpen}
+                    sx={{ ml: 0.5 }}
+                >
+                    <Avatar
+                        sx={(theme) => ({
+                            width: 32,
+                            height: 32,
+                            fontSize: '0.8125rem',
+                            fontWeight: 650,
+                            bgcolor: alpha(theme.palette.primary.main, 0.12),
+                            color: 'primary.main',
+                        })}
                     >
-                        {activeSectionLabel}
-                    </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                    <Tooltip title={`You have ${unreadCount} unread messages`}>
-                        <IconButton
-                            onClick={() => navigate('/messages')}
-                            color="inherit"
-                            size={isSmallMobile ? "small" : "medium"}
-                            sx={{
-                                minWidth: TOUCH_TARGETS.MINIMUM,
-                                minHeight: TOUCH_TARGETS.MINIMUM,
-                                transition: theme.transitions.create('transform', {
-                                    duration: theme.transitions.duration.shorter,
-                                }),
-                                '&:hover': {
-                                    transform: 'scale(1.1)',
-                                    bgcolor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.04)',
-                                },
-                            }}
-                        >
-                            <Badge
-                                badgeContent={unreadCount}
-                                color="error"
-                                sx={{
-                                    '& .MuiBadge-badge': {
-                                        fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                                        minWidth: { xs: 16, sm: 20 },
-                                        height: { xs: 16, sm: 20 },
-                                    }
-                                }}
-                            >
-                                <MailIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }} />
-                            </Badge>
-                        </IconButton>
-                    </Tooltip>
-
-                    {toggleDarkMode && (
-                        <Tooltip title={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
-                            <IconButton
-                                onClick={toggleDarkMode}
-                                color="inherit"
-                                size={isSmallMobile ? "small" : "medium"}
-                                sx={{
-                                    minWidth: TOUCH_TARGETS.MINIMUM,
-                                    minHeight: TOUCH_TARGETS.MINIMUM,
-                                    transition: theme.transitions.create('transform', {
-                                        duration: theme.transitions.duration.shorter,
-                                    }),
-                                    '&:hover': {
-                                        transform: 'scale(1.1)',
-                                        bgcolor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.04)',
-                                    },
-                                }}
-                            >
-                                {darkMode ? (
-                                    <Brightness7Icon sx={{
-                                        color: theme.palette.mode === 'dark' ? '#ffeb3b' : 'inherit',
-                                        fontSize: { xs: '1.2rem', sm: '1.5rem' }
-                                    }} />
-                                ) : (
-                                    <Brightness4Icon sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }} />
-                                )}
-                            </IconButton>
-                        </Tooltip>
-                    )}
-
-                    <IconButton
-                        size={isSmallMobile ? "small" : "medium"}
-                        edge="end"
-                        aria-label="account menu"
-                        aria-controls="menu-appbar"
-                        aria-haspopup="true"
-                        onClick={handleUserMenuOpen}
-                        color="inherit"
-                        sx={{
-                            minWidth: TOUCH_TARGETS.MINIMUM,
-                            minHeight: TOUCH_TARGETS.MINIMUM
-                        }}
-                    >
-                        <Avatar sx={{
-                            width: { xs: 28, sm: 32 },
-                            height: { xs: 28, sm: 32 },
-                            bgcolor: 'primary.main'
-                        }}>
-                            <AccountCircleIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
-                        </Avatar>
-                    </IconButton>
-                </Box>
+                        {getInitials(currentUser ?? undefined)}
+                    </Avatar>
+                </IconButton>
 
                 <Menu
                     id="menu-appbar"
                     anchorEl={userMenuAnchorEl}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                     keepMounted
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'right',
-                    }}
                     open={Boolean(userMenuAnchorEl)}
                     onClose={handleUserMenuClose}
-                    slotProps={{
-                        paper: {
-                            sx: {
-                                mt: 1,
-                                minWidth: 160,
-                                borderRadius: 2,
-                                boxShadow: theme.shadows[8],
-                            }
-                        }
-                    }}
+                    slotProps={{ paper: { sx: { mt: 1, minWidth: 220 } } }}
                 >
-                    {hasMultipleRoles && (
-                        <MenuItem
-                            onClick={handleUserMenuClose}
-                            sx={{
-                                minHeight: TOUCH_TARGETS.MINIMUM,
-                                px: 2,
-                                py: 1.5,
-                                fontSize: { xs: '0.9rem', sm: '1rem' }
-                            }}
-                        >
-                            Switch Role
-                        </MenuItem>
-                    )}
-                    <MenuItem
-                        onClick={handleProfileClick}
-                        sx={{
-                            minHeight: TOUCH_TARGETS.MINIMUM,
-                            px: 2,
-                            py: 1.5,
-                            fontSize: { xs: '0.9rem', sm: '1rem' }
-                        }}
-                    >
-                        <PersonIcon
-                            fontSize="small"
-                            sx={{
-                                mr: 1.5,
-                                fontSize: { xs: '1rem', sm: '1.25rem' }
-                            }}
-                        />
+                    <Box sx={{ px: 2, pt: 1, pb: 1.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {getDisplayName(currentUser ?? undefined)}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {currentUser?.email}
+                        </Typography>
+                    </Box>
+                    <Divider />
+                    <MenuItem onClick={goTo('/profile')}>
+                        <ListItemIcon><PersonOutlineIcon fontSize="small" /></ListItemIcon>
                         Profile
                     </MenuItem>
-                    <MenuItem
-                        onClick={handleChangePasswordClick}
-                        sx={{
-                            minHeight: TOUCH_TARGETS.MINIMUM,
-                            px: 2,
-                            py: 1.5,
-                            fontSize: { xs: '0.9rem', sm: '1rem' }
-                        }}
-                    >
-                        <LockResetIcon
-                            fontSize="small"
-                            sx={{
-                                mr: 1.5,
-                                fontSize: { xs: '1rem', sm: '1.25rem' }
-                            }}
-                        />
-                        Change Password
+                    <MenuItem onClick={goTo('/change-password')}>
+                        <ListItemIcon><LockResetIcon fontSize="small" /></ListItemIcon>
+                        Change password
                     </MenuItem>
-                    <MenuItem
-                        onClick={logout}
-                        sx={{
-                            minHeight: TOUCH_TARGETS.MINIMUM,
-                            px: 2,
-                            py: 1.5,
-                            fontSize: { xs: '0.9rem', sm: '1rem' },
-                            color: 'error.main'
-                        }}
-                    >
-                        <LogoutIcon
-                            fontSize="small"
-                            sx={{
-                                mr: 1.5,
-                                fontSize: { xs: '1rem', sm: '1.25rem' }
-                            }}
-                        />
-                        Logout
+                    <Divider />
+                    <MenuItem onClick={logout}>
+                        <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+                        Log out
                     </MenuItem>
                 </Menu>
             </Toolbar>

@@ -39,11 +39,6 @@ interface ResponsiveSpacing {
   [key: string]: number; // Add index signature for Material-UI compatibility
 }
 
-interface TouchFriendlyButtonProps {
-  minHeight: number;
-  padding: string;
-}
-
 /**
  * Get responsive padding based on screen size
  */
@@ -66,29 +61,4 @@ export const getResponsiveMargin = (size: SizeVariant = 'medium'): ResponsiveSpa
     large: { xs: 3, sm: 4, md: 5 },
   };
   return marginMap[size] || marginMap.medium;
-};
-
-/**
- * Get touch-friendly button props
- */
-export const getTouchFriendlyButtonProps = (
-  size: SizeVariant = 'medium', 
-  isMobile: boolean = false
-): TouchFriendlyButtonProps => {
-  const sizeMap: Record<SizeVariant, TouchFriendlyButtonProps> = {
-    small: {
-      minHeight: isMobile ? TOUCH_TARGETS.MINIMUM : 36,
-      padding: isMobile ? '10px 18px' : '8px 16px',
-    },
-    medium: {
-      minHeight: isMobile ? TOUCH_TARGETS.RECOMMENDED : 44,
-      padding: isMobile ? '14px 24px' : '12px 20px',
-    },
-    large: {
-      minHeight: isMobile ? TOUCH_TARGETS.LARGE : 52,
-      padding: isMobile ? '18px 32px' : '16px 28px',
-    },
-  };
-  
-  return sizeMap[size] || sizeMap.medium;
 };

@@ -261,7 +261,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
       >
         <DialogTitle>
           <Typography variant="h6" component="div">
-            {workingHours ? 'Edit Working Hours' : 'Add New Working Hours'}
+            {workingHours ? 'Edit working hours' : 'Add new working hours'}
           </Typography>
         </DialogTitle>
 
@@ -273,14 +273,14 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
           )}
 
           <Grid container spacing={3}>
-            {/* Day of Week */}
+            {/* Day of week */}
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth required>
-                <InputLabel>Day of Week</InputLabel>
+                <InputLabel>Day of week</InputLabel>
                 <Select
                   value={formData.dayOfWeek}
                   onChange={handleSelectChange}
-                  label="Day of Week"
+                  label="Day of week"
                   disabled={loading}
                 >
                   {dayOfWeekOptions.map((option) => (
@@ -292,10 +292,10 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
               </FormControl>
             </Grid>
 
-            {/* Specific Date (Optional) */}
+            {/* Specific date (optional) */}
             <Grid size={{ xs: 12, sm: 6 }}>
               <DatePicker
-                label="Specific Date (Optional)"
+                label="Specific date (optional)"
                 value={formData.specificDate}
                 onChange={(date) => handleFieldChange('specificDate', date)}
                 disabled={loading}
@@ -318,7 +318,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
                     disabled={loading}
                   />
                 }
-                label="Clinic Closed"
+                label="Clinic closed"
               />
             </Grid>
 
@@ -327,7 +327,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
               <>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
-                    label="Opening Time"
+                    label="Opening time"
                     value={formData.openingTime}
                     onChange={(time) => handleFieldChange('openingTime', time)}
                     disabled={loading}
@@ -342,7 +342,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
 
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
-                    label="Closing Time"
+                    label="Closing time"
                     value={formData.closingTime}
                     onChange={(time) => handleFieldChange('closingTime', time)}
                     disabled={loading}
@@ -358,7 +358,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
                 {/* Break Times */}
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
-                    label="Break Start Time (Optional)"
+                    label="Break start time (optional)"
                     value={formData.breakStartTime}
                     onChange={(time) => handleFieldChange('breakStartTime', time)}
                     disabled={loading}
@@ -372,7 +372,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
 
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
-                    label="Break End Time (Optional)"
+                    label="Break end time (optional)"
                     value={formData.breakEndTime}
                     onChange={(time) => handleFieldChange('breakEndTime', time)}
                     disabled={loading}
@@ -396,7 +396,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
                     disabled={loading}
                   />
                 }
-                label="Emergency Hours"
+                label="Emergency hours"
               />
             </Grid>
 
@@ -430,7 +430,7 @@ const WorkingHoursForm: React.FC<WorkingHoursFormProps> = ({
             disabled={loading}
             startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
           >
-            {loading ? 'Saving...' : 'Save Working Hours'}
+            {loading ? 'Saving...' : 'Save working hours'}
           </Button>
         </DialogActions>
       </Dialog>

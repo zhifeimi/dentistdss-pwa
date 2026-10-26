@@ -3,19 +3,18 @@ import { useLocation, useNavigate } from 'react-router';
 import {
   Box,
   Typography,
-  Container,
-  Paper,
   Alert,
   TextField,
   Button,
   CircularProgress,
   useTheme
 } from '@mui/material';
-import EmailIcon from '@mui/icons-material/Email';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import AuthLayout from '../../../components/Home/AuthLayout';
 import PasswordStrengthIndicator from '../../../components/PasswordStrengthIndicator';
 import authAPI from '../../../services/auth';
 import { isPasswordStrong } from '../../../utils/passwordStrength';
+import type { Approver } from '../../PendingApproval';
 
 const MAX_RESEND_ATTEMPTS = 3;
 const RESEND_WINDOW_SECONDS = 90;
@@ -24,6 +23,8 @@ const LOCAL_STORAGE_RESEND_KEY = 'resendVerificationStatus';
 interface LocationState {
   email?: string;
   firstName?: string;
+  // Set by the staff and clinic-admin sign-ups: who approves the account
+  approver?: Approver;
 }
 
 interface ResendStatus {
@@ -47,7 +48,7 @@ const VerifyEmailWithCodePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const { email: initialEmail, firstName: initialFirstName } = (location.state as LocationState) || {};
+  const { email: initialEmail, firstName: initialFirstName, approver } = (location.state as LocationState) || {};
 
   // Persist email and firstName in local state to survive potential state loss on refresh
   const [email, setEmail] = useState<string | undefined>(initialEmail);
@@ -127,10 +128,16 @@ const VerifyEmailWithCodePage: React.FC = () => {
         setCountdown(prevCountdown => prevCountdown - 1);
       }, 1000);
     } else if (showSuccessMessage && countdown === 0) {
-      navigate('/login?verified=true');
+      // The backend rejects logins until approval, so staff and clinic admins
+      // go to the page that explains the wait instead of to a failing login
+      if (approver) {
+        navigate('/pending-approval', { state: { approver, firstName } });
+      } else {
+        navigate('/login?verified=true');
+      }
     }
     return () => clearTimeout(countdownTimer);
-  }, [showSuccessMessage, countdown, navigate]);
+  }, [showSuccessMessage, countdown, navigate, approver, firstName]);
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value.replace(/[^0-9]/g, '').substring(0, 6);
@@ -247,159 +254,141 @@ const VerifyEmailWithCodePage: React.FC = () => {
 
   if (showSuccessMessage) {
     return (
-      <Container component="main" maxWidth="sm" sx={{ mt: 8 }}>
-        <Paper elevation={3} sx={{
-          p: { xs: 2, sm: 4 },
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center'
-        }}>
-          <CheckCircleOutlineIcon sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
-          <Typography variant="h4" component="h1" gutterBottom>
-            Verification Successful!
+      <AuthLayout
+        title="Email verified"
+        subtitle={`Welcome to DentistDSS${firstName ? `, ${firstName}` : ''}.`}
+      >
+        <Alert icon={<CheckCircleOutlineIcon />} severity="success">
+          {approver
+            ? 'Your email is verified. Your account still needs to be approved before you can log in.'
+            : 'Your email is verified. You can log in now.'}
+        </Alert>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 3, color: 'text.secondary' }}>
+          <CircularProgress size={18} color="inherit" />
+          <Typography variant="body2">
+            Opening the {approver ? 'next step' : 'login page'} in {countdown} second{countdown !== 1 ? 's' : ''}…
           </Typography>
-          <Typography variant="h6" component="p" sx={{ mb: 1 }}>
-            Welcome aboard{firstName ? `, ${firstName}` : ''}!
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Your email is verified. Staff and clinic administrator accounts remain pending until approved.
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Redirecting to login in {countdown} second{countdown !== 1 ? 's' : ''}...
-          </Typography>
-          <CircularProgress sx={{ mt: 2 }} />
-        </Paper>
-      </Container>
+        </Box>
+      </AuthLayout>
     );
   }
 
+  const busy = loadingVerify || loadingResend;
+
   return (
-    <Container component="main" maxWidth="sm" sx={{ mt: 8 }}>
-      <Paper elevation={3} sx={{
-        p: { xs: 2, sm: 4 },
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center'
-      }}>
-        <EmailIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-        <Typography variant="h4" component="h1" gutterBottom>
-          Verify Your Email{firstName ? `, ${firstName}` : ''}!
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          Enter the email address used to sign up, your 6-digit code, and the password you want to use.
-        </Typography>
+    <AuthLayout
+      title={`Check your email${firstName ? `, ${firstName}` : ''}`}
+      subtitle="Enter the email you signed up with, the 6-digit code we sent you and the password you want to use."
+    >
+      <Box component="form" onSubmit={handleVerify}>
+        <TextField
+          fullWidth
+          id="email"
+          name="email"
+          label="Email"
+          type="email"
+          value={email || ''}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setError('');
+          }}
+          autoComplete="email"
+          disabled={busy}
+          sx={{ mb: 2 }}
+        />
 
-        <Box component="form" onSubmit={handleVerify} sx={{ width: '100%', maxWidth: '300px' }}>
-          <TextField
-            fullWidth
-            id="email"
-            name="email"
-            label="Email Address"
-            type="email"
-            value={email || ''}
-            onChange={(event) => {
-              setEmail(event.target.value);
-              setError('');
-            }}
-            autoComplete="email"
-            disabled={loadingVerify || loadingResend}
-            sx={{ mb: 2 }}
-          />
+        <TextField
+          fullWidth
+          id="verificationCode"
+          name="verificationCode"
+          label="Verification code"
+          value={verificationCode}
+          onChange={handleCodeChange}
+          slotProps={{
+            htmlInput: {
+              maxLength: 6,
+              inputMode: 'numeric',
+              autoComplete: 'one-time-code',
+              style: { fontSize: '1.5rem', letterSpacing: '0.5rem', fontVariantNumeric: 'tabular-nums' },
+            },
+          }}
+          error={!!error}
+          helperText={error}
+          disabled={busy}
+          sx={{ mb: 2 }}
+        />
 
-          <TextField
-            fullWidth
-            id="verificationCode"
-            name="verificationCode"
-            label="Verification Code"
-            variant="outlined"
-            value={verificationCode}
-            onChange={handleCodeChange}
-            slotProps={{
-              htmlInput: { maxLength: 6, style: { textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' } },
-            }}
-            error={!!error}
-            helperText={error}
-            disabled={loadingVerify || loadingResend}
-            sx={{ mb: 2 }}
-          />
+        <TextField
+          fullWidth
+          id="newPassword"
+          name="newPassword"
+          label="Choose a password"
+          type="password"
+          value={newPassword}
+          onChange={(event) => {
+            setNewPassword(event.target.value);
+            setError('');
+          }}
+          autoComplete="new-password"
+          slotProps={{ htmlInput: { maxLength: 128 } }}
+          disabled={busy}
+          sx={{ mb: 1 }}
+        />
 
-          <TextField
-            fullWidth
-            id="newPassword"
-            name="newPassword"
-            label="Choose Your Password"
-            type="password"
-            value={newPassword}
-            onChange={(event) => {
-              setNewPassword(event.target.value);
-              setError('');
-            }}
-            autoComplete="new-password"
-            slotProps={{ htmlInput: { maxLength: 128 } }}
-            disabled={loadingVerify || loadingResend}
-            sx={{ mb: 1 }}
-          />
+        <PasswordStrengthIndicator password={newPassword} theme={theme} />
 
-          <PasswordStrengthIndicator password={newPassword} theme={theme} />
+        <TextField
+          fullWidth
+          id="confirmPassword"
+          name="confirmPassword"
+          label="Confirm password"
+          type="password"
+          value={confirmPassword}
+          onChange={(event) => {
+            setConfirmPassword(event.target.value);
+            setError('');
+          }}
+          autoComplete="new-password"
+          error={confirmPassword.length > 0 && newPassword !== confirmPassword}
+          slotProps={{ htmlInput: { maxLength: 128 } }}
+          disabled={busy}
+          sx={{ mb: 2 }}
+        />
 
-          <TextField
-            fullWidth
-            id="confirmPassword"
-            name="confirmPassword"
-            label="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => {
-              setConfirmPassword(event.target.value);
-              setError('');
-            }}
-            autoComplete="new-password"
-            error={confirmPassword.length > 0 && newPassword !== confirmPassword}
-            slotProps={{ htmlInput: { maxLength: 128 } }}
-            disabled={loadingVerify || loadingResend}
-            sx={{ mb: 2 }}
-          />
+        {resendMessage && <Alert severity="success" sx={{ mb: 2 }}>{resendMessage}</Alert>}
+        {resendError && <Alert severity="error" sx={{ mb: 2 }}>{resendError}</Alert>}
 
-          {resendMessage && <Alert severity="success" sx={{ mb: 2, width: '100%' }}>{resendMessage}</Alert>}
-          {resendError && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{resendError}</Alert>}
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          size="large"
+          disabled={
+            busy ||
+            verificationCode.length !== 6 ||
+            !isPasswordStrong(newPassword) ||
+            newPassword !== confirmPassword
+          }
+          sx={{ mt: 1 }}
+        >
+          {loadingVerify ? 'Verifying…' : 'Verify email'}
+        </Button>
 
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            color="primary"
-            disabled={
-              loadingVerify ||
-              loadingResend ||
-              verificationCode.length !== 6 ||
-              !isPasswordStrong(newPassword) ||
-              newPassword !== confirmPassword
-            }
-            sx={{ mb: 2, py: 1.5 }}
-          >
-            {loadingVerify ? <CircularProgress size={24} color="inherit" /> : 'Verify Account'}
-          </Button>
+        <Button
+          fullWidth
+          variant="text"
+          onClick={handleResendCode}
+          disabled={busy || resendDisabled}
+          sx={{ mt: 1 }}
+        >
+          {loadingResend ? 'Sending…' : resendCooldown > 0 ? `Send a new code (${resendCooldown}s)` : 'Send a new code'}
+        </Button>
+      </Box>
 
-          <Button
-            fullWidth
-            variant="outlined"
-            color="secondary"
-            onClick={handleResendCode}
-            disabled={loadingVerify || loadingResend || resendDisabled}
-          >
-            {loadingResend ? <CircularProgress size={24} color="inherit" /> :
-              resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Verification Code'
-            }
-          </Button>
-        </Box>
-
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 3 }}>
-          If you don't see the email, please check your spam or junk folder.
-        </Typography>
-      </Paper>
-    </Container>
+      <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+        No email? Check your spam or junk folder before asking for a new code.
+      </Typography>
+    </AuthLayout>
   );
 };
 

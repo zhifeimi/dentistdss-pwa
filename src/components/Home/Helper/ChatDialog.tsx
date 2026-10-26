@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, memo } from 'react';
 import {
+  alpha,
   Box,
   Typography,
   Paper,
@@ -38,21 +39,21 @@ const MessageItem = memo<{ message: ChatMessage; isDarkMode: boolean }>(({ messa
   const getMessageStyles = () => {
     if (message.error) {
       return {
-        bgcolor: isDarkMode ? '#d32f2f' : '#ffebee',
-        color: isDarkMode ? '#fff' : '#d32f2f',
-        border: `1px solid ${isDarkMode ? '#f44336' : '#f44336'}`,
+        bgcolor: alpha(theme.palette.error.main, 0.08),
+        color: theme.palette.error.main,
+        border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
       };
     }
 
     if (message.sender === 'user') {
       return {
-        bgcolor: theme.palette.primary.light,
+        bgcolor: theme.palette.primary.main,
         color: theme.palette.primary.contrastText,
       };
     }
 
     return {
-      bgcolor: isDarkMode ? theme.palette.grey[700] : theme.palette.grey[200],
+      bgcolor: alpha(theme.palette.text.primary, isDarkMode ? 0.08 : 0.05),
       color: theme.palette.text.primary,
     };
   };
@@ -65,7 +66,6 @@ const MessageItem = memo<{ message: ChatMessage; isDarkMode: boolean }>(({ messa
         maxWidth: '80%',
         alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
         ...getMessageStyles(),
-        boxShadow: isDarkMode ? '0 1px 3px rgba(0, 0, 0, 0.3)' : 'none',
         position: 'relative',
       }}
     >
@@ -151,26 +151,13 @@ const ChatInputForm = memo<{
         onChange={(e) => onInputChange(e.target.value)}
         disabled={isLoading}
         onKeyDown={handleKeyDown}
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            '&.Mui-disabled': {
-              bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-            },
-          },
-        }}
       />
       <Button
         type="submit"
         variant="contained"
         color="primary"
         disabled={isLoading || !inputValue.trim()}
-        sx={{
-          minWidth: 'auto',
-          px: 2,
-          '&.Mui-disabled': {
-            bgcolor: isDarkMode ? '#424242' : '#e0e0e0',
-          },
-        }}
+        sx={{ minWidth: 'auto', px: 2 }}
         aria-label="send message"
       >
         {isLoading ? (
@@ -220,7 +207,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
 
   return (
     <Paper
-      elevation={isDarkMode ? 6 : 3}
+      elevation={8}
       role="dialog"
       aria-label="Dentabot"
       sx={{
@@ -232,8 +219,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        bgcolor: isDarkMode ? '#1c1c21' : 'background.paper',
-        border: isDarkMode ? '1px solid #2e2e35' : '1px solid #e5e5ea',
+        border: 1,
+        borderColor: 'divider',
         borderRadius: 2,
       }}
     >

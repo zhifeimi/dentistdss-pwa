@@ -4,21 +4,17 @@ import {
   Button,
   TextField,
   Typography,
-  Container,
-  Paper,
+  Alert,
   Link as MuiLink,
   Grid,
   useTheme,
   Divider,
   InputAdornment,
-  IconButton
+  IconButton,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router';
 import { useAuth } from '../../../context/auth';
-import AuthBrandPanel from '../../../components/Home/AuthBrandPanel';
-import EmailIcon from '@mui/icons-material/Email';
-import LockIcon from '@mui/icons-material/Lock';
-import PersonIcon from '@mui/icons-material/Person';
+import AuthLayout from '../../../components/Home/AuthLayout';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { CredentialResponse } from '@react-oauth/google';
@@ -161,135 +157,42 @@ const Signup: React.FC = () => {
 
   return (
       <GoogleAuthProvider>
-      <Container component="main" maxWidth="lg">
-        <Box
-          sx={{
-            display: 'flex',
-            maxWidth: 980,
-            mx: 'auto',
-            my: 8,
-            borderRadius: 3,
-            overflow: 'hidden',
-            border: `1px solid ${theme.palette.divider}`,
-            boxShadow: theme.palette.mode === 'dark'
-                ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-                : '0 8px 32px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <Box sx={{ flex: 1, bgcolor: 'background.paper' }}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: {xs: 3, sm: 4},
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                backgroundColor: 'transparent',
-                borderRadius: 0,
-              }}
-            >
-          <Typography
-              component="h1"
-              variant="h4"
-              sx={{
-                color: theme.palette.mode === 'dark'
-                    ? theme.palette.primary.light
-                    : theme.palette.primary.main,
-                mb: 3,
-                fontWeight: 600
-              }}
-          >
-            Sign Up
-          </Typography>
-
-          <Box component="form" onSubmit={handleSubmit} noValidate sx={{mt: 1, width: '100%'}}>
+      <AuthLayout
+        title="Create your account"
+        subtitle="For patients. Book visits, ask Dentabot and keep your records in one place."
+      >
+          <Box component="form" onSubmit={handleSubmit} noValidate>
             <TextField
                 margin="normal"
                 required
                 fullWidth
                 id="firstName"
-                label="First Name"
+                label="First name"
                 name="firstName"
                 autoComplete="given-name"
                 autoFocus
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 disabled={loading}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                        <InputAdornment position="start">
-                          <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                        </InputAdornment>
-                    ),
-                  },
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-                  },
-                  '& .MuiInputBase-input': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
-                  },
-                }}
             />
             <TextField
                 margin="normal"
                 required
                 fullWidth
                 id="lastName"
-                label="Last Name"
+                label="Last name"
                 name="lastName"
                 autoComplete="family-name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 disabled={loading}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                        <InputAdornment position="start">
-                          <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                        </InputAdornment>
-                    ),
-                  },
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-                  },
-                  '& .MuiInputBase-input': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
-                  },
-                }}
             />
             <TextField
                 margin="normal"
                 required
                 fullWidth
                 id="email"
-                label="Email Address"
+                label="Email"
                 name="email"
                 autoComplete="email"
                 value={email}
@@ -304,34 +207,6 @@ const Signup: React.FC = () => {
                 disabled={loading}
                 error={hasFieldError('email')}
                 helperText={getFieldError('email')}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                        <InputAdornment position="start">
-                          <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                        </InputAdornment>
-                    ),
-                  },
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-                  },
-                  '& .MuiInputBase-input': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
-                  },
-                }}
             />
             <TextField
                 margin="normal"
@@ -354,42 +229,17 @@ const Signup: React.FC = () => {
                 disabled={loading}
                 slotProps={{
                   input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                      </InputAdornment>
-                    ),
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
                             aria-label="toggle password visibility"
                             onClick={handleClickShowPassword}
                             edge="end"
-                            sx={{color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined}}
                         >
                           {showPassword ? <VisibilityOff/> : <Visibility/>}
                         </IconButton>
                       </InputAdornment>
                     ),
-                  },
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-                  },
-                  '& .MuiInputBase-input': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
                   },
                 }}
             />
@@ -402,7 +252,7 @@ const Signup: React.FC = () => {
                 required
                 fullWidth
                 name="confirmPassword"
-                label="Confirm Password"
+                label="Confirm password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 id="confirmPassword"
                 autoComplete="new-password"
@@ -420,18 +270,12 @@ const Signup: React.FC = () => {
                 helperText={getFieldError('confirmPassword')}
                 slotProps={{
                   input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                      </InputAdornment>
-                    ),
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
                             aria-label="toggle password visibility"
                             onClick={handleClickShowConfirmPassword}
                             edge="end"
-                            sx={{color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined}}
                         >
                           {showConfirmPassword ? <VisibilityOff/> : <Visibility/>}
                         </IconButton>
@@ -439,87 +283,33 @@ const Signup: React.FC = () => {
                     ),
                   },
                 }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-                  },
-                  '& .MuiInputBase-input': {
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
-                  },
-                }}
             />
 
             {error && (
-                <Box sx={{
-                  mt: 2,
-                  p: 1.5,
-                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.15)' : 'rgba(211, 47, 47, 0.05)',
-                  borderRadius: 1,
-                  border: `1px solid ${theme.palette.error.main}`
-                }}>
-                  <Typography color="error" variant="body2" sx={{textAlign: 'center'}}>
-                    {error}
-                  </Typography>
-                </Box>
+                <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
             )}
 
             <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                color="primary"
-                sx={{
-                  mt: 3,
-                  mb: 2,
-                  py: 1.2,
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  boxShadow: theme.palette.mode === 'dark'
-                      ? '0 4px 12px rgba(0, 100, 80, 0.3)'
-                      : '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  '&:hover': {
-                    boxShadow: theme.palette.mode === 'dark'
-                        ? '0 6px 16px rgba(0, 100, 80, 0.4)'
-                        : '0 6px 16px rgba(0, 0, 0, 0.15)',
-                  }
-                }}
+                size="large"
+                sx={{ mt: 3, mb: 1 }}
                 disabled={loading || !isFormValid(['email', 'confirmPassword'])}
             >
-              {loading ? 'Signing Up...' : 'Sign Up'}
+              {loading ? 'Creating account…' : 'Create account'}
             </Button>
 
-            <Typography variant="body2" sx={{textAlign: 'center', mt: 1}}>
-              By clicking Sign Up, you agree to our{' '}
-              <MuiLink component={RouterLink} to="/terms" target="_blank" rel="noopener" sx={{fontWeight: 500}}>
+            <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary' }}>
+              By creating an account, you agree to our{' '}
+              <MuiLink component={RouterLink} to="/terms" target="_blank" rel="noopener">
                 Terms &amp; Conditions
               </MuiLink>
             </Typography>
 
-            <Divider sx={{
-              my: 3,
-              '&::before, &::after': {
-                borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : undefined
-              }
-            }}>
-              <Typography
-                  variant="body2"
-                  sx={{
-                    px: 1,
-                    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : theme.palette.text.secondary
-                  }}
-              >
-                Or
+            <Divider sx={{ my: 3 }}>
+              <Typography variant="body2" sx={{ px: 1, color: 'text.secondary' }}>
+                or
               </Typography>
             </Divider>
 
@@ -544,7 +334,7 @@ const Signup: React.FC = () => {
                       width={googleButtonWidth}
                       onSuccess={handleGoogleSuccess}
                       onError={handleGoogleError}
-                      theme={theme.palette.mode === 'dark' ? 'filled_black' : 'filled_blue'}
+                      theme={theme.palette.mode === 'dark' ? 'filled_black' : 'outline'}
                   />
                 </Box>
               </Grid>
@@ -556,16 +346,8 @@ const Signup: React.FC = () => {
                     component={RouterLink}
                     to="/login"
                     variant="body2"
-                    sx={{
-                      color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                      '&:hover': {
-                        textDecoration: 'underline'
-                      }
-                    }}
                 >
-                  Go Back to Sign in
+                  Log in instead
                 </MuiLink>
               </Grid>
               <Grid size={{ xs: 'auto' }}>
@@ -573,27 +355,13 @@ const Signup: React.FC = () => {
                     component={RouterLink}
                     to="/signup/clinic-staff"
                     variant="body2"
-                    sx={{
-                      color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                      '&:hover': {
-                        textDecoration: 'underline'
-                      }
-                    }}
                 >
                   I work for a clinic
                 </MuiLink>
               </Grid>
             </Grid>
           </Box>
-            </Paper>
-          </Box>
-          <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }}>
-            <AuthBrandPanel />
-          </Box>
-        </Box>
-      </Container>
+      </AuthLayout>
       </GoogleAuthProvider>
   );
 }

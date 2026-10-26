@@ -48,10 +48,11 @@ const useOnlineStatus = (): boolean => {
  * - Keyboard event handling
  * - Global error handling integration
  */
-export const useClinicSearch = (): UseClinicSearchReturn => {
-  // State management
-  const [searchKeywords, setSearchKeywords] = useState<string>('');
-  const [debouncedSearchKeywords, setDebouncedSearchKeywords] = useState<string>('');
+export const useClinicSearch = (initialKeywords = ''): UseClinicSearchReturn => {
+  // State management. An initial query (e.g. from the home page search)
+  // starts searching on mount without waiting for the debounce.
+  const [searchKeywords, setSearchKeywords] = useState<string>(initialKeywords);
+  const [debouncedSearchKeywords, setDebouncedSearchKeywords] = useState<string>(initialKeywords);
   const [clinics, setClinics] = useState<ClinicSearchResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 

@@ -1,10 +1,11 @@
-const CACHE_NAME = 'dentistdss-pwa-v4';
+const CACHE_NAME = 'dentistdss-pwa-v5';
 const CORE_ASSETS = [
   '/',
   '/index.html',
   '/offline.html',
   '/manifest.webmanifest',
   '/favicon.ico',
+  '/favicon.svg',
   '/logo192.png',
   '/logo512.png',
   '/images/logo.png',

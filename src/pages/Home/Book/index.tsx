@@ -10,8 +10,6 @@ import {
   Button as MuiButton // Renamed to avoid conflict if you use a Button variable later
 } from '@mui/material';
 import BookCard from '../../../components/Home/Book/BookCard';
-import GradientMesh from '../Welcome/sections/GradientMesh';
-import FilterAltIcon from '@mui/icons-material/FilterAlt'; // Import the BookCard component
 
 interface DentalBook {
   id: number;
@@ -258,105 +256,42 @@ const BookPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Hero — same GradientMesh idiom as the Learn page: eyebrow, h1,
-          subcopy, and topic chips that are violet when active and
-          hairline-outlined when not. */}
-      <GradientMesh>
-        <Box
-          sx={{
-            textAlign: 'center',
-            mb: 4,
-            p: { xs: 3, sm: 4 },
-            borderRadius: 3,
-            border: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 600,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'primary.main',
-              fontSize: '0.75rem',
-              mb: 1.5,
-            }}
-          >
-            Reading list
-          </Typography>
-          <Typography
-            variant={isMobile ? "h4" : "h3"}
-            component="h1"
-            gutterBottom
-            sx={{
-              fontWeight: 600,
-              color: 'text.primary',
-              mb: 2
-            }}
-          >
-            Dental Reading List
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              mb: 3,
-              color: 'text.secondary',
-              maxWidth: '700px',
-              mx: 'auto',
-              lineHeight: 1.7,
-            }}
-          >
-            Explore our curated list of dental books. Click on any book to find it on Amazon.
-          </Typography>
+    <Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, sm: 3, md: 4 } }}>
+      <Typography variant="h2" component="h1">
+        Reading list
+      </Typography>
+      <Typography sx={{ mt: 1, color: 'text.secondary', maxWidth: '60ch' }}>
+        Dental textbooks and references recommended for students and practitioners. Each book links
+        to a search on Amazon.
+      </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-            <FilterAltIcon sx={{ mr: 1, color: 'primary.main' }} />
-            <Typography variant="subtitle1" color="text.primary">
-              Filter by topic:
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
-            {allTopics.map((topic) => {
-              const active = selectedTopics.includes(topic);
-              return (
-                <Chip
-                  key={topic}
-                  label={topic}
-                  onClick={() => handleTopicToggle(topic)}
-                  color={active ? 'primary' : 'default'}
-                  variant={active ? 'filled' : 'outlined'}
-                  sx={{
-                    fontWeight: active ? 600 : 500,
-                    ...(active
-                      ? {}
-                      : {
-                          color: 'text.primary',
-                          borderColor: 'divider',
-                          '&:hover': { bgcolor: 'action.hover' },
-                        }),
-                  }}
-                />
-              );
-            })}
-          </Box>
-
-          {selectedTopics.length > 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <MuiButton
-                variant="text"
-                onClick={clearFilters}
-                size="small"
-                color="primary"
-                sx={{ textTransform: 'none' }}
-              >
-                Clear All Filters
-              </MuiButton>
-            </Box>
-          )}
-        </Box>
-      </GradientMesh>
+      <Box
+        role="group"
+        aria-label="Filter by topic"
+        sx={{ mt: 3, mb: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}
+      >
+        <Typography variant="body2" sx={{ color: 'text.secondary', mr: 0.5 }}>
+          Topics
+        </Typography>
+        {allTopics.map((topic) => {
+          const active = selectedTopics.includes(topic);
+          return (
+            <Chip
+              key={topic}
+              label={topic}
+              onClick={() => handleTopicToggle(topic)}
+              color={active ? 'primary' : 'default'}
+              variant={active ? 'filled' : 'outlined'}
+              aria-pressed={active}
+            />
+          );
+        })}
+        {selectedTopics.length > 0 && (
+          <MuiButton variant="text" onClick={clearFilters} size="small">
+            Clear topics
+          </MuiButton>
+        )}
+      </Box>
 
       {filteredBooks.length > 0 ? (
         <Grid container spacing={isMobile ? 2 : 3}>
@@ -373,7 +308,7 @@ const BookPage: React.FC = () => {
           color="text.secondary"
           sx={{ mt: 4 }}
         >
-          No books found matching your selected topic(s). Try clearing filters or selecting different topics.
+          No books cover all of those topics. Clear a topic to see more.
         </Typography>
       )}
     </Container>

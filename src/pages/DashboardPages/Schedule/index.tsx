@@ -9,7 +9,6 @@ import {
   Chip,
   Alert,
   CircularProgress,
-  IconButton,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -19,8 +18,6 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
   Block as BlockIcon,
   CheckCircle as UnblockIcon,
   Delete as DeleteIcon
@@ -88,8 +85,8 @@ const SchedulePage: React.FC = () => {
 
   // Calendar event style getter with type safety
   const eventStyleGetter = (event: any) => {
-    const backgroundColor = event.backgroundColor || '#3174ad';
-    const borderColor = event.borderColor || '#3174ad';
+    const backgroundColor = event.backgroundColor || 'var(--dss-primary)';
+    const borderColor = event.borderColor || 'var(--dss-primary)';
     const color = event.color || '#ffffff';
 
     return {
@@ -257,22 +254,6 @@ const SchedulePage: React.FC = () => {
   };
 
   /**
-   * Navigate to previous month
-   */
-  const handlePreviousMonth = () => {
-    const newDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
-    changeSelectedDate(newDate);
-  };
-
-  /**
-   * Navigate to next month
-   */
-  const handleNextMonth = () => {
-    const newDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1);
-    changeSelectedDate(newDate);
-  };
-
-  /**
    * Render availability slots for a specific date
    */
   const renderSlotsForDate = (date: Date) => {
@@ -285,7 +266,7 @@ const SchedulePage: React.FC = () => {
             No availability slots
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Click "Add Availability" to create new slots
+            Choose "Add availability" to open times on this day
           </Typography>
         </Box>
       );
@@ -355,39 +336,22 @@ const SchedulePage: React.FC = () => {
         flexDirection: isMobile ? 'column' : 'row',
         gap: isMobile ? 2 : 0
       }}>
-        <Typography variant="h4" component="h1">
-          Schedule Management
-        </Typography>
+        <Box>
+          <Typography variant="h5" component="h1">
+            Your availability
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
+            Patients can book the open slots you add here.
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setAddDialogOpen(true)}
           disabled={loading}
         >
-          Add Availability
+          Add availability
         </Button>
-      </Box>
-
-      {/* Calendar Navigation */}
-      <Box sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        mb: 3,
-        gap: 2
-      }}>
-        <IconButton onClick={handlePreviousMonth} disabled={loading}>
-          <ChevronLeftIcon />
-        </IconButton>
-        <Typography variant="h6">
-          {selectedDate.toLocaleDateString('en-US', {
-            month: 'long',
-            year: 'numeric'
-          })}
-        </Typography>
-        <IconButton onClick={handleNextMonth} disabled={loading}>
-          <ChevronRightIcon />
-        </IconButton>
       </Box>
 
       {/* Loading indicator */}
@@ -510,7 +474,7 @@ const SchedulePage: React.FC = () => {
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
         onConfirm={confirmDelete}
-        title="Delete Availability Slot"
+        title="Delete availability slot"
         message={`Are you sure you want to delete this availability slot? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"

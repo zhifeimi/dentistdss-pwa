@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material';
 import { Theme } from '@mui/material/styles';
 import { getStatusColor } from '../../../../utils/dashboard/dashboardUtils';
 
@@ -9,17 +10,21 @@ import { getStatusColor } from '../../../../utils/dashboard/dashboardUtils';
 /**
  * Get event styles based on appointment status
  */
-export const getEventStyle = (status: string, isMobile: boolean) => ({
-  style: {
-    backgroundColor: getStatusColor(status),
-    borderColor: getStatusColor(status),
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: isMobile ? '12px' : '14px',
-    padding: '2px 4px',
-  },
-});
+export const getEventStyle = (status: string, isMobile: boolean, theme: Theme) => {
+  // getStatusColor returns a palette key, not a CSS colour
+  const tone = getStatusColor(status);
+  const palette = theme.palette[tone === 'default' ? 'primary' : tone];
+  return {
+    style: {
+      backgroundColor: palette.main,
+      color: palette.contrastText,
+      border: 'none',
+      borderRadius: '4px',
+      fontSize: isMobile ? '12px' : '14px',
+      padding: '2px 4px',
+    },
+  };
+};
 
 /**
  * Get calendar paper styles
@@ -31,17 +36,26 @@ export const getCalendarPaperStyles = (theme: Theme, height: number) => ({
     height: '100%',
   },
   // Custom styles for react-big-calendar
+  // Grid hairlines in the theme divider colour (the library default is #ddd)
+  [[
+    '.rbc-month-view', '.rbc-time-view', '.rbc-agenda-view', '.rbc-header', '.rbc-header + .rbc-header',
+    '.rbc-day-bg + .rbc-day-bg', '.rbc-month-row + .rbc-month-row', '.rbc-time-header-content',
+    '.rbc-time-content', '.rbc-time-content > * + * > *', '.rbc-timeslot-group', '.rbc-day-slot .rbc-time-slot',
+    '.rbc-agenda-view table.rbc-agenda-table', '.rbc-agenda-view table.rbc-agenda-table tbody > tr > td + td',
+    '.rbc-agenda-view table.rbc-agenda-table tbody > tr + tr', '.rbc-agenda-view table.rbc-agenda-table thead > tr > th',
+  ].map((selector) => `& ${selector}`).join(', ')]: {
+    borderColor: theme.palette.divider,
+  },
   '& .rbc-header': {
-    backgroundColor: theme.palette.grey[50],
     borderBottom: `1px solid ${theme.palette.divider}`,
     padding: theme.spacing(1),
     fontWeight: 'medium',
   },
   '& .rbc-today': {
-    backgroundColor: theme.palette.primary.light + '20',
+    backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.08),
   },
   '& .rbc-off-range-bg': {
-    backgroundColor: theme.palette.grey[100],
+    backgroundColor: theme.palette.background.default,
   },
   '& .rbc-event': {
     borderRadius: theme.shape.borderRadius,
@@ -52,7 +66,7 @@ export const getCalendarPaperStyles = (theme: Theme, height: number) => ({
     outlineOffset: '2px',
   },
   '& .rbc-slot-selection': {
-    backgroundColor: theme.palette.primary.light + '40',
+    backgroundColor: alpha(theme.palette.primary.main, 0.16),
   },
   '& .rbc-toolbar': {
     marginBottom: theme.spacing(2),
@@ -74,17 +88,4 @@ export const getCalendarPaperStyles = (theme: Theme, height: number) => ({
       borderColor: theme.palette.primary.main,
     },
   },
-  // Dark mode support
-  ...(theme.palette.mode === 'dark' && {
-    '& .rbc-header': {
-      backgroundColor: theme.palette.grey[800],
-      color: theme.palette.common.white,
-    },
-    '& .rbc-off-range-bg': {
-      backgroundColor: theme.palette.grey[900],
-    },
-    '& .rbc-today': {
-      backgroundColor: theme.palette.primary.dark + '30',
-    },
-  }),
 });

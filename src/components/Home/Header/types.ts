@@ -1,8 +1,3 @@
-/**
- * Header component types
- * Extracted to follow Single Responsibility Principle
- */
-
 export interface User {
   id?: string | number;
   firstName?: string;
@@ -18,19 +13,16 @@ export interface User {
 export interface HeaderProps {
   darkMode: boolean;
   toggleDarkMode: () => void;
-  currentUser?: User | null;
   isMobile?: boolean;
 }
 
 export interface NavigationItem {
   label: string;
   path: string;
-  icon: React.ComponentType;
   requiresAuth?: boolean;
 }
 
 export interface HeaderState {
   mobileMenuAnchorEl: HTMLElement | null;
-  profileMenuAnchor: HTMLElement | null;
   scrolled: boolean;
 }

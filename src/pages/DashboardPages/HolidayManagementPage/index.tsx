@@ -16,11 +16,11 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  CalendarToday as CalendarIcon,
   Event as EventIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import api from '../../../services';
 import { Holiday } from '../../../types';
 import HolidayForm from './components/HolidayForm';
@@ -136,49 +136,14 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
     );
   }
 
-  // Loading state
-  if (loading) {
-    return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          minHeight: '400px' 
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ p: getResponsivePadding(isSmallMobile ? 'small' : isMobile ? 'medium' : 'large') }}>
-      {/* Header */}
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? 2 : 0
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CalendarIcon color="primary" />
-          <Typography 
-            variant={isMobile ? 'h5' : 'h4'} 
-            component="h1"
-            sx={{ fontWeight: 600 }}
-          >
-            Holiday Management
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+  const header = (
+    <PageHeader
+      title="Holidays and closures"
+      description="Days your clinic is closed. Patients can't book on these days."
+      actions={
+        <>
           <Tooltip title="Refresh holidays">
-            <IconButton 
+            <IconButton
               onClick={handleRefresh}
               disabled={refreshing}
               color="primary"
@@ -186,7 +151,7 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
               <RefreshIcon />
             </IconButton>
           </Tooltip>
-          
+
           {!isMobile && (
             <Button
               variant="contained"
@@ -194,16 +159,34 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
               onClick={handleAddHoliday}
               sx={{ minWidth: 140 }}
             >
-              Add Holiday
+              Add holiday
             </Button>
           )}
+        </>
+      }
+    />
+  );
+
+  // Loading state
+  if (loading) {
+    return (
+      <Box>
+        {header}
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress aria-label="Loading holidays" />
         </Box>
       </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {header}
 
       {/* Error Alert */}
       {error && (
-        <Alert 
-          severity="error" 
+        <Alert
+          severity="error"
           sx={{ mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium') }}
           onClose={() => setError('')}
         >
@@ -213,41 +196,37 @@ const HolidayManagementPage: React.FC<HolidayManagementPageProps> = ({ clinicId 
 
       {/* Upcoming Holidays Summary */}
       {upcomingHolidays.length > 0 && (
-        <Card 
-          sx={{ 
+        <Card
+          sx={{
             mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
-            background: theme.palette.mode === 'dark' 
-              ? 'linear-gradient(135deg, #1a237e 0%, #3949ab 100%)'
-              : 'linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%)',
-            color: 'white'
           }}
         >
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <EventIcon />
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Upcoming Holidays ({upcomingHolidays.length})
+                Upcoming holidays ({upcomingHolidays.length})
               </Typography>
             </Box>
-            
+
             <Grid container spacing={1}>
               {upcomingHolidays.slice(0, 3).map((holiday) => (
                 <Grid size={{ xs: 12, sm: 6, md: 4 }} key={holiday.id}>
-                  <Box 
-                    sx={{ 
-                      p: 1.5, 
-                      borderRadius: 1, 
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      backdropFilter: 'blur(10px)'
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 1.5,
+                      border: 1,
+                      borderColor: 'divider',
                     }}
                   >
                     <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                       {holiday.name}
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       {new Date(holiday.holidayDate).toLocaleDateString()}
                     </Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                       {holiday.daysUntilHoliday} days away
                     </Typography>
                   </Box>

@@ -2,10 +2,10 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// Inter Variable: weight-axis faces only, latin + latin-ext subsets. The app's
-// English UI never renders cyrillic/greek/vietnamese glyphs, and italic faces
-// stay system-synthesized; unicode-range keeps everything else un-downloaded.
-import '@fontsource-variable/inter/wght.css';
+// Atkinson Hyperlegible Next Variable: weight-axis faces only, latin +
+// latin-ext subsets. Italic faces stay system-synthesized; unicode-range keeps
+// everything else un-downloaded.
+import '@fontsource-variable/atkinson-hyperlegible-next/wght.css';
 import './styles/index.scss';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';

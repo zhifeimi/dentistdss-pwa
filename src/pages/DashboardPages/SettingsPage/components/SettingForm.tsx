@@ -145,7 +145,7 @@ const SettingForm = memo(({
   return (
     <Card elevation={2} sx={{ mb: 3 }}>
       <CardHeader
-        title="Add New Setting"
+        title="Add new setting"
         action={
           <IconButton
             onClick={toggleExpanded}
@@ -167,7 +167,7 @@ const SettingForm = memo(({
           )}
 
           <TextField
-            label="Setting Key"
+            label="Setting key"
             value={formData.key}
             onChange={(e: ChangeEvent<HTMLInputElement>) => handleFieldChange('key', e.target.value)}
             error={Boolean(allErrors.key)}
@@ -187,7 +187,7 @@ const SettingForm = memo(({
           />
           
           <TextField
-            label="Setting Value"
+            label="Setting value"
             value={formData.value}
             onChange={(e: ChangeEvent<HTMLInputElement>) => handleFieldChange('value', e.target.value)}
             error={Boolean(allErrors.value)}
@@ -245,7 +245,7 @@ const SettingForm = memo(({
               fullWidth={isMobile}
               aria-label="Save new setting"
             >
-              {saving ? 'Adding...' : 'Add Setting'}
+              {saving ? 'Adding...' : 'Add setting'}
             </Button>
           </Box>
         </CardContent>

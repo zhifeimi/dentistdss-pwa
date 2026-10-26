@@ -1,64 +1,40 @@
 import React from 'react';
-import { Box, Button, IconButton } from '@mui/material';
-import { Mail as MailIcon } from '@mui/icons-material';
+import { Box, Button, IconButton, Tooltip } from '@mui/material';
+import { MailOutlined as MailIcon } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router';
-import type { User } from './types';
 
 interface UserActionsProps {
   isAuthenticated: boolean;
-  currentUser?: User | null;
 }
 
-/**
- * User action buttons (login/signup or dashboard/messages)
- * Simplified user action logic
- */
-export const UserActions: React.FC<UserActionsProps> = ({ 
-  isAuthenticated, 
-  currentUser 
-}) => {
+export const UserActions: React.FC<UserActionsProps> = ({ isAuthenticated }) => {
   if (isAuthenticated) {
     return (
-      <>
-        <IconButton
-          aria-label="Messages"
-          color="inherit"
-          component={RouterLink}
-          to="/dashboard/messages"
-          sx={{ mr: 1.5 }}
-        >
-          <MailIcon />
-        </IconButton>
-        <Button
-          color="inherit"
-          component={RouterLink}
-          to="/dashboard"
-          variant="outlined"
-          size="small"
-        >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Tooltip title="Messages">
+          <IconButton
+            aria-label="Messages"
+            component={RouterLink}
+            to="/messages"
+            sx={{ color: 'text.secondary' }}
+          >
+            <MailIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Button component={RouterLink} to="/dashboard" variant="contained">
           Dashboard
         </Button>
-      </>
+      </Box>
     );
   }
 
   return (
-    <Box>
-      <Button
-        color="inherit"
-        component={RouterLink}
-        to="/login"
-        sx={{ mr: 1 }}
-      >
-        Login
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Button component={RouterLink} to="/login" sx={{ color: 'text.primary' }}>
+        Log in
       </Button>
-      <Button
-        color="inherit"
-        component={RouterLink}
-        to="/signup"
-        variant="outlined"
-      >
-        Sign Up
+      <Button component={RouterLink} to="/signup" variant="contained">
+        Sign up
       </Button>
     </Box>
   );

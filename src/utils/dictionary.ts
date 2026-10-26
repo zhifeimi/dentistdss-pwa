@@ -13,7 +13,7 @@ interface Dictionary {
 const dictionary: Dictionary = {
   locations: {
     public: ['/', '/login', '/signup', "/signup/clinic-staff", "/signup/clinic-admin", "/terms",
-      "/signup/verify", "/verify-email-code", "/book", "/learn", "/quiz", "/find-a-clinic"],
+      "/signup/verify", "/verify-email-code", "/book", "/learn", "/quiz", "/find-a-clinic", "/pending-approval"],
   },
   modes: {
     light: 'light',
@@ -24,9 +24,9 @@ const dictionary: Dictionary = {
 export const roleMapping: Record<string, string> = {
   'PATIENT': 'Patient',
   'DENTIST': 'Dentist',
-  'CLINIC_ADMIN': 'Clinic Admin',
+  'CLINIC_ADMIN': 'Clinic admin',
   'RECEPTIONIST': 'Receptionist',
-  'SYSTEM_ADMIN': 'System Admin',
+  'SYSTEM_ADMIN': 'System admin',
 }
 
 export const COUNTRIES: Country[] = [

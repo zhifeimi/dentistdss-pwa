@@ -108,7 +108,7 @@ test.describe('Authenticated chat pages', () => {
       await receptionistRequest;
       await expect(page.getByText(stalePrompt, { exact: true })).toBeVisible();
 
-      await page.getByRole('tab', { name: 'AI Triage' }).click();
+      await page.getByRole('tab', { name: 'Symptom check' }).click();
 
       const triageInput = page.getByPlaceholder('Describe your symptoms or dental concerns...');
       await expect(triageInput).toBeVisible();
@@ -167,7 +167,7 @@ test.describe('Authenticated chat pages', () => {
     const summaryCard = page
       .getByText('Summary retained', { exact: true })
       .locator('xpath=ancestor::div[contains(@class, "MuiCard-root")]');
-    const saveButton = summaryCard.getByRole('button', { name: 'Save to Records', exact: true });
+    const saveButton = summaryCard.getByRole('button', { name: 'Save to records', exact: true });
     await expect(saveButton).toBeVisible();
     await saveButton.click();
     await expect(

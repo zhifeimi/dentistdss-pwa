@@ -70,11 +70,11 @@ describe('WorkingHoursPage', () => {
     renderWithProviders(<WorkingHoursPage />);
 
     // Check if the main heading is present
-    expect(await screen.findByText('Working Hours Management')).toBeInTheDocument();
+    expect(await screen.findByText('Opening hours')).toBeInTheDocument();
 
     // Check if the schedule overview is present
     await waitFor(() => {
-      expect(screen.getByText('Schedule Overview')).toBeInTheDocument();
+      expect(screen.getByText('Summary')).toBeInTheDocument();
     });
   });
 
@@ -112,7 +112,7 @@ describe('WorkingHoursPage', () => {
 
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.getByText('Weekly Schedule')).toBeInTheDocument();
+      expect(screen.getByText('Weekly schedule')).toBeInTheDocument();
     });
 
     // Check if all days of the week are displayed

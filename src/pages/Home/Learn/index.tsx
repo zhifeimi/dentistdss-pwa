@@ -8,7 +8,6 @@ import {
   CardMedia,
   Grid,
   Chip,
-  Divider,
   useTheme,
   useMediaQuery,
   Fade,
@@ -23,10 +22,7 @@ import {
   DialogActions
 } from '@mui/material';
 import { TransitionProps } from '@mui/material/transitions';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import GradientMesh from '../Welcome/sections/GradientMesh';
 
 import img11 from '../../../assets/learn/11-card.webp';
 import img22 from '../../../assets/learn/22-card.webp';
@@ -196,92 +192,37 @@ const Learn: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Hero Section — GradientMesh panel in the landing's idiom; every
-          text and chip stays on theme colors (no contrastText-on-band
-          tricks, which were unreadable in both themes). */}
-      <GradientMesh>
-        <Box
-          sx={{
-            textAlign: 'center',
-            mb: 6,
-            p: { xs: 3, sm: 4 },
-            borderRadius: 3,
-            border: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 600,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'primary.main',
-              fontSize: '0.75rem',
-              mb: 1.5,
-            }}
-          >
-            Oral health library
-          </Typography>
-          <Typography
-            variant="h3"
-            component="h1"
-            gutterBottom
-            sx={{
-              fontWeight: 600,
-              color: 'text.primary',
-              mb: 2
-            }}
-          >
-            Learn About Oral Health
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              mb: 3,
-              color: 'text.secondary',
-              maxWidth: '800px',
-              mx: 'auto',
-              lineHeight: 1.7,
-            }}
-          >
-            Discover essential information about dental health, common conditions, and how to maintain a healthy smile.
-          </Typography>
-          <Divider sx={{ width: '60%', mx: 'auto', mb: 3, borderColor: 'divider' }} />
+    <Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, sm: 3, md: 4 } }}>
+      <Typography variant="h2" component="h1">
+        Learn about oral health
+      </Typography>
+      <Typography sx={{ mt: 1, color: 'text.secondary', maxWidth: '60ch' }}>
+        Plain-language guides to common dental problems, treatments and everyday care, written for
+        patients.
+      </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-            <FilterAltIcon sx={{ mr: 1, color: 'primary.main' }} />
-            <Typography variant="subtitle1" color="text.primary">
-              Filter by topic:
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
-            {allTags.map((tag) => {
-              const active = activeFilters.includes(tag);
-              return (
-                <Chip
-                  key={tag}
-                  label={tag}
-                  onClick={() => handleFilterToggle(tag)}
-                  color={active ? 'primary' : 'default'}
-                  variant={active ? 'filled' : 'outlined'}
-                  sx={{
-                    fontWeight: active ? 600 : 500,
-                    ...(active
-                      ? {}
-                      : {
-                          color: 'text.primary',
-                          borderColor: 'divider',
-                          '&:hover': { bgcolor: 'action.hover' },
-                        }),
-                  }}
-                />
-              );
-            })}
-          </Box>
-        </Box>
-      </GradientMesh>
+      <Box
+        role="group"
+        aria-label="Filter by topic"
+        sx={{ mt: 3, mb: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}
+      >
+        <Typography variant="body2" sx={{ color: 'text.secondary', mr: 0.5 }}>
+          Topics
+        </Typography>
+        {allTags.map((tag) => {
+          const active = activeFilters.includes(tag);
+          return (
+            <Chip
+              key={tag}
+              label={tag}
+              onClick={() => handleFilterToggle(tag)}
+              color={active ? 'primary' : 'default'}
+              variant={active ? 'filled' : 'outlined'}
+              aria-pressed={active}
+            />
+          );
+        })}
+      </Box>
 
       {/* Article Dialog */}
       <Dialog
@@ -320,11 +261,9 @@ const Learn: React.FC = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            color: 'primary.main',
-            fontWeight: 600
           }}>
             {selectedArticle?.title}
-            <IconButton onClick={handleCloseDialog} sx={{ ml: 2 }}>
+            <IconButton onClick={handleCloseDialog} sx={{ ml: 2 }} aria-label="Close article">
               <CloseIcon />
             </IconButton>
           </DialogTitle>
@@ -336,17 +275,7 @@ const Learn: React.FC = () => {
               {selectedArticle.tags && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
                   {selectedArticle.tags.map((tag) => (
-                    <Chip
-                      key={tag}
-                      label={tag}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{
-                        fontSize: '0.75rem',
-                        height: 24
-                      }}
-                    />
+                    <Chip key={tag} label={tag} size="small" variant="outlined" />
                   ))}
                 </Box>
               )}
@@ -361,7 +290,6 @@ const Learn: React.FC = () => {
                   borderRadius: 1,
                   mb: 3,
                   objectFit: 'cover',
-                  boxShadow: 2
                 }}
               />
 
@@ -398,36 +326,21 @@ const Learn: React.FC = () => {
             textAlign: 'center'
           }}>
             <Typography variant="h6" color="text.primary">
-              No articles match your selected filters.
+              No articles cover all of those topics
             </Typography>
             <Button
               variant="outlined"
               onClick={() => setActiveFilters([])}
               sx={{ mt: 2 }}
             >
-              Clear Filters
+              Clear topics
             </Button>
           </Box>
         ) : (
           filteredArticles.map((article) => (
             <Grid size={{ xs: 12, md: 6, lg: 4 }} key={article.title}>
               <Fade in={visibleArticles.includes(articles.indexOf(article))} timeout={500}>
-                <Card
-                  elevation={2}
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-6px)',
-                      boxShadow: 4
-                    },
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    bgcolor: 'background.paper'
-                  }}
-                >
+                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <CardMedia
                     component="img"
                     height="180"
@@ -440,19 +353,7 @@ const Learn: React.FC = () => {
                   <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
                     <Box sx={{ mb: 1.5 }}>
                       {article.tags.map((tag) => (
-                        <Chip
-                          key={tag}
-                          label={tag}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{
-                            mr: 0.5,
-                            mb: 0.5,
-                            fontSize: '0.75rem',
-                            height: 24
-                          }}
-                        />
+                        <Chip key={tag} label={tag} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }} />
                       ))}
                     </Box>
 
@@ -460,12 +361,7 @@ const Learn: React.FC = () => {
                       variant="h6"
                       component="h2"
                       gutterBottom
-                      sx={{
-                        fontWeight: 600,
-                        color: 'primary.main',
-                        fontSize: '1.1rem',
-                        lineHeight: 1.3
-                      }}
+                      sx={{ fontSize: '1.125rem', lineHeight: 1.3 }}
                     >
                       {article.title}
                     </Typography>
@@ -477,18 +373,13 @@ const Learn: React.FC = () => {
                       {article.content.split('.')[0] + '...'}
                     </Typography>
                     <Button
-                      variant="contained"
-                      color="primary"
+                      variant="outlined"
                       size="small"
-                      endIcon={<ArrowForwardIcon />}
                       onClick={() => handleReadMore(article)}
-                      sx={{
-                        alignSelf: 'flex-start',
-                        borderRadius: 6,
-                        px: 2
-                      }}
+                      sx={{ alignSelf: 'flex-start' }}
+                      aria-label={`Read ${article.title}`}
                     >
-                      Read More
+                      Read article
                     </Button>
                   </CardContent>
                 </Card>

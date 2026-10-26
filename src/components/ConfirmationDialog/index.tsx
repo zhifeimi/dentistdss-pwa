@@ -7,7 +7,6 @@ import {
   DialogContentText,
   DialogTitle,
   Slide,
-  useTheme,
   Avatar,
   type DialogProps,
 } from '@mui/material';
@@ -121,7 +120,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   maxWidth = 'sm',
   ...otherProps
 }) => {
-  const theme = useTheme();
   const config = dialogTypeConfig[type] || dialogTypeConfig.info;
   const IconComponent = config.icon;
 
@@ -145,15 +143,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       aria-describedby="confirmation-dialog-description"
       maxWidth={maxWidth}
       fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            borderRadius: 2,
-            border: theme.palette.mode === 'dark' ? `1px solid ${theme.palette.divider}` : 'none',
-            boxShadow: theme.palette.mode === 'dark' ? '0 8px 32px rgba(0,0,0,0.3)' : '0 8px 32px rgba(0,0,0,0.1)',
-          }
-        }
-      }}
       {...otherProps}
     >
       <DialogTitle

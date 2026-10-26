@@ -19,18 +19,18 @@ const PatientInfoStep = ({
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        Patient Information
+        Patient information
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Please provide your personal information to create your patient profile.
       </Typography>
 
       <Grid container spacing={3}>
-        {/* First Name */}
+        {/* First name */}
         <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
-            label="First Name"
+            label="First name"
             value={patientData.firstName}
             onChange={(e) => onUpdatePatientData('firstName', e.target.value)}
             error={!!errors.firstName}
@@ -39,11 +39,11 @@ const PatientInfoStep = ({
           />
         </Grid>
 
-        {/* Last Name */}
+        {/* Last name */}
         <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
-            label="Last Name"
+            label="Last name"
             value={patientData.lastName}
             onChange={(e) => onUpdatePatientData('lastName', e.target.value)}
             error={!!errors.lastName}
@@ -70,7 +70,7 @@ const PatientInfoStep = ({
         <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
-            label="Phone Number"
+            label="Phone number"
             value={patientData.phone}
             onChange={(e) => onUpdatePatientData('phone', e.target.value)}
             error={!!errors.phone}
@@ -79,10 +79,10 @@ const PatientInfoStep = ({
           />
         </Grid>
 
-        {/* Date of Birth */}
+        {/* Date of birth */}
         <Grid size={{ xs: 12, md: 6 }}>
           <CalendarDatePicker
-            label="Date of Birth"
+            label="Date of birth"
             value={patientData.dateOfBirth ? dayjs(patientData.dateOfBirth).toDate() : null}
             onChange={(date) => onUpdatePatientData('dateOfBirth', date ? dayjs(date).format('YYYY-MM-DD') : undefined)}
             maxDate={new Date()}
@@ -109,7 +109,7 @@ const PatientInfoStep = ({
         <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
-            label="Emergency Contact (Optional)"
+            label="Emergency contact (optional)"
             value={patientData.emergencyContact}
             onChange={(e) => onUpdatePatientData('emergencyContact', e.target.value)}
             helperText="Name and phone number of emergency contact"

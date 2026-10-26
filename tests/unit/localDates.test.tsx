@@ -75,7 +75,7 @@ describe.each([
     const onUpdatePatientData = vi.fn();
     render(<PatientInfoStep patientData={{ dateOfBirth: '2026-10-22' }} onUpdatePatientData={onUpdatePatientData} errors={{}} />);
 
-    const picker = screen.getByRole('button', { name: 'Date of Birth' });
+    const picker = screen.getByRole('button', { name: 'Date of birth' });
     expect(picker).toHaveAttribute('data-value', new Date(2026, 9, 22).toDateString());
     await userEvent.click(picker);
     expect(onUpdatePatientData).toHaveBeenCalledWith('dateOfBirth', '2026-10-22');

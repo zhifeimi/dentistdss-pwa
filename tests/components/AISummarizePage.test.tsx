@@ -51,7 +51,7 @@ describe('AISummarizePage', () => {
     );
     await screen.findByText('Summary retained');
 
-    const saveButtons = screen.getAllByRole('button', { name: 'Save to Records' });
+    const saveButtons = screen.getAllByRole('button', { name: 'Save to records' });
     await userEvent.click(saveButtons[saveButtons.length - 1]);
 
     expect(snackbarMessages()).toEqual(['Summary saved to patient records']);

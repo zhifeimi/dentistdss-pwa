@@ -4,26 +4,24 @@ import {
   Button,
   TextField,
   Typography,
-  Container,
-  Paper,
   Link as MuiLink,
+  Alert,
   Grid,
   useTheme,
   Divider,
   InputAdornment,
-  IconButton
+  IconButton,
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from 'react-router';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../../context/auth';
-import EmailIcon from '@mui/icons-material/Email';
-import LockIcon from '@mui/icons-material/Lock';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { CredentialResponse } from '@react-oauth/google';
 import { useMediaQuery } from '@mui/material';
-import AuthBrandPanel from '../../../components/Home/AuthBrandPanel';
+import AuthLayout from '../../../components/Home/AuthLayout';
 import GoogleAuthProvider from '../../../components/Auth/GoogleAuthProvider';
 import GoogleSignInButton from '../../../components/Auth/GoogleSignInButton';
+import { returnPathAfterLogin } from '../../../utils/returnPath';
 
 /**
  * Login - User authentication page
@@ -46,6 +44,7 @@ const Login: React.FC = () => {
   const [isUsingEmailLogin, setIsUsingEmailLogin] = useState<boolean>(false);
   const { login, googleIdLogin } = useAuth() || {};
   const navigate = useNavigate();
+  const location = useLocation();
 
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -148,7 +147,7 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(returnPathAfterLogin(location.state), { replace: true });
     } catch (err: any) {
       console.error('Login failed:', err);
       setError(err.message || 'Failed to log in. Please check your credentials.');
@@ -173,7 +172,7 @@ const Login: React.FC = () => {
       }
       
       await googleIdLogin(credentialResponse.credential, nonce);
-      navigate('/dashboard');
+      navigate(returnPathAfterLogin(location.state), { replace: true });
     } catch (err: any) {
       console.error(err);
       setError(`${err.message || 'Google login failed'} Please retry Google sign-in.`);
@@ -187,62 +186,17 @@ const Login: React.FC = () => {
 
   return (
     <GoogleAuthProvider>
-    <Container
-      component="main"
-      maxWidth="lg"
-      sx={{
-        px: { xs: 2, sm: 3 },
-        py: { xs: 2, sm: 4 }
-      }}
+    <AuthLayout
+      title="Log in"
+      subtitle="Patients and clinic staff use the same login."
     >
-      <Box
-        sx={{
-          display: 'flex',
-          maxWidth: 980,
-          mx: 'auto',
-          mt: { xs: 4, sm: 6, md: 8 },
-          borderRadius: 3,
-          overflow: 'hidden',
-          border: `1px solid ${theme.palette.divider}`,
-          boxShadow: theme.palette.mode === 'dark'
-            ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-            : '0 8px 32px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <Box sx={{ flex: 1, bgcolor: 'background.paper' }}>
-          <Paper
-            elevation={0}
-            sx={{
-              p: { xs: 2.5, sm: 3, md: 4 },
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              backgroundColor: 'transparent',
-              borderRadius: 0,
-            }}
-          >
-        <Typography
-          component="h1"
-          variant={isMobile ? "h5" : "h4"}
-          sx={{
-            color: theme.palette.mode === 'dark'
-              ? theme.palette.primary.light
-              : theme.palette.primary.main,
-            mb: { xs: 2, sm: 2.5, md: 3 },
-            fontWeight: 600,
-            textAlign: 'center'
-          }}
-        >
-          Log In
-        </Typography>
-
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
+        <Box component="form" onSubmit={handleSubmit} noValidate>
           <TextField
             margin="normal"
             required
             fullWidth
             id="email"
-            label="Email Address"
+            label="Email"
             name="email"
             autoComplete="email"
             autoFocus={!isMobile} // Disable autofocus on mobile to prevent keyboard popup
@@ -256,32 +210,6 @@ const Login: React.FC = () => {
               htmlInput: {
                 inputMode: 'email',
                 type: 'email'
-              },
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'} />
-                  </InputAdornment>
-                ),
-              },
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: theme.palette.primary.main,
-                },
-              },
-              '& .MuiInputLabel-root': {
-                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-              },
-              '& .MuiInputBase-input': {
-                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
               },
             }}
           />
@@ -299,18 +227,12 @@ const Login: React.FC = () => {
             disabled={loading}
             slotProps={{
               input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'} />
-                  </InputAdornment>
-                ),
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
                       aria-label="toggle password visibility"
                       onClick={handleClickShowPassword}
                       edge="end"
-                      sx={{ color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined }}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -318,82 +240,26 @@ const Login: React.FC = () => {
                 ),
               },
             }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: theme.palette.primary.main,
-                },
-              },
-              '& .MuiInputLabel-root': {
-                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-              },
-              '& .MuiInputBase-input': {
-                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
-              },
-            }}
           />
 
           {error && (
-            <Box sx={{
-              mt: 2,
-              p: 1.5,
-              bgcolor: theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.15)' : 'rgba(211, 47, 47, 0.05)',
-              borderRadius: 1,
-              border: `1px solid ${theme.palette.error.main}`
-            }}>
-              <Typography color="error" variant="body2" sx={{ textAlign: 'center' }}>
-                {error}
-              </Typography>
-            </Box>
+            <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
           )}
 
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            color="primary"
-            size={isMobile ? "medium" : "large"}
-            sx={{
-              mt: { xs: 2.5, sm: 3 },
-              mb: { xs: 1.5, sm: 2 },
-              py: { xs: 1.5, sm: 1.8 },
-              fontWeight: 600,
-              fontSize: { xs: '0.95rem', sm: '1rem' },
-              minHeight: { xs: 48, sm: 52 },
-              boxShadow: theme.palette.mode === 'dark'
-                ? '0 4px 12px rgba(0, 100, 80, 0.3)'
-                : '0 4px 12px rgba(0, 0, 0, 0.1)',
-              '&:hover': {
-                boxShadow: theme.palette.mode === 'dark'
-                  ? '0 6px 16px rgba(0, 100, 80, 0.4)'
-                  : '0 6px 16px rgba(0, 0, 0, 0.15)',
-              }
-            }}
+            size="large"
+            sx={{ mt: 3 }}
             disabled={loading}
           >
-            {loading ? 'Logging In...' : 'Log In'}
+            {loading ? 'Logging in…' : 'Log in'}
           </Button>
 
-          <Divider sx={{
-            my: 3,
-            '&::before, &::after': {
-              borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : undefined
-            }
-          }}>
-            <Typography
-              variant="body2"
-              sx={{
-                px: 1,
-                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : theme.palette.text.secondary
-              }}
-            >
-              Or
+          <Divider sx={{ my: 3 }}>
+            <Typography variant="body2" sx={{ px: 1, color: 'text.secondary' }}>
+              or
             </Typography>
           </Divider>
 
@@ -419,37 +285,20 @@ const Login: React.FC = () => {
                   width={googleButtonWidth}
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
-                  theme={theme.palette.mode === 'dark' ? 'filled_black' : 'filled_blue'}
+                  theme={theme.palette.mode === 'dark' ? 'filled_black' : 'outline'}
                 />
               </Box>
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 4, textAlign: 'center' }}>
-            <MuiLink
-              component={RouterLink}
-              to="/signup"
-              variant="body2"
-              sx={{
-                color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
-                textDecoration: 'none',
-                fontWeight: 500,
-                '&:hover': {
-                  textDecoration: 'underline'
-                }
-              }}
-            >
-              {"Don't have an account? Sign Up"}
+          <Typography variant="body2" sx={{ mt: 4, color: 'text.secondary' }}>
+            New to DentistDSS?{' '}
+            <MuiLink component={RouterLink} to="/signup">
+              Create an account
             </MuiLink>
-          </Box>
+          </Typography>
         </Box>
-          </Paper>
-        </Box>
-        <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }}>
-          <AuthBrandPanel />
-        </Box>
-      </Box>
-    </Container>
+    </AuthLayout>
     </GoogleAuthProvider>
   );
 };

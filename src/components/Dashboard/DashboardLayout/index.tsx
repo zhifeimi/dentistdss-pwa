@@ -1,5 +1,10 @@
 import React, { Suspense } from 'react';
-import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Alert,
+  Box,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { Navigate, Route, Routes } from 'react-router';
 import { useAuth } from '@/context/auth';
 import { DashboardProvider } from '@/context/dashboard/DashboardContext';
@@ -47,7 +52,6 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
     mobileOpen,
     userMenuAnchorEl,
     activeSectionLabel,
-    hasMultipleRoles,
     handleRoleChange,
     handleSectionChange,
     handleDrawerToggle,
@@ -68,16 +72,15 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
     <Box sx={{ display: 'flex' }}>
       {/* Header */}
       <Header
-        isSmUp={isSmUp}
         handleDrawerToggle={handleDrawerToggle}
         activeSectionLabel={activeSectionLabel}
+        drawerWidth={drawerWidth}
         userMenuAnchorEl={userMenuAnchorEl}
         handleUserMenuOpen={handleUserMenuOpen}
         handleUserMenuClose={handleUserMenuClose}
         darkMode={darkMode}
         toggleDarkMode={toggleDarkMode}
         logout={logout}
-        hasMultipleRoles={hasMultipleRoles}
       />
 
       {/* Sidebar */}
@@ -93,7 +96,6 @@ const DashboardLayoutInternal: React.FC<DashboardLayoutInternalProps> = ({
         activeRoleSections={activeRoleSections}
         activeSectionKey={currentSection?.id || ''}
         setActiveSectionKey={handleSectionChange}
-        logout={logout}
       />
 
       {/* Main Content with Routes */}

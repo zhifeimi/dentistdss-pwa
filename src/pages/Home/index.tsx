@@ -11,36 +11,21 @@ interface HomeProps {
   toggleDarkMode: () => void;
 }
 
-/**
- * Home - Main layout component for the home page
- * 
- * Features:
- * - Header with navigation and dark mode toggle
- * - Main content area for child components
- * - Floating chat helper
- * - Footer
- * - Responsive design support
- */
+/** Public layout: fixed header, page content, Dentabot helper, footer. */
 const Home: React.FC<HomeProps> = ({ children, isMobile, darkMode, toggleDarkMode }) => {
   return (
     <>
-      <Box sx={{ 
-        display: 'flex', 
-        pt: 10, 
-        flexDirection: 'column', 
-        minHeight: 'calc(100vh - 50px)' 
-      }}>
-        <Header 
-          darkMode={darkMode} 
-          toggleDarkMode={toggleDarkMode} 
-          isMobile={isMobile} 
-        />
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          pt: { xs: '60px', md: '68px' },
+          minHeight: '70vh',
+        }}
+      >
+        <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} isMobile={isMobile} />
         {children}
-        <FloatingChatHelper 
-          darkMode={darkMode} 
-          toggleDarkMode={toggleDarkMode} 
-          isMobile={isMobile} 
-        />
+        <FloatingChatHelper darkMode={darkMode} toggleDarkMode={toggleDarkMode} isMobile={isMobile} />
       </Box>
       <Footer />
     </>

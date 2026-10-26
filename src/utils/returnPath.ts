@@ -1,0 +1,8 @@
+// Protected pages send logged-out visitors to /login with `{ from: location }`,
+// so logging in can take them back to what they asked for (a booking link, say).
+export const returnPathAfterLogin = (state: unknown): string => {
+  const from = (state as { from?: { pathname?: string; search?: string } } | null)?.from;
+  const path = `${from?.pathname ?? ''}${from?.search ?? ''}`;
+  // In-app paths only; browsers read "//host" and "/\host" as another site
+  return /^\/(?![/\\])/.test(path) ? path : '/dashboard';
+};

@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import {
   Alert,
   Box,
@@ -83,6 +84,22 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     refreshAppointments();
     setShowBookingWizard(false);
   });
+
+  // "Book a visit" links here with ?book=<clinicId>: open the wizard with that
+  // clinic chosen once the clinic list has loaded (an unknown id, such as the
+  // overview's ?book=new, opens it with no clinic chosen).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const bookClinicId = canBookAppointment ? searchParams.get('book') : null;
+  const bookingClinics = bookingWizard.clinics;
+  useEffect(() => {
+    if (!bookClinicId || bookingClinics.length === 0) return;
+    const clinic = bookingClinics.find((item) => String(item.id) === bookClinicId);
+    bookingWizard.resetBooking();
+    if (clinic) bookingWizard.updateBookingData('clinicId', clinic.id);
+    setShowBookingWizard(true);
+    setSearchParams({}, { replace: true });
+    // bookingWizard's identity changes every render; the inputs above are the triggers.
+  }, [bookClinicId, bookingClinics]);
 
   // Event handlers
   const handleAppointmentClick = useCallback((appointment: Appointment) => {
@@ -268,8 +285,8 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
       >
         {/* Title and Today's Count */}
         <Box>
-          <Typography variant='h5' sx={{ fontWeight: 'medium', mb: 0.5 }}>
-            {userRole === 'PATIENT' ? 'My Appointments' : 'Appointments'}
+          <Typography variant='h5' component='h1' sx={{ mb: 0.5 }}>
+            {userRole === 'PATIENT' ? 'Your appointments' : 'Appointments'}
           </Typography>
           <Typography variant='body2' color='text.secondary'>
             {todaysAppointments.length} appointment{todaysAppointments.length !== 1 ? 's' : ''}{' '}
@@ -307,7 +324,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
               onClick={() => handleNewAppointment()}
               size={isMobile ? 'small' : 'medium'}
             >
-              {isMobile ? 'Book' : 'Book Appointment'}
+              {isMobile ? 'Book' : 'Book a visit'}
             </Button>
           )}
         </Box>
@@ -340,7 +357,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
         maxWidth='sm'
         fullWidth
       >
-        <DialogTitle>Cancel Appointment</DialogTitle>
+        <DialogTitle>Cancel appointment</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -361,7 +378,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCancellation} color='inherit'>
-            Keep Appointment
+            Keep appointment
           </Button>
           <Button
             onClick={handleConfirmCancellation}
@@ -369,7 +386,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
             variant='contained'
             disabled={appointmentActions.loading}
           >
-            {appointmentActions.loading ? 'Cancelling...' : 'Cancel Appointment'}
+            {appointmentActions.loading ? 'Cancelling...' : 'Cancel appointment'}
           </Button>
         </DialogActions>
       </Dialog>
