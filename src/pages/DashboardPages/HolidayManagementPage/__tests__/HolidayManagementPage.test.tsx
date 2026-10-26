@@ -71,7 +71,7 @@ describe('HolidayManagementPage', () => {
     renderWithProviders(<HolidayManagementPage />);
 
     // Check if the main heading is present
-    expect(await screen.findByText('Holiday Management')).toBeInTheDocument();
+    expect(await screen.findByText('Holidays and closures')).toBeInTheDocument();
 
     // Check if the add holiday button is present (on desktop)
     await waitFor(() => {

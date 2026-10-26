@@ -1,26 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Chip,
-  Alert,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import {
-  People as PeopleIcon,
-  PersonAdd as PersonAddIcon,
-} from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router';
+import { Alert, Box, Chip, CircularProgress, Link, Typography } from '@mui/material';
 import { roleMapping } from '../../../utils/dictionary';
-import {
-  getResponsivePadding,
-  getResponsiveMargin,
-  getTouchFriendlyButtonProps,
-  TOUCH_TARGETS
-} from '../../../utils/mobileOptimization';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
+import EmptyState from '../../../components/Dashboard/shared/EmptyState';
 import api from '../../../services';
 import { UserRole, User } from '../../../types';
 
@@ -32,11 +15,7 @@ interface UserManagementPageProps {
 /**
  * UserManagementPage - Unified user/staff management page
  *
- * Features:
- * - System Users view for System Admin
- * - Staff Management view for Clinic Admin
- * - Reusable user list functionality
- * - Responsive design with mobile optimization
+ * System admins see every account; clinic admins see their clinic's staff.
  */
 const UserManagementPage: React.FC<UserManagementPageProps> = ({ 
   userRole = 'SYSTEM_ADMIN', 
@@ -45,9 +24,6 @@ const UserManagementPage: React.FC<UserManagementPageProps> = ({
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Load users data
   useEffect(() => {
@@ -86,220 +62,80 @@ const UserManagementPage: React.FC<UserManagementPageProps> = ({
     loadUsers();
   }, [userRole, clinicId]);
 
-  /**
-   * Render individual user item with responsive design
-   */
-  const renderUserItem = (user: User, index: number) => (
-    <Card
-      key={user.id || index}
-      sx={{
-        mb: getResponsiveMargin('small'),
-        borderRadius: { xs: 1, sm: 2 },
-        minHeight: { xs: TOUCH_TARGETS.MINIMUM, sm: 'auto' }
-      }}
-    >
-      <CardContent sx={{ p: getResponsivePadding('medium') }}>
-        <Typography
-          variant={isMobile ? "subtitle2" : "subtitle1"}
-          sx={{
-            fontWeight: 'medium',
-            mb: { xs: 0.5, sm: 1 },
-            fontSize: { xs: '1rem', sm: '1.1rem' }
-          }}
-        >
-          {`${user.firstName || 'Unknown'} ${user.lastName || ''}`}
-        </Typography>
-
-        <Box sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 0.5, sm: 2 },
-          mb: { xs: 1, sm: 0.5 }
-        }}>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-          >
-            {user.roles
-              ? user.roles.map(role => roleMapping[role] || role).join(', ')
-              : 'No role assigned'
-            }
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-          >
-            {user.email}
-          </Typography>
-        </Box>
-
-        {user.clinicName && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              mb: { xs: 1, sm: 0.5 },
-              fontSize: { xs: '0.75rem', sm: '0.8rem' }
-            }}
-          >
-            Clinic: {user.clinicName}
-          </Typography>
-        )}
-
-        <Box sx={{ mt: { xs: 1, sm: 0.5 } }}>
-          <Chip
-            label={user.isActive !== undefined ? (user.isActive ? 'Active' : 'Inactive') : 'Active'}
-            color={user.isActive !== undefined ? (user.isActive ? 'success' : 'error') : 'success'}
-            size={isMobile ? "small" : "medium"}
-            sx={{
-              fontSize: { xs: '0.75rem', sm: '0.8rem' },
-              height: { xs: TOUCH_TARGETS.MINIMUM - 16, sm: 'auto' }
-            }}
-          />
-        </Box>
-      </CardContent>
-    </Card>
-  );
-
-  /**
-   * Get role-specific button text
-   */
-  const getAddButtonText = (): string => {
-    switch (userRole) {
-      case 'SYSTEM_ADMIN':
-        return 'Add New User';
-      case 'CLINIC_ADMIN':
-        return 'Add New Staff';
-      default:
-        return 'Add User';
-    }
-  };
-
-  /**
-   * Get role-specific empty message
-   */
-  const getEmptyMessage = (): string => {
-    switch (userRole) {
-      case 'SYSTEM_ADMIN':
-        return 'No system users found.';
-      case 'CLINIC_ADMIN':
-        return 'No staff members found.';
-      default:
-        return 'No users found.';
-    }
-  };
-
-  if (loading) {
-    return (
-      <Box sx={{ p: getResponsivePadding('medium') }}>
-        <Alert
-          severity="info"
-          sx={{
-            fontSize: { xs: '0.85rem', sm: '0.9rem' },
-            '& .MuiAlert-message': {
-              fontSize: 'inherit'
-            }
-          }}
-        >
-          Loading users...
-        </Alert>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box sx={{ p: getResponsivePadding('medium') }}>
-        <Alert
-          severity="error"
-          sx={{
-            fontSize: { xs: '0.85rem', sm: '0.9rem' },
-            '& .MuiAlert-message': {
-              fontSize: 'inherit'
-            }
-          }}
-        >
-          {error}
-        </Alert>
-      </Box>
-    );
-  }
+  const isSystemAdmin = userRole === 'SYSTEM_ADMIN';
 
   return (
-    <Box sx={{
-      p: getResponsivePadding('medium'),
-      height: '100%',
-      maxWidth: { xs: '100%', sm: '100%', md: '100%' }
-    }}>
-      {/* Page Header */}
-      <Box sx={{
-        display: 'flex',
-        flexDirection: { xs: 'column', sm: 'row' },
-        justifyContent: 'space-between',
-        alignItems: { xs: 'flex-start', sm: 'center' },
-        gap: { xs: 2, sm: 3 },
-        mb: getResponsiveMargin('medium')
-      }}>
-        <Typography
-          variant={isMobile ? "h5" : "h4"}
-          sx={{
-            fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: { xs: 1, sm: 1.5 }
-          }}
-        >
-          <PeopleIcon sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }} />
-          {userRole === 'SYSTEM_ADMIN' ? 'System Users' : 'Staff Management'}
-        </Typography>
-
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<PersonAddIcon />}
-          sx={{
-            ...getTouchFriendlyButtonProps('medium', isMobile),
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            alignSelf: { xs: 'stretch', sm: 'auto' }
-          }}
-        >
-          {isMobile ? 'Add' : getAddButtonText()}
-        </Button>
-      </Box>
-
-      {/* Users List */}
-      <Box sx={{
-        height: 'calc(100% - 120px)',
-        '& .MuiCard-root': {
-          borderRadius: { xs: 1, sm: 2 }
+    <>
+      <PageHeader
+        title={isSystemAdmin ? 'All users' : 'Your team'}
+        description={
+          isSystemAdmin ? (
+            'Every account on DentistDSS, across all clinics.'
+          ) : (
+            <>
+              Dentists and receptionists at your clinic. New staff sign up as clinic staff, then you approve them
+              under <Link component={RouterLink} to="/approvals">Approvals</Link>.
+            </>
+          )
         }
-      }}>
-        {users.length === 0 ? (
-          <Alert
-            severity="info"
-            sx={{
-              fontSize: { xs: '0.85rem', sm: '0.9rem' },
-              '& .MuiAlert-message': {
-                fontSize: 'inherit'
-              }
-            }}
-          >
-            {getEmptyMessage()}
-          </Alert>
-        ) : (
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: getResponsiveMargin('small')
-          }}>
-            {users.map((user, index) => renderUserItem(user, index))}
-          </Box>
-        )}
-      </Box>
-    </Box>
+      />
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress aria-label="Loading users" />
+        </Box>
+      ) : error ? (
+        <Alert severity="error">{error}</Alert>
+      ) : users.length === 0 ? (
+        <EmptyState title={isSystemAdmin ? 'No users yet' : 'No staff yet'}>
+          {isSystemAdmin
+            ? 'Accounts show up here as people sign up.'
+            : 'Staff show up here once you approve their sign-up.'}
+        </EmptyState>
+      ) : (
+        <Box
+          component="ul"
+          sx={{ m: 0, p: 0, listStyle: 'none', border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper' }}
+        >
+          {users.map((user, index) => (
+            <Box
+              component="li"
+              key={user.id || index}
+              sx={{
+                px: { xs: 2, sm: 3 },
+                py: 2,
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+                '& + &': { borderTop: 1, borderColor: 'divider' },
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 650 }}>
+                  {`${user.firstName || 'Unknown'} ${user.lastName || ''}`.trim()}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', overflowWrap: 'anywhere' }}>
+                  {user.email}
+                  {isSystemAdmin && user.clinicName ? `, ${user.clinicName}` : ''}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Typography variant="body2">
+                  {user.roles?.length ? user.roles.map((role) => roleMapping[role] || role).join(', ') : 'No role'}
+                </Typography>
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={user.isActive === false ? 'Inactive' : 'Active'}
+                  color={user.isActive === false ? 'default' : 'success'}
+                />
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      )}
+    </>
   );
 };
 

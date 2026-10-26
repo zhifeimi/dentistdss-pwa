@@ -57,7 +57,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         mr: isUser ? 0 : 1,
       }}>
         <Avatar sx={{ 
-          bgcolor: isUser ? 'primary.main' : 'secondary.main',
+          bgcolor: isUser ? 'action.selected' : 'primary.main',
+          color: isUser ? 'text.primary' : 'primary.contrastText',
           width: 32,
           height: 32,
         }}>

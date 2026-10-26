@@ -1,18 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Alert,
-  CircularProgress,
-  Typography,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import { Settings as SettingsIcon } from '@mui/icons-material';
+import { Alert, Box, CircularProgress } from '@mui/material';
 import { useAuth } from '../../../context/auth';
-import {
-  getResponsivePadding,
-  getResponsiveMargin
-} from '../../../utils/mobileOptimization';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import api from '../../../services';
 import SystemSettingsSection from './components/SystemSettingsSection';
 import ClinicInformationForm from './components/ClinicInformationForm';
@@ -25,11 +14,7 @@ interface SettingsPageProps {
 /**
  * SettingsPage - Unified settings page for admin roles
  *
- * Features:
- * - Clinic settings for Clinic Admin
- * - System settings for System Admin
- * - Role-specific configuration options
- * - Responsive design with mobile optimization
+ * Clinic admins edit their clinic's details; system admins edit system settings.
  */
 const SettingsPage: React.FC<SettingsPageProps> = ({ userRole = 'CLINIC_ADMIN' }) => {
   const [clinicDetails, setClinicDetails] = useState<Clinic | null>(null);
@@ -37,8 +22,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ userRole = 'CLINIC_ADMIN' }
   const [error, setError] = useState<string>('');
 
   const { currentUser } = useAuth() || {};
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Load settings data
   useEffect(() => {
@@ -92,108 +75,32 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ userRole = 'CLINIC_ADMIN' }
     <SystemSettingsSection />
   );
 
-  if (loading) {
-    return (
-      <Box sx={{ p: getResponsivePadding('medium') }}>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: { xs: 200, sm: 400 },
-            flexDirection: 'column',
-            gap: { xs: 1, sm: 2 }
-          }}
-        >
-          <CircularProgress size={isMobile ? 32 : 40} />
-          <Alert
-            severity="info"
-            sx={{
-              border: 'none',
-              backgroundColor: 'transparent',
-              fontSize: { xs: '0.85rem', sm: '0.9rem' },
-              '& .MuiAlert-message': {
-                fontSize: 'inherit'
-              }
-            }}
-          >
-            Loading settings...
-          </Alert>
-        </Box>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box sx={{ p: getResponsivePadding('medium') }}>
-        <Alert
-          severity="error"
-          sx={{
-            fontSize: { xs: '0.85rem', sm: '0.9rem' },
-            '& .MuiAlert-message': {
-              fontSize: 'inherit'
-            }
-          }}
-        >
-          {error}
-        </Alert>
-      </Box>
-    );
-  }
+  const isClinicAdmin = userRole === 'CLINIC_ADMIN';
 
   return (
-    <Box sx={{
-      p: getResponsivePadding('medium'),
-      height: '100%',
-      maxWidth: { xs: '100%', sm: '100%', md: '100%' }
-    }}>
-      {/* Page Title */}
-      <Typography
-        variant={isMobile ? "h5" : "h4"}
-        gutterBottom
-        sx={{
-          fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-          fontWeight: 600,
-          mb: getResponsiveMargin('medium'),
-          display: 'flex',
-          alignItems: 'center',
-          gap: { xs: 1, sm: 1.5 }
-        }}
-      >
-        <SettingsIcon sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }} />
-        {userRole === 'CLINIC_ADMIN' ? 'Clinic Settings' : 'System Settings'}
-      </Typography>
-
-      {/* Settings Content */}
-      <Box sx={{
-        height: 'calc(100% - 80px)',
-        '& .MuiCard-root': {
-          borderRadius: { xs: 1, sm: 2 }
-        },
-        '& .MuiTextField-root': {
-          '& .MuiInputBase-input': {
-            fontSize: { xs: '0.9rem', sm: '1rem' }
-          }
+    <>
+      <PageHeader
+        title={isClinicAdmin ? 'Clinic details' : 'System settings'}
+        description={
+          isClinicAdmin
+            ? 'What patients see when they search for and book your clinic.'
+            : 'Settings that apply to every clinic on DentistDSS.'
         }
-      }}>
-        {userRole === 'CLINIC_ADMIN' && renderClinicSettings()}
-        {userRole === 'SYSTEM_ADMIN' && renderSystemSettings()}
-        {!['CLINIC_ADMIN', 'SYSTEM_ADMIN'].includes(userRole) && (
-          <Alert
-            severity="warning"
-            sx={{
-              fontSize: { xs: '0.85rem', sm: '0.9rem' },
-              '& .MuiAlert-message': {
-                fontSize: 'inherit'
-              }
-            }}
-          >
-            Settings not available for this role.
-          </Alert>
-        )}
-      </Box>
-    </Box>
+      />
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress aria-label="Loading settings" />
+        </Box>
+      ) : error ? (
+        <Alert severity="error">{error}</Alert>
+      ) : isClinicAdmin ? (
+        renderClinicSettings()
+      ) : userRole === 'SYSTEM_ADMIN' ? (
+        renderSystemSettings()
+      ) : (
+        <Alert severity="warning">Settings aren't available for this role.</Alert>
+      )}
+    </>
   );
 };
 

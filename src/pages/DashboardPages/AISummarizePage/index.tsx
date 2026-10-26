@@ -14,15 +14,15 @@ import {
 import {
   Summarize as SummarizeIcon,
   Description as DocumentIcon,
-  Save as SaveIcon,
+  ContentCopy as CopyIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
 import useAIChat from '../../../hooks/useAIChat';
-import ChatHeader from '../../../components/shared/ChatComponents/ChatHeader';
 import ChatMessage from '../../../components/shared/ChatComponents/ChatMessage';
 import ChatInput from '../../../components/shared/ChatComponents/ChatInput';
 import { getWelcomeMessage, getQuickActions } from '../../../utils/chatUtils';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import dayjs from '../../../utils/dayjs';
 
 interface CustomEvent extends Event {
@@ -65,21 +65,24 @@ const AISummarizePage: React.FC = () => {
   // The newest AI reply after the welcome message, however it was sent
   const lastSummary = messages.slice(1).reverse().find((message) => message.type === 'ai')?.content ?? '';
 
-  // Save summary (placeholder - would integrate with patient records)
-  const handleSaveSummary = useCallback(() => {
+  // Copy the summary so the dentist can paste it into the patient's record.
+  // Saving it to a record directly needs the appointment it belongs to, which
+  // this page doesn't know.
+  const handleCopySummary = useCallback(async () => {
     if (!lastSummary) return;
-    
-    // TODO: Integrate with patient records API
-    console.log('Saving summary:', lastSummary);
-    
-    // Show success notification
-    const event = new CustomEvent('show-snackbar', {
-      detail: {
-        message: 'Summary saved to patient records',
-        severity: 'success',
-      },
-    }) as CustomEvent;
-    window.dispatchEvent(event);
+
+    let copied = true;
+    try {
+      await navigator.clipboard.writeText(lastSummary);
+    } catch {
+      copied = false;
+    }
+
+    window.dispatchEvent(new CustomEvent('show-snackbar', {
+      detail: copied
+        ? { message: 'Summary copied', severity: 'success' }
+        : { message: "Couldn't copy the summary. Select the text and copy it instead.", severity: 'error' },
+    }));
   }, [lastSummary]);
 
   // Download summary
@@ -98,42 +101,17 @@ const AISummarizePage: React.FC = () => {
   }, [lastSummary]);
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <SummarizeIcon color="primary" />
-        AI Documentation Assistant
-      </Typography>
+    <>
+      <PageHeader
+        title="Note summaries"
+        description="Paste appointment or clinical notes to get a structured summary. Read it through before you use it."
+        actions={<Button variant="outlined" onClick={() => clearConversation()}>New conversation</Button>}
+      />
 
-      <Paper elevation={2} sx={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
-        <ChatHeader
-          icon={<DocumentIcon color="primary" />}
-          title="AI Summarization - Clinical Documentation"
-          subtitle="Provide appointment details, clinical notes, or treatment information for AI-powered summarization"
-          onClear={() => clearConversation()}
-          additionalActions={
-            lastSummary && (
-              <>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSaveSummary}
-                >
-                  Save
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<DownloadIcon />}
-                  onClick={handleDownloadSummary}
-                >
-                  Download
-                </Button>
-              </>
-            )
-          }
-        />
-
+      <Paper
+        variant="outlined"
+        sx={{ height: { xs: '62dvh', md: '70vh' }, minHeight: 420, display: 'flex', flexDirection: 'column', borderRadius: 2, overflow: 'hidden' }}
+      >
         {/* Messages Area */}
         <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
           {error && (
@@ -143,16 +121,16 @@ const AISummarizePage: React.FC = () => {
           )}
 
           <List sx={{ width: '100%' }}>
-            {messages.map((message) => {
-              // Special handling for AI summary messages
-              if (message.type === 'ai' && message.content) {
+            {messages.map((message, index) => {
+              // Replies after the welcome message are summaries
+              if (index > 0 && message.type === 'ai' && message.content) {
                 return (
                   <Box key={message.id} sx={{ mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                    <Card sx={{ maxWidth: '70%', elevation: 2 }}>
+                    <Card variant="outlined" sx={{ maxWidth: { xs: '100%', md: '80%' } }}>
                       <CardContent>
-                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <DocumentIcon />
-                          Clinical Summary
+                        <Typography variant="subtitle1" component="h2" gutterBottom sx={{ fontWeight: 650, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <DocumentIcon fontSize="small" color="primary" />
+                          Summary
                         </Typography>
                         <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                           {message.content}
@@ -172,8 +150,8 @@ const AISummarizePage: React.FC = () => {
                       </CardContent>
                       {!message.isStreaming && message.content && (
                         <CardActions>
-                          <Button size="small" startIcon={<SaveIcon />} onClick={handleSaveSummary}>
-                            Save to Records
+                          <Button size="small" startIcon={<CopyIcon />} onClick={handleCopySummary}>
+                            Copy summary
                           </Button>
                           <Button size="small" startIcon={<DownloadIcon />} onClick={handleDownloadSummary}>
                             Download
@@ -204,13 +182,13 @@ const AISummarizePage: React.FC = () => {
           onChange={(e) => setInputValue(e.target.value)}
           onSend={sendMessage}
           onKeyPress={handleKeyPress}
-          placeholder="Paste appointment notes, clinical observations, or treatment details for summarization..."
+          placeholder="Paste appointment notes, clinical observations, or treatment details for summarization…"
           isLoading={isLoading}
           quickActions={quickActions}
           maxRows={6}
         />
       </Paper>
-    </Box>
+    </>
   );
 };
 

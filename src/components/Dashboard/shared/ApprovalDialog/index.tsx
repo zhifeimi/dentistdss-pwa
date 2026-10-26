@@ -63,7 +63,7 @@ const ApprovalDialog: React.FC<ApprovalDialogProps> = ({
   approveText = 'Approve',
   rejectText = 'Reject',
   cancelText = 'Cancel',
-  rejectionReasonLabel = 'Reason for Rejection (if any)',
+  rejectionReasonLabel = 'Reason for rejecting (optional)',
   disabled = false,
   ...otherProps
 }) => {

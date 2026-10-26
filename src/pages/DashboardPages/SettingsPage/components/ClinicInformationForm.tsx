@@ -3,13 +3,11 @@ import {
   Box,
   Card,
   CardContent,
-  CardHeader,
   Grid,
   TextField,
   Button,
   Alert,
   CircularProgress,
-  Divider,
   MenuItem,
   FormControl,
   InputLabel,
@@ -70,14 +68,14 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
   // Get field label for error messages
   const getFieldLabel = (field: keyof ClinicFormData): string => {
     const labels: Record<keyof ClinicFormData, string> = {
-      name: 'Clinic Name',
+      name: 'Clinic name',
       address: 'Address',
       city: 'City',
-      state: 'State/Province',
-      zipCode: 'ZIP/Postal Code',
+      state: 'State',
+      zipCode: 'Postcode',
       country: 'Country',
-      phoneNumber: 'Phone Number',
-      email: 'Email Address',
+      phoneNumber: 'Phone',
+      email: 'Email',
     };
     return labels[field] || field;
   };
@@ -238,7 +236,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
       // Show success notification
       window.dispatchEvent(new CustomEvent('show-snackbar', {
         detail: {
-          message: 'Clinic information updated successfully!',
+          message: 'Clinic details saved',
           severity: 'success'
         }
       }));
@@ -302,23 +300,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
 
   return (
     <Card>
-      <CardHeader
-        title="Clinic Information"
-        subheader="Update your clinic's contact information and details"
-        sx={{
-          pb: 1,
-          '& .MuiCardHeader-title': {
-            fontSize: { xs: '1.25rem', sm: '1.5rem' },
-            fontWeight: 600,
-          },
-          '& .MuiCardHeader-subheader': {
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            mt: 0.5,
-          },
-        }}
-      />
-      <Divider />
-      <CardContent sx={{ pt: 3 }}>
+      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -331,7 +313,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Clinic Name"
+                label="Clinic name"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange('name')}
@@ -348,7 +330,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Phone Number"
+                label="Phone"
                 name="phoneNumber"
                 type="tel"
                 value={formData.phoneNumber}
@@ -366,7 +348,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Email Address"
+                label="Email"
                 name="email"
                 type="email"
                 value={formData.email}
@@ -384,7 +366,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
             <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
-                label="Street Address"
+                label="Street address"
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange('address')}
@@ -419,7 +401,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <TextField
                 fullWidth
-                label="State/Province"
+                label="State"
                 name="state"
                 value={formData.state}
                 onChange={handleInputChange('state')}
@@ -436,7 +418,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <TextField
                 fullWidth
-                label="ZIP/Postal Code"
+                label="Postcode"
                 name="zipCode"
                 value={formData.zipCode}
                 onChange={handleInputChange('zipCode')}
@@ -500,7 +482,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
               startIcon={<RefreshIcon />}
               sx={{ order: { xs: 2, sm: 1 } }}
             >
-              Reset Changes
+              Discard changes
             </Button>
             
             <Button
@@ -510,7 +492,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
               startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
               sx={{ order: { xs: 1, sm: 2 } }}
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving…' : 'Save changes'}
             </Button>
           </Box>
         </Box>

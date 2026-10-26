@@ -98,23 +98,23 @@ const generateRecurringDates = (slot: AvailabilitySlot, startDate: Date, endDate
 const getEventColor = (slot: AvailabilitySlot): EventColor => {
   if (slot.isBlocked) {
     return {
-      backgroundColor: '#f44336', // Red
-      borderColor: '#d32f2f',
+      backgroundColor: '#B42318', // error
+      borderColor: '#8F1C13',
       color: '#ffffff'
     };
   }
   
   if (slot.isActive) {
     return {
-      backgroundColor: '#4caf50', // Green
-      borderColor: '#388e3c',
+      backgroundColor: '#0B5D52', // primary (scrubs)
+      borderColor: '#07463E',
       color: '#ffffff'
     };
   }
   
   return {
-    backgroundColor: '#9e9e9e', // Gray
-    borderColor: '#757575',
+    backgroundColor: '#6E7F7A', // steel
+    borderColor: '#52645F',
     color: '#ffffff'
   };
 };

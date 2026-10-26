@@ -107,12 +107,12 @@ const MapSection = React.memo<MapSectionProps>(({
     rotateControl: false,
     fullscreenControl: !isMobile,
     gestureHandling: isMobile ? 'cooperative' : 'auto',
+    // Muted base map so clinic markers carry the color.
     styles: [
-      {
-        featureType: 'poi',
-        elementType: 'labels',
-        stylers: [{ visibility: isMobile ? 'off' : 'on' }]
-      }
+      { stylers: [{ saturation: -55 }] },
+      { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      { featureType: 'poi.medical', elementType: 'labels', stylers: [{ visibility: 'on' }] },
+      { featureType: 'transit', stylers: [{ visibility: 'simplified' }] },
     ]
   });
 
@@ -173,7 +173,7 @@ const MapSection = React.memo<MapSectionProps>(({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              bgcolor: 'secondary.light',
+              bgcolor: 'action.hover',
             }}
           >
             <CircularProgress />

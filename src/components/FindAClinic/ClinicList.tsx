@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  Divider,
-  CircularProgress,
-  List,
-} from '@mui/material';
+import { Box, Button, Skeleton, Typography } from '@mui/material';
 import ClinicCard from './ClinicCard';
 import type { ClinicSearchResult } from '../../types/api';
 
@@ -14,149 +7,93 @@ interface ClinicListProps {
   clinics: ClinicSearchResult[];
   selectedClinic?: ClinicSearchResult | null;
   loading: boolean;
+  /** The search request failed: say so instead of "no matches" */
+  failed?: boolean;
+  onRetry?: () => void;
+  hasQuery: boolean;
   isMobile: boolean;
   onClinicSelect: (clinic: ClinicSearchResult) => void;
 }
 
-/**
- * ClinicList Component
- *
- * Responsive list of clinic search results with:
- * - Mobile-first responsive design
- * - Loading and empty states
- * - Accessible list structure
- * - Optimized scrolling for mobile
- */
+const Message: React.FC<{ title: string; text: string; action?: React.ReactNode }> = ({ title, text, action }) => (
+  <Box
+    sx={{
+      p: 3,
+      border: 1,
+      borderColor: 'divider',
+      borderStyle: 'dashed',
+      borderRadius: 2,
+    }}
+  >
+    <Typography variant="subtitle1">{title}</Typography>
+    <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
+      {text}
+    </Typography>
+    {action && <Box sx={{ mt: 1.5 }}>{action}</Box>}
+  </Box>
+);
+
+/** ClinicList — search results with loading, empty and no-match states. */
 const ClinicList = React.memo<ClinicListProps>(({
   clinics,
   selectedClinic,
   loading,
-  isMobile,
-  onClinicSelect
-}) => {
-
-  // Responsive list height
-  const getListHeight = (): string => {
-    if (isMobile) return 'auto';
-    return '600px';
-  };
-
-  return (
-    <Paper
-      elevation={3}
-      sx={{
-        height: getListHeight(),
-        overflow: isMobile ? 'visible' : 'auto',
-        borderRadius: 2,
-        width: '100%', // Ensure full width within Grid item
-        minWidth: '100%', // Prevent width collapse
-        maxWidth: '100%', // Prevent overflow
-        display: 'block',
-        boxSizing: 'border-box',
-        flex: '1 1 auto',
-      }}
+  failed = false,
+  onRetry,
+  hasQuery,
+  onClinicSelect,
+}) => (
+  <Box component="section" aria-labelledby="clinic-results-heading" aria-busy={loading}>
+    <Typography
+      id="clinic-results-heading"
+      variant="subtitle1"
+      component="h2"
+      sx={{ mb: 1.5 }}
+      aria-live="polite"
     >
-      <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-        {/* Header */}
-        <Typography
-          variant="h6"
-          component="h2"
-          gutterBottom
-          sx={{
-            fontSize: { xs: '1.1rem', sm: '1.25rem' },
-            fontWeight: 600,
-          }}
-        >
-          Search Results ({clinics.length})
-        </Typography>
+      {loading
+        ? 'Searching clinics…'
+        : failed
+        ? 'Clinics'
+        : hasQuery
+        ? `${clinics.length} ${clinics.length === 1 ? 'clinic' : 'clinics'}`
+        : 'Clinics'}
+    </Typography>
 
-        <Divider sx={{ mb: 2 }} />
-
-        {/* Loading State */}
-        {loading ? (
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              py: { xs: 3, sm: 4 },
-              minHeight: { xs: 120, sm: 160 },
-            }}
-          >
-            <Box sx={{ textAlign: 'center' }}>
-              <CircularProgress size={isMobile ? 32 : 40} />
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2 }}
-              >
-                Searching for clinics...
-              </Typography>
-            </Box>
-          </Box>
-        ) : clinics.length === 0 ? (
-          /* Empty State */
-          <Box
-            sx={{
-              py: { xs: 3, sm: 4 },
-              textAlign: 'center',
-              minHeight: { xs: 120, sm: 160 },
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Box>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{
-                  mb: 1,
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
-                }}
-              >
-                No clinics found
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{
-                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                }}
-              >
-                Try searching with different keywords or check your spelling.
-              </Typography>
-            </Box>
-          </Box>
-        ) : (
-          /* Clinic List */
-          <List
-            sx={{
-              width: '100%',
-              p: 0,
-              '& .MuiListItem-root': {
-                p: 0,
-              }
-            }}
-            role="list"
-            aria-label="Clinic search results"
-          >
-            {clinics.map((clinic, index) => (
-              <ClinicCard
-                key={clinic.id || index}
-                clinic={clinic}
-                isSelected={selectedClinic?.id === clinic.id}
-                onClick={() => onClinicSelect(clinic)}
-                isMobile={isMobile}
-                isLast={index === clinics.length - 1}
-              />
-            ))}
-          </List>
-        )}
+    {loading ? (
+      <Box sx={{ display: 'grid', gap: 1.5 }}>
+        {[0, 1, 2].map((i) => <Skeleton key={i} variant="rounded" height={148} />)}
       </Box>
-    </Paper>
-  );
-});
+    ) : failed ? (
+      <Message
+        title="Couldn't search clinics"
+        text="Something went wrong on our side or with your connection. Your search is still there; try again."
+        action={onRetry && <Button variant="outlined" size="small" onClick={onRetry}>Retry</Button>}
+      />
+    ) : !hasQuery ? (
+      <Message
+        title="Start with a suburb or clinic name"
+        text="Type in the search box above and matching clinics will appear here."
+      />
+    ) : clinics.length === 0 ? (
+      <Message
+        title="No clinics match that search"
+        text="Check the spelling, or try a nearby suburb or a broader treatment such as “check-up”."
+      />
+    ) : (
+      <Box component="ul" aria-label="Clinic search results" sx={{ display: 'grid', gap: 1.5, p: 0, m: 0 }}>
+        {clinics.map((clinic, index) => (
+          <ClinicCard
+            key={clinic.id || index}
+            clinic={clinic}
+            isSelected={selectedClinic?.id === clinic.id}
+            onClick={() => onClinicSelect(clinic)}
+          />
+        ))}
+      </Box>
+    )}
+  </Box>
+));
 
 ClinicList.displayName = 'ClinicList';
 

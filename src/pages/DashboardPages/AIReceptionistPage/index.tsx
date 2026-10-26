@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   Box,
+  Button,
   Paper,
   Tabs,
   Tab,
@@ -15,10 +16,10 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
 import useAIChat from '../../../hooks/useAIChat';
-import ChatHeader from '../../../components/shared/ChatComponents/ChatHeader';
 import ChatMessage from '../../../components/shared/ChatComponents/ChatMessage';
 import ChatInput from '../../../components/shared/ChatComponents/ChatInput';
 import { getWelcomeMessage, getQuickActions } from '../../../utils/chatUtils';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import {
   getResponsivePadding,
   getResponsiveMargin,
@@ -81,19 +82,27 @@ const AIReceptionistPage: React.FC = () => {
   const quickActions = getQuickActions(currentChatType, setQuickInput);
 
   return (
-    <Box sx={{
-      p: getResponsivePadding('medium'),
-      maxWidth: { xs: '100%', sm: '100%', md: 1000 },
-      mx: 'auto',
-      height: '100%'
-    }}>
+    <>
+      <PageHeader
+        title="Ask Dentabot"
+        description="Ask about appointments, opening hours and services, or describe a symptom under Symptom check. Dentabot doesn't replace seeing a dentist."
+        actions={
+          <Button
+            variant="outlined"
+            onClick={() => clearConversation(getWelcomeMessage(currentChatType, 'PATIENT', currentUser))}
+          >
+            New conversation
+          </Button>
+        }
+      />
       <Paper
-        elevation={2}
+        variant="outlined"
         sx={{
-          minHeight: { xs: 'calc(100vh - 160px)', sm: 'calc(100vh - 140px)', md: '78vh' },
+          height: { xs: '62dvh', md: '70vh' },
+          minHeight: 420,
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: { xs: 1, sm: 2 },
+          borderRadius: 2,
           overflow: 'hidden'
         }}
       >
@@ -121,31 +130,10 @@ const AIReceptionistPage: React.FC = () => {
             />
             <Tab
               icon={<TriageIcon />}
-              label={isMobile ? "Triage" : "AI Triage"}
+              label="Symptom check"
               iconPosition={isMobile ? "top" : "start"}
             />
           </Tabs>
-
-          <ChatHeader
-            icon={activeTab === 0 ? <ReceptionistIcon color="primary" /> : <TriageIcon color="primary" />}
-            title={activeTab === 0 ?
-              (isMobile ? "Reception" : "Receptionist Mode") :
-              (isMobile ? "Triage" : "Triage Mode")
-            }
-            subtitle={activeTab === 0 ?
-              (isMobile ?
-                "Appointments & services" :
-                "Ask about appointments, clinic services, or general information"
-              ) :
-              (isMobile ?
-                "Describe your symptoms" :
-                "Describe your symptoms or dental concerns for assessment"
-              )
-            }
-            onClear={clearConversation}
-            showClearButton
-            isMobile={isMobile}
-          />
         </Box>
 
         {/* Messages Area */}
@@ -197,12 +185,12 @@ const AIReceptionistPage: React.FC = () => {
           onKeyPress={handleKeyPress}
           placeholder={activeTab === 0 ?
             (isMobile ?
-              "Ask about appointments..." :
-              "Ask about appointments, clinic services, or general information..."
+              "Ask about appointments…" :
+              "Ask about appointments, clinic services, or general information…"
             ) :
             (isMobile ?
-              "Describe symptoms..." :
-              "Describe your symptoms or dental concerns..."
+              "Describe symptoms…" :
+              "Describe your symptoms or dental concerns…"
             )
           }
           isLoading={isLoading}
@@ -210,7 +198,7 @@ const AIReceptionistPage: React.FC = () => {
           isMobile={isMobile}
         />
       </Paper>
-    </Box>
+    </>
   );
 };
 

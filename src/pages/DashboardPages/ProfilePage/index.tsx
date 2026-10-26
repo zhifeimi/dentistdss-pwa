@@ -27,6 +27,7 @@ import {
   TOUCH_TARGETS
 } from '../../../utils/mobileOptimization';
 import api from '../../../services';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 
 interface DentistProfile {
   name?: string;
@@ -97,7 +98,7 @@ const ProfilePage: React.FC = () => {
             }
           }}
         >
-          Loading profile...
+          Loading profile…
         </Alert>
       </Box>
     );
@@ -122,27 +123,8 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <Box sx={{
-      p: getResponsivePadding('medium'),
-      height: '100%',
-      maxWidth: { xs: '100%', sm: '100%', md: '100%' }
-    }}>
-      {/* Page Title */}
-      <Typography
-        variant={isMobile ? "h5" : "h4"}
-        gutterBottom
-        sx={{
-          fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-          fontWeight: 600,
-          mb: getResponsiveMargin('medium'),
-          display: 'flex',
-          alignItems: 'center',
-          gap: { xs: 1, sm: 1.5 }
-        }}
-      >
-        <PersonIcon sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }} />
-        My Profile
-      </Typography>
+    <Box>
+      <PageHeader title="Your profile" description="Your professional details at the clinic." />
 
       <Grid container spacing={getResponsiveMargin('medium')}>
         <Grid size={{ xs: 12, md: 8, lg: 6 }}>
@@ -166,7 +148,7 @@ const ProfilePage: React.FC = () => {
                       fontWeight: 600
                     }}
                   >
-                    Basic Information
+                    Basic information
                   </Typography>
 
                   <List dense={isMobile} sx={{ mb: getResponsiveMargin('medium') }}>
@@ -306,7 +288,7 @@ const ProfilePage: React.FC = () => {
                           fontWeight: 600
                         }}
                       >
-                        Professional Details
+                        Professional details
                       </Typography>
 
                       <List dense={isMobile}>
@@ -372,7 +354,7 @@ const ProfilePage: React.FC = () => {
                                     variant="subtitle2"
                                     sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
                                   >
-                                    License Number
+                                    License number
                                   </Typography>
                                 </Box>
                               }
@@ -413,7 +395,7 @@ const ProfilePage: React.FC = () => {
                                     variant="subtitle2"
                                     sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
                                   >
-                                    Years of Experience
+                                    Years of experience
                                   </Typography>
                                 </Box>
                               }

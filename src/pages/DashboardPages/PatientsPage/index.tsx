@@ -16,6 +16,7 @@ import {
   TOUCH_TARGETS
 } from '../../../utils/mobileOptimization';
 import api from '../../../services';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 
 interface Patient {
   id: string | number;
@@ -100,7 +101,7 @@ const PatientsPage: React.FC = () => {
         >
           {patient.name || 
            patient.patientName || 
-           (patient.firstName && patient.lastName ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient')}
+           (patient.firstName && patient.lastName ? `${patient.firstName} ${patient.lastName}` : 'Unknown patient')}
         </Typography>
 
         <Box sx={{
@@ -168,7 +169,7 @@ const PatientsPage: React.FC = () => {
             }
           }}
         >
-          Loading patients...
+          Loading patients…
         </Alert>
       </Box>
     );
@@ -193,30 +194,15 @@ const PatientsPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{
-      p: getResponsivePadding('medium'),
-      height: '100%',
-      maxWidth: { xs: '100%', sm: '100%', md: '100%' }
-    }}>
-      {/* Page Title */}
-      <Typography
-        variant={isMobile ? "h5" : "h4"}
-        gutterBottom
-        sx={{
-          fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-          fontWeight: 600,
-          mb: getResponsiveMargin('medium')
-        }}
-      >
-        Patients
-      </Typography>
+    <Box>
+      <PageHeader title="Patients" description="Patients registered with your clinic." />
 
       <SearchableList
         items={patients}
         renderItem={renderPatientItem}
         searchFields={['name', 'patientName', 'firstName', 'lastName', 'phone', 'phoneNumber', 'email', 'emailAddress']}
         emptyMessage="No patients found."
-        searchPlaceholder={isMobile ? "Search patients..." : "Search patients by name, phone, or email..."}
+        searchPlaceholder={isMobile ? "Search patients…" : "Search patients by name, phone, or email…"}
         sx={{
           '& .MuiTextField-root': {
             minHeight: { xs: TOUCH_TARGETS.MINIMUM, sm: 'auto' }

@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import {
   Box,
   Button,
-  Container,
   Grid,
   TextField,
   Typography,
-  Paper,
+  Alert,
   Link as MuiLink,
   InputAdornment,
   IconButton,
@@ -19,22 +18,16 @@ import {
   SelectChangeEvent,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router';
-import EmailIcon from '@mui/icons-material/Email';
-import LockIcon from '@mui/icons-material/Lock';
-import PersonIcon from '@mui/icons-material/Person';
-import BusinessIcon from '@mui/icons-material/Business';
-import HomeIcon from '@mui/icons-material/Home';
-import PublicIcon from '@mui/icons-material/Public';
-import LocalPhoneIcon from '@mui/icons-material/LocalPhone';
-import LanguageIcon from '@mui/icons-material/Language';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import api from '../../../../services';
 import PasswordStrengthIndicator from '../../../../components/PasswordStrengthIndicator';
 import { isPasswordStrong } from '../../../../utils/passwordStrength';
 import ConfirmationDialog from '../../../../components/ConfirmationDialog';
+import AuthLayout from '../../../../components/Home/AuthLayout';
 import useFormValidation from '../../../../hooks/useFormValidation';
 import { COUNTRIES } from '../../../../utils/dictionary';
+import type { ApprovalSignupState } from '../../../../types/routerState';
 
 interface FormData {
   firstName: string;
@@ -110,7 +103,7 @@ const ClinicAdmin: React.FC = () => {
     const newFormData = { ...formData, [name]: value };
     setFormData(newFormData);
 
-    // Handle validation for email, password, and website fields
+    // Live validation for the email, password and website fields
     if (name === 'email' || name === 'businessEmail' || name === 'password' || name === 'confirmPassword' || name === 'website') {
       handleFieldChange(name, value, newFormData);
     }
@@ -185,7 +178,7 @@ const ClinicAdmin: React.FC = () => {
 
       await api.auth.signupClinicAdmin(payload);
 
-      setDialogTitle('Signup Submitted');
+      setDialogTitle('Sign-up submitted');
       setDialogMessage('Signup request submitted! Please check your email for verification. Your clinic registration is pending approval by the DentistDSS team.');
       setOpenDialog(true);
     } catch (err: any) {
@@ -196,81 +189,23 @@ const ClinicAdmin: React.FC = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    navigate('/verify-email-code', {state: {email: formData.email, firstName: formData.firstName}});
-  };
-
-  const textFieldSx = {
-    '& .MuiOutlinedInput-root': {
-      '& fieldset': {
-        borderColor:
-            theme.palette.mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.15)'
-                : 'rgba(0, 0, 0, 0.15)',
-      },
-      '&:hover fieldset': {
-        borderColor:
-            theme.palette.mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.25)'
-                : 'rgba(0, 0, 0, 0.25)',
-      },
-      '&.Mui-focused fieldset': {
-        borderColor: theme.palette.primary.main,
-      },
-    },
-    '& .MuiInputLabel-root': {
-      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-    },
-    '& .MuiInputBase-input': {
-      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
-    },
+    const state: ApprovalSignupState = { email: formData.email, firstName: formData.firstName, approver: 'dentistdss' };
+    navigate('/verify-email-code', { state });
   };
 
   return (
-      <Container component="main" maxWidth="md">
-        <Paper
-            elevation={3}
-            sx={{
-              my: 8,
-              p: {xs: 3, sm: 4},
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              backgroundColor:
-                  theme.palette.mode === 'dark'
-                      ? 'rgba(42, 45, 50, 0.9)'
-                      : theme.palette.background.paper,
-              borderRadius: 2,
-              border:
-                  theme.palette.mode === 'dark'
-                      ? `1px solid ${theme.palette.divider}`
-                      : 'none',
-              boxShadow:
-                  theme.palette.mode === 'dark'
-                      ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-                      : '0 8px 32px rgba(0, 0, 0, 0.1)',
-            }}
-        >
-          <Typography
-              component="h1"
-              variant="h4"
-              sx={{
-                color:
-                    theme.palette.mode === 'dark'
-                        ? theme.palette.primary.light
-                        : theme.palette.primary.main,
-                mb: 3,
-                fontWeight: 600,
-              }}
-          >
-            Clinic Administrator Sign Up
-          </Typography>
-
-          <Box component="form" onSubmit={handleSubmit} noValidate sx={{mt: 1, width: '100%'}}>
+      <>
+      <AuthLayout
+        wide
+        title="Register your clinic"
+        subtitle="Set up your clinic on DentistDSS. We review each registration before the clinic goes live, then you can invite your team."
+      >
+          <Box component="form" onSubmit={handleSubmit} noValidate>
             <Grid container spacing={2}>
               {/* ---------- SECTION: ADMIN INFO ---------- */}
               <Grid size={{ xs: 12 }}>
-                <Typography variant="h6" sx={{fontWeight: 500, mb: 1}}>
-                  Administrator Information
+                <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
+                  About you
                 </Typography>
                 <Divider sx={{mb: 2}}/>
               </Grid>
@@ -280,21 +215,11 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     id="firstName"
-                    label="First Name"
+                    label="First name"
                     name="firstName"
                     autoComplete="given-name"
                     value={formData.firstName}
                     onChange={handleChange}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                            <InputAdornment position="start">
-                              <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                            </InputAdornment>
-                        ),
-                      },
-                    }}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -302,21 +227,11 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     id="lastName"
-                    label="Last Name"
+                    label="Last name"
                     name="lastName"
                     autoComplete="family-name"
                     value={formData.lastName}
                     onChange={handleChange}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                            <InputAdornment position="start">
-                              <PersonIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                            </InputAdornment>
-                        ),
-                      },
-                    }}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
@@ -324,7 +239,7 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     id="email"
-                    label="Email Address"
+                    label="Email"
                     name="email"
                     autoComplete="email"
                     value={formData.email}
@@ -332,16 +247,6 @@ const ClinicAdmin: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('email')}
                     helperText={getFieldError('email')}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                            <InputAdornment position="start">
-                              <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                            </InputAdornment>
-                        ),
-                      },
-                    }}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -357,22 +262,15 @@ const ClinicAdmin: React.FC = () => {
                     onChange={handleChange}
                     slotProps={{
                       input: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                        ),
                         endAdornment: (
                           <InputAdornment position="end">
-                            <IconButton onClick={handleClickShowPassword} edge="end"
-                                        sx={{color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined}}>
+                            <IconButton onClick={handleClickShowPassword} edge="end">
                               {showPassword ? <VisibilityOff/> : <Visibility/>}
                             </IconButton>
                           </InputAdornment>
                         ),
                       },
                     }}
-                    sx={textFieldSx}
                 />
 
                 {/* Password Strength Indicator */}
@@ -383,7 +281,7 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     name="confirmPassword"
-                    label="Confirm Password"
+                    label="Confirm password"
                     type={showConfirmPassword ? 'text' : 'password'}
                     id="confirmPassword"
                     autoComplete="new-password"
@@ -394,29 +292,22 @@ const ClinicAdmin: React.FC = () => {
                     helperText={getFieldError('confirmPassword')}
                     slotProps={{
                       input: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LockIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                          </InputAdornment>
-                        ),
                         endAdornment: (
                           <InputAdornment position="end">
-                            <IconButton onClick={handleClickShowConfirmPassword} edge="end"
-                                        sx={{color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined}}>
+                            <IconButton onClick={handleClickShowConfirmPassword} edge="end">
                               {showConfirmPassword ? <VisibilityOff/> : <Visibility/>}
                             </IconButton>
                           </InputAdornment>
                         ),
                       },
                     }}
-                    sx={textFieldSx}
                 />
               </Grid>
 
               {/* ---------- SECTION: CLINIC INFO ---------- */}
               <Grid size={{ xs: 12 }} sx={{mt: 3}}>
-                <Typography variant="h6" sx={{fontWeight: 500, mb: 1}}>
-                  Clinic Information
+                <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
+                  About your clinic
                 </Typography>
                 <Divider sx={{mb: 2}}/>
               </Grid>
@@ -426,20 +317,10 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     name="clinicName"
-                    label="Clinic Name"
+                    label="Clinic name"
                     id="clinicName"
                     value={formData.clinicName}
                     onChange={handleChange}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                            <InputAdornment position="start">
-                              <BusinessIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                            </InputAdornment>
-                        ),
-                      },
-                    }}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -451,16 +332,6 @@ const ClinicAdmin: React.FC = () => {
                     id="address"
                     value={formData.address}
                     onChange={handleChange}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                            <InputAdornment position="start">
-                              <HomeIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                            </InputAdornment>
-                        ),
-                      },
-                    }}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
@@ -468,11 +339,10 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     name="city"
-                    label="City or Suburb"
+                    label="Suburb or city"
                     id="city"
                     value={formData.city}
                     onChange={handleChange}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
@@ -480,11 +350,10 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     name="state"
-                    label="State or Territory"
+                    label="State or territory"
                     id="state"
                     value={formData.state}
                     onChange={handleChange}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
@@ -496,38 +365,12 @@ const ClinicAdmin: React.FC = () => {
                     id="zipCode"
                     value={formData.zipCode}
                     onChange={handleChange}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
                 <FormControl
                     required
                     fullWidth
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          borderColor:
-                              theme.palette.mode === 'dark'
-                                  ? 'rgba(255, 255, 255, 0.15)'
-                                  : 'rgba(0, 0, 0, 0.15)',
-                        },
-                        '&:hover fieldset': {
-                          borderColor:
-                              theme.palette.mode === 'dark'
-                                  ? 'rgba(255, 255, 255, 0.25)'
-                                  : 'rgba(0, 0, 0, 0.25)',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: theme.palette.primary.main,
-                        },
-                      },
-                      '& .MuiInputLabel-root': {
-                        color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
-                      },
-                      '& .MuiSelect-select': {
-                        color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : undefined,
-                      },
-                    }}
                 >
                   <InputLabel id="country-label">Country</InputLabel>
                   <Select
@@ -537,11 +380,6 @@ const ClinicAdmin: React.FC = () => {
                       value={formData.country}
                       label="Country"
                       onChange={handleSelectChange}
-                      startAdornment={
-                        <InputAdornment position="start">
-                          <PublicIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                        </InputAdornment>
-                      }
                   >
                     {COUNTRIES.map((country) => (
                         <MenuItem key={country.code} value={country.name}>
@@ -556,7 +394,7 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     name="businessEmail"
-                    label="Clinic Business Email"
+                    label="Clinic email"
                     id="businessEmail"
                     autoComplete="email"
                     value={formData.businessEmail}
@@ -564,16 +402,6 @@ const ClinicAdmin: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('businessEmail')}
                     helperText={getFieldError('businessEmail')}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                            <InputAdornment position="start">
-                              <EmailIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                            </InputAdornment>
-                        ),
-                      },
-                    }}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -581,27 +409,17 @@ const ClinicAdmin: React.FC = () => {
                     required
                     fullWidth
                     name="phoneNumber"
-                    label="Phone Number"
+                    label="Phone number"
                     id="phoneNumber"
                     value={formData.phoneNumber}
                     onChange={handleChange}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                            <InputAdornment position="start">
-                              <LocalPhoneIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                            </InputAdornment>
-                        ),
-                      },
-                    }}
-                    sx={textFieldSx}
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <TextField
                     fullWidth
                     name="website"
-                    label="Clinic Website"
+                    label="Website"
                     id="website"
                     type="url"
                     placeholder="https://www.example.com"
@@ -610,69 +428,28 @@ const ClinicAdmin: React.FC = () => {
                     onBlur={handleBlur}
                     error={hasFieldError('website')}
                     helperText={getFieldError('website')}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                            <InputAdornment position="start">
-                              <LanguageIcon color={theme.palette.mode === 'dark' ? 'primary' : 'action'}/>
-                            </InputAdornment>
-                        ),
-                      },
-                    }}
-                    sx={textFieldSx}
                 />
               </Grid>
             </Grid>
 
             {error && (
-                <Box
-                    sx={{
-                      mt: 2,
-                      p: 1.5,
-                      bgcolor:
-                          theme.palette.mode === 'dark'
-                              ? 'rgba(211, 47, 47, 0.15)'
-                              : 'rgba(211, 47, 47, 0.05)',
-                      borderRadius: 1,
-                      border: `1px solid ${theme.palette.error.main}`,
-                    }}
-                >
-                  <Typography color="error" variant="body2" sx={{textAlign: 'center'}}>
-                    {error}
-                  </Typography>
-                </Box>
+                <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
             )}
 
             <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                color="primary"
-                sx={{
-                  mt: 3,
-                  mb: 2,
-                  py: 1.2,
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  boxShadow:
-                      theme.palette.mode === 'dark'
-                          ? '0 4px 12px rgba(0, 100, 80, 0.3)'
-                          : '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  '&:hover': {
-                    boxShadow:
-                        theme.palette.mode === 'dark'
-                            ? '0 6px 16px rgba(0, 100, 80, 0.4)'
-                            : '0 6px 16px rgba(0, 0, 0, 0.15)',
-                  },
-                }}
+                size="large"
+                sx={{ mt: 3, mb: 1 }}
                 disabled={loading || !isFormValid(['email', 'businessEmail', 'confirmPassword', 'website'])}
             >
-              {loading ? 'Signing Up...' : 'Sign Up'}
+              {loading ? 'Sending registration…' : 'Register clinic'}
             </Button>
 
-            <Typography variant="body2" sx={{textAlign: 'center', mt: 1}}>
-              By clicking Sign Up, you agree to our{' '}
-              <MuiLink component={RouterLink} to="/terms" target="_blank" rel="noopener" sx={{fontWeight: 500}}>
+            <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary' }}>
+              By registering, you agree to our{' '}
+              <MuiLink component={RouterLink} to="/terms" target="_blank" rel="noopener">
                 Terms &amp; Conditions
               </MuiLink>
             </Typography>
@@ -683,19 +460,8 @@ const ClinicAdmin: React.FC = () => {
                     component={RouterLink}
                     to="/login"
                     variant="body2"
-                    sx={{
-                      color:
-                          theme.palette.mode === 'dark'
-                              ? theme.palette.primary.light
-                              : theme.palette.primary.main,
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
                 >
-                  Already have an account? Sign in
+                  Already registered? Log in
                 </MuiLink>
               </Grid>
               <Grid size={{ xs: 'auto' }}>
@@ -703,31 +469,20 @@ const ClinicAdmin: React.FC = () => {
                     component={RouterLink}
                     to="/signup/clinic-staff"
                     variant="body2"
-                    sx={{
-                      color:
-                          theme.palette.mode === 'dark'
-                              ? theme.palette.primary.light
-                              : theme.palette.primary.main,
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
                 >
-                  Sign up as a Clinic Staff
+                  Joining an existing clinic?
                 </MuiLink>
               </Grid>
             </Grid>
           </Box>
-        </Paper>
+      </AuthLayout>
         <ConfirmationDialog
             open={openDialog}
             onClose={handleCloseDialog}
             title={dialogTitle}
             message={dialogMessage}
         />
-      </Container>
+      </>
   );
 };
 

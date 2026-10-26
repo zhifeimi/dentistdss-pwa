@@ -1,33 +1,27 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
-import { Link as RouterLink } from 'react-router';
+import { Link as RouterLink, useLocation } from 'react-router';
 import { NAVIGATION_ITEMS } from './constants';
 
-interface NavigationProps {
-  isAuthenticated: boolean;
-}
-
-/**
- * Desktop navigation component
- * Simplified navigation logic
- */
-export const Navigation: React.FC<NavigationProps> = ({ isAuthenticated }) => {
-  const visibleItems = NAVIGATION_ITEMS.filter(item => 
-    !item.requiresAuth || isAuthenticated
-  );
+export const Navigation: React.FC = () => {
+  const { pathname } = useLocation();
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      {visibleItems.map((item) => {
-        const IconComponent = item.icon;
+    <Box component="nav" aria-label="Main" sx={{ display: 'flex', gap: 0.5 }}>
+      {NAVIGATION_ITEMS.map((item) => {
+        const active = item.path === pathname;
         return (
           <Button
             key={item.path}
-            color="inherit"
             component={RouterLink}
             to={item.path}
-            startIcon={<IconComponent />}
-            sx={{ mr: 1 }}
+            aria-current={active ? 'page' : undefined}
+            sx={{
+              color: active ? 'text.primary' : 'text.secondary',
+              fontWeight: active ? 650 : 550,
+              px: 1.5,
+              '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
+            }}
           >
             {item.label}
           </Button>

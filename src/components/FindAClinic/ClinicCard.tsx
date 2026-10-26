@@ -1,285 +1,114 @@
-import React, { MouseEvent, KeyboardEvent } from 'react';
+import React, { MouseEvent } from 'react';
+import { Box, Button, Link, Typography } from '@mui/material';
 import {
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Box,
-  Link,
-  Chip,
-} from '@mui/material';
-import {
-  LocationOn as LocationIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
-  Language as WebsiteIcon,
   Directions as DirectionsIcon,
+  Place as PlaceIcon,
 } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router';
 import { openDirections } from '../../utils/mapUtils';
-import { TOUCH_TARGETS } from '../../utils/mobileOptimization';
 import type { Clinic } from '../../types/api';
 
 interface ClinicCardProps {
   clinic: Clinic;
   isSelected: boolean;
   onClick: () => void;
-  isMobile: boolean;
-  isLast: boolean;
 }
 
+const stop = (event: MouseEvent) => event.stopPropagation();
+
 /**
- * ClinicCard Component
- *
- * Individual clinic card with:
- * - Mobile-first responsive design
- * - Accessible interaction patterns
- * - Contact information with direct actions
- * - Visual selection states
- * - Proper touch targets for mobile
+ * ClinicCard — one search result. Clicking the card (or "Show on map")
+ * selects it on the map; the actions book a visit or open directions.
  */
-const ClinicCard = React.memo<ClinicCardProps>(({
-  clinic,
-  isSelected,
-  onClick,
-  isMobile,
-  isLast
-}) => {
+const ClinicCard = React.memo<ClinicCardProps>(({ clinic, isSelected, onClick }) => {
+  const address = [clinic.address, clinic.city, [clinic.state, clinic.zipCode].filter(Boolean).join(' ')]
+    .filter(Boolean)
+    .join(', ');
+  const hasLocation = Boolean(clinic.latitude && clinic.longitude);
+
   const handleDirections = (event: MouseEvent): void => {
-    event.preventDefault();
     event.stopPropagation();
-
     if (clinic.latitude && clinic.longitude) {
-      openDirections({
-        latitude: clinic.latitude,
-        longitude: clinic.longitude,
-        name: clinic.name
-      });
-    }
-  };
-
-  const handlePhoneClick = (event: MouseEvent): void => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (clinic.phoneNumber) {
-      window.open(`tel:${clinic.phoneNumber}`, '_self');
-    }
-  };
-
-  const handleEmailClick = (event: MouseEvent): void => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (clinic.email) {
-      window.open(`mailto:${clinic.email}`, '_self');
-    }
-  };
-
-  const handleWebsiteClick = (event: MouseEvent): void => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (clinic.website) {
-      window.open(clinic.website, '_blank', 'noopener,noreferrer');
+      openDirections({ latitude: clinic.latitude, longitude: clinic.longitude, name: clinic.name });
     }
   };
 
   return (
-    <Card
-      sx={{
-        mb: isLast ? 0 : { xs: 1.5, sm: 2 },
-        cursor: 'pointer',
-        bgcolor: isSelected ? 'action.selected' : 'background.paper',
-        border: isSelected ? 2 : 1,
-        borderColor: isSelected ? 'primary.main' : 'divider',
-        borderRadius: 2,
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          bgcolor: isSelected ? 'action.selected' : 'action.hover',
-          transform: 'translateY(-1px)',
-          boxShadow: 3,
-        },
-        '&:active': {
-          transform: 'translateY(0)',
-        },
-        minHeight: { xs: TOUCH_TARGETS.MINIMUM, sm: 'auto' },
-      }}
+    <Box
+      component="li"
       onClick={onClick}
-      role="button"
-      tabIndex={0}
-      aria-label={`Select ${clinic.name} clinic`}
-      onKeyDown={(event: KeyboardEvent) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onClick();
-        }
+      sx={{
+        listStyle: 'none',
+        p: { xs: 2, sm: 2.5 },
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: isSelected ? 'primary.main' : 'divider',
+        boxShadow: (theme) => (isSelected ? `inset 0 0 0 1px ${theme.palette.primary.main}` : 'none'),
+        borderRadius: 2,
+        cursor: 'pointer',
+        transition: (theme) => theme.transitions.create(['border-color', 'box-shadow']),
+        '&:hover': { borderColor: isSelected ? 'primary.main' : 'text.secondary' },
       }}
     >
-      <CardContent sx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
-        {/* Clinic Name and Status */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
-          <Typography 
-            variant="subtitle1" 
-            component="h3"
-            sx={{ 
-              fontWeight: 'bold',
-              fontSize: { xs: '1rem', sm: '1.1rem' },
-              lineHeight: 1.3,
-              flex: 1,
-              mr: 1,
-            }}
-          >
-            {clinic.name}
-          </Typography>
-          
-          {isSelected && (
-            <Chip
-              label="Selected"
-              size="small"
-              color="primary"
-              sx={{ 
-                fontSize: '0.7rem',
-                height: 24,
-              }}
-            />
-          )}
-        </Box>
+      <Typography variant="h6" component="h3">
+        {clinic.name}
+      </Typography>
 
-        {/* Address */}
-        {clinic.address && (
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-            <LocationIcon 
-              sx={{ 
-                fontSize: { xs: 16, sm: 18 }, 
-                mt: 0.2,
-                mr: 0.5,
-                color: 'text.secondary',
-                flexShrink: 0,
-              }} 
-            />
-            <Typography 
-              variant="body2" 
-              color="text.secondary"
-              sx={{ 
-                fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                lineHeight: 1.4,
-              }}
-            >
-              {clinic.address}
-              {clinic.city && `, ${clinic.city}`}
-              {clinic.state && `, ${clinic.state}`}
-              {clinic.zipCode && ` ${clinic.zipCode}`}
-            </Typography>
-          </Box>
-        )}
+      {address && (
+        <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
+          {address}
+        </Typography>
+      )}
 
-        {/* Contact Information */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.5 }}>
-          {/* Phone */}
+      {(clinic.phoneNumber || clinic.email || clinic.website) && (
+        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', columnGap: 2, rowGap: 0.5 }}>
           {clinic.phoneNumber && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <PhoneIcon 
-                sx={{ 
-                  fontSize: { xs: 16, sm: 18 }, 
-                  mr: 0.5,
-                  color: 'text.secondary',
-                }} 
-              />
-              <Link
-                component="button"
-                variant="body2"
-                onClick={handlePhoneClick}
-                sx={{ 
-                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                  textAlign: 'left',
-                  color: 'primary.main',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                {clinic.phoneNumber}
-              </Link>
-            </Box>
+            <Link href={`tel:${clinic.phoneNumber}`} variant="body2" onClick={stop}>
+              {clinic.phoneNumber}
+            </Link>
           )}
-
-          {/* Email */}
           {clinic.email && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <EmailIcon 
-                sx={{ 
-                  fontSize: { xs: 16, sm: 18 }, 
-                  mr: 0.5,
-                  color: 'text.secondary',
-                }} 
-              />
-              <Link
-                component="button"
-                variant="body2"
-                onClick={handleEmailClick}
-                sx={{ 
-                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                  textAlign: 'left',
-                  color: 'primary.main',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                {clinic.email}
-              </Link>
-            </Box>
+            <Link href={`mailto:${clinic.email}`} variant="body2" onClick={stop}>
+              Email
+            </Link>
           )}
-
-          {/* Website */}
           {clinic.website && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <WebsiteIcon 
-                sx={{ 
-                  fontSize: { xs: 16, sm: 18 }, 
-                  mr: 0.5,
-                  color: 'text.secondary',
-                }} 
-              />
-              <Link
-                component="button"
-                variant="body2"
-                onClick={handleWebsiteClick}
-                sx={{ 
-                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                  textAlign: 'left',
-                  color: 'primary.main',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                Visit Website
-              </Link>
-            </Box>
+            <Link href={clinic.website} target="_blank" rel="noopener noreferrer" variant="body2" onClick={stop}>
+              Website
+            </Link>
           )}
         </Box>
+      )}
 
-        {/* Directions Button */}
-        {clinic.latitude && clinic.longitude && (
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<DirectionsIcon />}
-            onClick={handleDirections}
-            fullWidth
-            sx={{ 
-              minHeight: { xs: TOUCH_TARGETS.MINIMUM - 8, sm: 36 },
-              fontSize: { xs: '0.8rem', sm: '0.875rem' },
-              fontWeight: 500,
-              borderRadius: 1.5,
-            }}
-          >
-            Get Directions
+      <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        <Button
+          component={RouterLink}
+          to={`/appointments?book=${encodeURIComponent(String(clinic.id))}`}
+          variant="contained"
+          size="small"
+          onClick={stop}
+        >
+          Book a visit
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<PlaceIcon />}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClick();
+          }}
+          aria-pressed={isSelected}
+        >
+          Show on map
+        </Button>
+        {hasLocation && (
+          <Button size="small" startIcon={<DirectionsIcon />} onClick={handleDirections}>
+            Directions
           </Button>
         )}
-      </CardContent>
-    </Card>
+      </Box>
+    </Box>
   );
 });
 

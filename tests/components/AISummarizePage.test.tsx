@@ -38,23 +38,47 @@ describe('AISummarizePage', () => {
     vi.mocked(window.dispatchEvent).mockClear();
   });
 
-  test('saves a summary that was requested with the Enter key', async () => {
+  test('copies a summary that was requested with the Enter key, and claims no save', async () => {
     mocks.send.mockImplementationOnce(async (_agent, _prompt, options) => {
       options.onText?.('Summary retained');
       return { kind: 'completed', text: 'Summary retained' };
     });
+    const user = userEvent.setup();
     render(<AISummarizePage />);
 
-    await userEvent.type(
+    await user.type(
       screen.getByPlaceholderText(/Paste appointment notes/),
       'Routine cleaning, no caries.{Enter}',
     );
     await screen.findByText('Summary retained');
 
-    const saveButtons = screen.getAllByRole('button', { name: 'Save to Records' });
-    await userEvent.click(saveButtons[saveButtons.length - 1]);
+    // Nothing here writes to a patient record, so nothing may say it does
+    expect(screen.queryByRole('button', { name: /save/i })).toBeNull();
 
-    expect(snackbarMessages()).toEqual(['Summary saved to patient records']);
+    const copyButtons = screen.getAllByRole('button', { name: 'Copy summary' });
+    await user.click(copyButtons[copyButtons.length - 1]);
+
+    await expect(navigator.clipboard.readText()).resolves.toBe('Summary retained');
+    expect(snackbarMessages()).toEqual(['Summary copied']);
+  });
+
+  test('says so when the summary could not be copied', async () => {
+    mocks.send.mockImplementationOnce(async (_agent, _prompt, options) => {
+      options.onText?.('Summary retained');
+      return { kind: 'completed', text: 'Summary retained' };
+    });
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValueOnce(new Error('denied'));
+    render(<AISummarizePage />);
+
+    await user.type(screen.getByPlaceholderText(/Paste appointment notes/), 'Routine cleaning.{Enter}');
+    await screen.findByText('Summary retained');
+    const copyButtons = screen.getAllByRole('button', { name: 'Copy summary' });
+    await user.click(copyButtons[copyButtons.length - 1]);
+
+    await waitFor(() =>
+      expect(snackbarMessages()).toEqual(["Couldn't copy the summary. Select the text and copy it instead."])
+    );
   });
 
   test('streaming indicator is valid phrasing content inside the summary paragraph', async () => {

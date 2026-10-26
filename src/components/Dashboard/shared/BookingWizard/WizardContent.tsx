@@ -23,6 +23,7 @@ export const WizardContent: React.FC<WizardContentProps> = ({
   serviceTypes,
   loading,
   isLoggedIn,
+  onRetryClinics,
   onUpdateBookingData,
   onUpdatePatientData,
 }) => {
@@ -37,6 +38,8 @@ export const WizardContent: React.FC<WizardContentProps> = ({
             selectedClinic={bookingData.clinicId}
             onSelectClinic={(clinicId) => onUpdateBookingData('clinicId', clinicId)}
             error={errors.clinicId}
+            loadError={errors.clinics}
+            onRetry={onRetryClinics}
             loading={loading}
           />
         );

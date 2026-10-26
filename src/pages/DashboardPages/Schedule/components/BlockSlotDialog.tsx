@@ -126,7 +126,7 @@ const BlockSlotDialog: React.FC<BlockSlotDialogProps> = ({ open, onClose, onSubm
           {slot && (
             <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Slot Details:
+                Slot details:
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {slot.isRecurring ? (
@@ -177,7 +177,7 @@ const BlockSlotDialog: React.FC<BlockSlotDialogProps> = ({ open, onClose, onSubm
           disabled={submitting || loading}
           startIcon={submitting && <CircularProgress size={16} />}
         >
-          {submitting ? 'Blocking...' : 'Block Slot'}
+          {submitting ? 'Blocking…' : 'Block slot'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -17,6 +17,7 @@ import {
 import MailIcon from '@mui/icons-material/Mail';
 import DraftsIcon from '@mui/icons-material/Drafts'; // For read messages
 import api from '../services';
+import EmptyState from './Dashboard/shared/EmptyState';
 
 interface Message {
   id: number;
@@ -89,74 +90,78 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ userId }) => {
   }
 
   if (error) {
-    return <Alert severity="error" sx={{m: 2}}>{error}</Alert>;
+    return <Alert severity="error">{error}</Alert>;
+  }
+
+  if (messages.length === 0) {
+    return (
+      <EmptyState title="No messages yet">
+        Appointment updates and notes from your clinic show up here.
+      </EmptyState>
+    );
   }
 
   return (
-      <Box sx={{p: isMobile ? 1 : 2, minHeight: '78vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column'}}>
-        {messages.length === 0 ? (
-            <Typography sx={{textAlign: 'center', p: 2}}>You have no messages.</Typography>
-        ) : (
-            <Grid container spacing={isMobile ? 1 : 2} sx={{flexGrow: 1, overflow: 'hidden'}}>
-              <Grid size={{ xs: 12, md: 4 }} sx={{
-                overflowY: 'auto',
-                height: isMobile ? '200px' : 'auto',
-                borderRight: isMobile ? 'none' : `1px solid ${theme.palette.divider}`,
-                p: 1
-              }}>
-                <List component="nav" aria-label="message list">
-                  {sortedMessages.map((msg) => (
-                      <React.Fragment key={msg.id}>
-                        <ListItem
-                            component="button"
-                            onClick={() => handleSelectMessage(msg)}
-                            sx={{
-                              bgcolor: selectedMessage?.id === msg.id ? theme.palette.action.selected : 'inherit',
-                              borderRadius: 1,
-                              mb: 0.5,
-                              cursor: 'pointer',
-                              border: 'none',
-                              width: '100%',
-                              textAlign: 'left'
-                            }}
-                        >
-                          <ListItemIcon sx={{minWidth: 'auto', mr: 1.5}}>
-                            {msg.read ? <DraftsIcon color="disabled"/> : <MailIcon color="primary"/>}
-                          </ListItemIcon>
-                          <ListItemText
-                              primary={msg.subject}
-                              secondary={`From: ${msg.sender} - ${new Date(msg.date).toLocaleDateString()}`}
-                              slotProps={{
-                                primary: {sx: {fontWeight: msg.read ? 'normal' : 'bold'}, noWrap: true},
-                                secondary: {noWrap: true}
-                              }}
-                          />
-                          {!msg.read && <Chip label="New" color="primary" size="small" sx={{ml: 1}}/>}
-                        </ListItem>
-                        <Divider component="li"/>
-                      </React.Fragment>
-                  ))}
-                </List>
-              </Grid>
-              <Grid size={{ xs: 12, md: 8 }}
-                    sx={{overflowY: 'auto', height: isMobile ? 'calc(100% - 200px)' : 'auto', p: isMobile ? 1 : 2}}>
-                {selectedMessage ? (
-                    <Box>
-                      <Typography variant="h6" gutterBottom>{selectedMessage.subject}</Typography>
-                      <Typography variant="caption" color="textSecondary" sx={{display: 'block'}} gutterBottom>
-                        From: {selectedMessage.sender} | Received: {new Date(selectedMessage.date).toLocaleString()}
-                      </Typography>
-                      <Divider sx={{my: 2}}/>
-                      <Typography variant="body1" sx={{whiteSpace: 'pre-wrap'}}>{selectedMessage.content}</Typography>
-                    </Box>
-                ) : (
-                    <Typography sx={{textAlign: 'center', color: 'text.secondary', mt: isMobile ? 2 : 4}}>
-                      Select a message to read its content.
-                    </Typography>
-                )}
-              </Grid>
-            </Grid>
-        )}
+      <Box sx={{p: isMobile ? 1 : 2, minHeight: '60vh', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper'}}>
+        <Grid container spacing={isMobile ? 1 : 2} sx={{flexGrow: 1, overflow: 'hidden'}}>
+          <Grid size={{ xs: 12, md: 4 }} sx={{
+            overflowY: 'auto',
+            height: isMobile ? '200px' : 'auto',
+            borderRight: isMobile ? 'none' : `1px solid ${theme.palette.divider}`,
+            p: 1
+          }}>
+            <List component="nav" aria-label="message list">
+              {sortedMessages.map((msg) => (
+                  <React.Fragment key={msg.id}>
+                    <ListItem
+                        component="button"
+                        onClick={() => handleSelectMessage(msg)}
+                        sx={{
+                          bgcolor: selectedMessage?.id === msg.id ? theme.palette.action.selected : 'inherit',
+                          borderRadius: 1,
+                          mb: 0.5,
+                          cursor: 'pointer',
+                          border: 'none',
+                          width: '100%',
+                          textAlign: 'left'
+                        }}
+                    >
+                      <ListItemIcon sx={{minWidth: 'auto', mr: 1.5}}>
+                        {msg.read ? <DraftsIcon color="disabled"/> : <MailIcon color="primary"/>}
+                      </ListItemIcon>
+                      <ListItemText
+                          primary={msg.subject}
+                          secondary={`From: ${msg.sender} - ${new Date(msg.date).toLocaleDateString()}`}
+                          slotProps={{
+                            primary: {sx: {fontWeight: msg.read ? 'normal' : 'bold'}, noWrap: true},
+                            secondary: {noWrap: true}
+                          }}
+                      />
+                      {!msg.read && <Chip label="New" color="primary" size="small" sx={{ml: 1}}/>}
+                    </ListItem>
+                    <Divider component="li"/>
+                  </React.Fragment>
+              ))}
+            </List>
+          </Grid>
+          <Grid size={{ xs: 12, md: 8 }}
+                sx={{overflowY: 'auto', height: isMobile ? 'calc(100% - 200px)' : 'auto', p: isMobile ? 1 : 2}}>
+            {selectedMessage ? (
+                <Box>
+                  <Typography variant="h6" gutterBottom>{selectedMessage.subject}</Typography>
+                  <Typography variant="caption" color="textSecondary" sx={{display: 'block'}} gutterBottom>
+                    From: {selectedMessage.sender} | Received: {new Date(selectedMessage.date).toLocaleString()}
+                  </Typography>
+                  <Divider sx={{my: 2}}/>
+                  <Typography variant="body1" sx={{whiteSpace: 'pre-wrap'}}>{selectedMessage.content}</Typography>
+                </Box>
+            ) : (
+                <Typography sx={{textAlign: 'center', color: 'text.secondary', mt: isMobile ? 2 : 4}}>
+                  Select a message to read its content.
+                </Typography>
+            )}
+          </Grid>
+        </Grid>
       </Box>
   );
 };

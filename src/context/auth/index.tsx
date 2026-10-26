@@ -1,6 +1,7 @@
 import React, {createContext, useState, useContext, useEffect, useCallback, ReactNode} from 'react';
 import api from '../../services';
 import session from '../../services/session';
+import { noteLogout } from '../../utils/returnPath';
 import { AuthContextValue, User, UserRole } from '../../types';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -99,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   };
 
   const logout = useCallback(async (): Promise<void> => {
+    noteLogout();
     setCurrentUser(null);
     try {
       await api.auth.logout();

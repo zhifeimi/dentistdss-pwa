@@ -111,7 +111,7 @@ const SettingItem = memo(({
           // Edit Mode
           <Box>
             <TextField
-              label="Setting Key"
+              label="Setting key"
               value={editData.key}
               onChange={(e: ChangeEvent<HTMLInputElement>) => handleFieldChange('key', e.target.value)}
               error={Boolean(errors.key)}
@@ -125,7 +125,7 @@ const SettingItem = memo(({
             />
             
             <TextField
-              label="Setting Value"
+              label="Setting value"
               value={editData.value}
               onChange={(e: ChangeEvent<HTMLInputElement>) => handleFieldChange('value', e.target.value)}
               error={Boolean(errors.value)}
@@ -173,7 +173,7 @@ const SettingItem = memo(({
                 size={isMobile ? 'small' : 'medium'}
                 aria-label="Save setting"
               >
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Saving…' : 'Save'}
               </Button>
             </Box>
           </Box>

@@ -1,90 +1,102 @@
-import React from 'react';
-import { Box, Button, Chip, Container, Grid, Typography, useTheme, useMediaQuery } from '@mui/material';
-import { Link as RouterLink } from 'react-router';
-import GradientMesh from './GradientMesh';
-import ChatPreviewCard from './ChatPreviewCard';
+import React, { useState } from 'react';
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  InputAdornment,
+  Link,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router';
+import { OPEN_DENTABOT_EVENT } from '../../../../components/Home/Helper';
+import HeroLedger from './HeroLedger';
 
 /**
- * HeroSection — gradient-mesh hero: eyebrow chip, headline with a
- * gradient-highlighted phrase, subcopy, CTA row, and the Dentabot product
- * preview card. No stock imagery anywhere; all visuals are code-built.
+ * HeroSection — the patient's first task, front and centre: a working clinic
+ * search that hands its query to /find-a-clinic, plus a way to ask Dentabot
+ * first. The ledger on the right shows what booking looks like.
  */
 const HeroSection: React.FC = () => {
-  const theme = useTheme();
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const q = query.trim();
+    navigate(q ? `/find-a-clinic?q=${encodeURIComponent(q)}` : '/find-a-clinic');
+  };
 
   return (
-    <GradientMesh>
-      <Container maxWidth="lg" sx={{ pt: { xs: 10, md: 14 }, pb: { xs: 8, md: 12 } }}>
-        <Grid container spacing={{ xs: 5, md: 6 }} sx={{ alignItems: 'center' }}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Chip
-              label="AI Dental Assistant"
-              size="small"
+    <Box component="section" sx={{ pt: { xs: 4, md: 8 }, pb: { xs: 8, md: 12 } }}>
+      <Container maxWidth="lg">
+        <Grid container spacing={{ xs: 6, md: 8 }} sx={{ alignItems: 'center' }}>
+          <Grid size={{ xs: 12, md: 7 }}>
+            <Typography variant="h1" sx={{ maxWidth: '14ch' }}>
+              Find a dentist and book a time that suits you
+            </Typography>
+            <Typography
+              sx={{ mt: 3, maxWidth: '44ch', fontSize: '1.125rem', color: 'text.secondary' }}
+            >
+              Search clinics by suburb, name or treatment, see who can take you, and book online. No
+              phone queue.
+            </Typography>
+
+            <Box
+              component="form"
+              role="search"
+              onSubmit={handleSubmit}
               sx={{
-                mb: 2.5,
-                fontWeight: 600,
-                letterSpacing: '0.06em',
-                color: 'primary.main',
-                bgcolor: theme.palette.mode === 'dark' ? 'rgba(139, 107, 255, 0.14)' : 'rgba(108, 71, 255, 0.10)',
-                border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(139, 107, 255, 0.35)' : 'rgba(108, 71, 255, 0.25)'}`,
+                mt: 4,
+                display: 'flex',
+                gap: 1.5,
+                maxWidth: 560,
+                flexDirection: { xs: 'column', sm: 'row' },
               }}
-            />
-            <Typography
-              variant={isSmallMobile ? 'h3' : 'h2'}
-              component="h1"
-              sx={{ fontWeight: 700, letterSpacing: '-0.03em', color: 'text.primary', mb: 2 }}
             >
-              Your dental clinic,{' '}
-              <Box
-                component="span"
-                sx={{
-                  background: 'linear-gradient(90deg, #6C47FF, #A98FFF)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+              <TextField
+                fullWidth
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Suburb, clinic or treatment"
+                slotProps={{
+                  htmlInput: { 'aria-label': 'Search clinics', enterKeyHint: 'search' },
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: 'text.secondary' }} />
+                      </InputAdornment>
+                    ),
+                  },
                 }}
-              >
-                intelligently assisted
-              </Box>
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{ color: 'text.secondary', lineHeight: 1.75, maxWidth: 480, mb: 4 }}
-            >
-              Ask Dentabot anything, get guided next steps, and book trusted
-              clinics — assistant-level help whenever you need it, real care
-              when it matters.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', flexDirection: { xs: 'column', sm: 'row' } }}>
-              <Button
-                component={RouterLink}
-                to="/chat"
-                variant="contained"
-                color="primary"
-                size="large"
-                fullWidth={isSmallMobile}
-              >
-                Ask a dental question
-              </Button>
-              <Button
-                component={RouterLink}
-                to="/find-a-clinic"
-                variant="outlined"
-                color="primary"
-                size="large"
-                fullWidth={isSmallMobile}
-              >
-                Find a clinic →
+              />
+              <Button type="submit" variant="contained" size="large" sx={{ flexShrink: 0 }}>
+                Search clinics
               </Button>
             </Box>
+
+            <Typography variant="body2" sx={{ mt: 2.5, color: 'text.secondary' }}>
+              Not sure it needs a visit?{' '}
+              <Link
+                component="button"
+                type="button"
+                onClick={() => window.dispatchEvent(new Event(OPEN_DENTABOT_EVENT))}
+                sx={{ verticalAlign: 'baseline', fontSize: 'inherit' }}
+              >
+                Ask Dentabot
+              </Link>
+              , our dental assistant, any time of day.
+            </Typography>
           </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <ChatPreviewCard />
+
+          <Grid size={{ xs: 12, md: 5 }}>
+            <HeroLedger />
           </Grid>
         </Grid>
       </Container>
-    </GradientMesh>
+    </Box>
   );
 };
 

@@ -50,7 +50,7 @@ test('logout immediately removes authenticated actions and protects the dashboar
     await expect(page.getByRole('navigation', { name: 'dashboard navigation' })).toBeVisible();
 
     await page.getByRole('button', { name: 'account menu' }).click();
-    await page.getByRole('menuitem', { name: 'Logout' }).click();
+    await page.getByRole('menuitem', { name: 'Log out' }).click();
 
     await expect(page).toHaveURL(/\/login$/);
     await expect.poll(() => logoutStarted).toBe(true);
@@ -59,8 +59,8 @@ test('logout immediately removes authenticated actions and protects the dashboar
     await page.getByRole('link', { name: 'Privacy Policy', exact: true }).click();
     await expect(page).toHaveURL(/\/terms$/);
     await expect(page.getByRole('heading', { name: 'DentistDSS Privacy Policy' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Login', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Sign Up', exact: true })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Log in', exact: true })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Sign up', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Dashboard', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Messages', exact: true })).toHaveCount(0);
 
@@ -68,7 +68,7 @@ test('logout immediately removes authenticated actions and protects the dashboar
     await expect.poll(() => logoutFinished).toBe(true);
 
     await page.goto('/terms');
-    await expect(page.getByRole('link', { name: 'Login', exact: true })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Log in', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Dashboard', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Messages', exact: true })).toHaveCount(0);
 
@@ -115,7 +115,7 @@ test('logout blocks session restore when reloading before the server responds', 
     await expect(page.getByRole('navigation', { name: 'dashboard navigation' })).toBeVisible();
 
     await page.getByRole('button', { name: 'account menu' }).click();
-    await page.getByRole('menuitem', { name: 'Logout' }).click();
+    await page.getByRole('menuitem', { name: 'Log out' }).click();
     await expect(page).toHaveURL(/\/login$/);
     await expect.poll(() => logoutStarted).toBe(true);
 

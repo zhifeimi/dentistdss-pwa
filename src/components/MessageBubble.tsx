@@ -148,7 +148,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       {isUser && (
         <Avatar
           sx={{
-            bgcolor: 'secondary.main',
+            bgcolor: 'action.selected',
+            color: 'text.primary',
             ml: 1,
             width: isMobile ? 28 : 36,
             height: isMobile ? 28 : 36

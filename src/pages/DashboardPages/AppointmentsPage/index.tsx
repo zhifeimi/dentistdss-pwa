@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import {
   Alert,
   Box,
@@ -10,7 +11,6 @@ import {
   Tab,
   Tabs,
   TextField,
-  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -26,6 +26,7 @@ import AppointmentCard from '../../../components/Dashboard/shared/AppointmentCar
 import AppointmentDialog from '../../../components/Dashboard/shared/AppointmentDialog';
 import BookingWizard from '../../../components/Dashboard/shared/BookingWizard';
 import SearchableList from '../../../components/Dashboard/shared/SearchableList';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';
 import useAppointments from '../../../hooks/appointment/useAppointments';
 import useAppointmentActions from '../../../hooks/appointment/useAppointmentActions';
@@ -83,6 +84,30 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     refreshAppointments();
     setShowBookingWizard(false);
   });
+
+  // "Book a visit" links here with ?book=<clinicId>: open the wizard straight
+  // away (it shows the clinic list loading, or failing with a retry) and choose
+  // that clinic once it's in the list. An unknown id, such as the overview's
+  // ?book=new, leaves the choice to the visitor.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const bookClinicId = canBookAppointment ? searchParams.get('book') : null;
+  const [pendingClinicId, setPendingClinicId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!bookClinicId) return;
+    bookingWizard.resetBooking();
+    setPendingClinicId(bookClinicId);
+    setShowBookingWizard(true);
+    setSearchParams({}, { replace: true });
+    // bookingWizard's identity changes every render; the inputs above are the triggers.
+  }, [bookClinicId]);
+
+  const bookingClinics = bookingWizard.clinics;
+  useEffect(() => {
+    const clinic = pendingClinicId && bookingClinics.find((item) => String(item.id) === pendingClinicId);
+    if (!clinic) return;
+    bookingWizard.updateBookingData('clinicId', clinic.id);
+    setPendingClinicId(null);
+  }, [pendingClinicId, bookingClinics]);
 
   // Event handlers
   const handleAppointmentClick = useCallback((appointment: Appointment) => {
@@ -157,6 +182,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
 
   const handleCloseBookingWizard = useCallback(() => {
     bookingWizard.resetBooking();
+    setPendingClinicId(null);
     setShowBookingWizard(false);
   }, [bookingWizard]);
 
@@ -165,6 +191,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     // every booking from a blank wizard so time can only be chosen from the
     // service-specific slots returned by appointment-service.
     bookingWizard.resetBooking();
+    setPendingClinicId(null);
     setShowBookingWizard(true);
   }, [bookingWizard]);
 
@@ -216,10 +243,10 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
       : 'No appointments found.';
 
     const searchPlaceholder = userRole === 'PATIENT'
-      ? 'Search by dentist or service type...'
+      ? 'Search by dentist or service type…'
       : userRole === 'DENTIST'
-      ? 'Search by patient or service type...'
-      : 'Search by patient, dentist, or service type...';
+      ? 'Search by patient or service type…'
+      : 'Search by patient, dentist, or service type…';
 
     return (
       <SearchableList
@@ -246,7 +273,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
   };
 
   if (loading) {
-    return <Alert severity='info'>Loading appointments...</Alert>;
+    return <Alert severity='info'>Loading appointments…</Alert>;
   }
 
   if (error) {
@@ -255,63 +282,44 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
 
   return (
     <Box sx={{ pt: 2, height: '100%' }}>
-      {/* Header with View Toggle and Actions */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-          flexWrap: 'wrap',
-          gap: 2,
-        }}
-      >
-        {/* Title and Today's Count */}
-        <Box>
-          <Typography variant='h5' sx={{ fontWeight: 'medium', mb: 0.5 }}>
-            {userRole === 'PATIENT' ? 'My Appointments' : 'Appointments'}
-          </Typography>
-          <Typography variant='body2' color='text.secondary'>
-            {todaysAppointments.length} appointment{todaysAppointments.length !== 1 ? 's' : ''}{' '}
-            today
-          </Typography>
-        </Box>
-
-        {/* Actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {/* View Mode Toggle */}
-          <Tabs
-            value={viewMode}
-            onChange={handleViewModeChange}
-            sx={{ minHeight: 'auto' }}
-          >
-            <Tab
-              icon={<CalendarIcon />}
-              label={!isMobile ? 'Calendar' : ''}
-              value='calendar'
-              sx={{ minHeight: 'auto', py: 1 }}
-            />
-            <Tab
-              icon={<ListIcon />}
-              label={!isMobile ? 'List' : ''}
-              value='list'
-              sx={{ minHeight: 'auto', py: 1 }}
-            />
-          </Tabs>
-
-          {/* New Appointment Button */}
-          {canBookAppointment && (
-            <Button
-              variant='contained'
-              startIcon={<AddIcon />}
-              onClick={() => handleNewAppointment()}
-              size={isMobile ? 'small' : 'medium'}
+      <PageHeader
+        title={userRole === 'PATIENT' ? 'Your appointments' : 'Appointments'}
+        description={`${todaysAppointments.length} appointment${todaysAppointments.length !== 1 ? 's' : ''} today`}
+        actions={
+          <>
+            <Tabs
+              value={viewMode}
+              onChange={handleViewModeChange}
+              sx={{ minHeight: 'auto' }}
             >
-              {isMobile ? 'Book' : 'Book Appointment'}
-            </Button>
-          )}
-        </Box>
-      </Box>
+              <Tab
+                icon={<CalendarIcon />}
+                label={!isMobile ? 'Calendar' : ''}
+                value='calendar'
+                sx={{ minHeight: 'auto', py: 1 }}
+              />
+              <Tab
+                icon={<ListIcon />}
+                label={!isMobile ? 'List' : ''}
+                value='list'
+                sx={{ minHeight: 'auto', py: 1 }}
+              />
+            </Tabs>
+
+            {/* New Appointment Button */}
+            {canBookAppointment && (
+              <Button
+                variant='contained'
+                startIcon={<AddIcon />}
+                onClick={() => handleNewAppointment()}
+                size={isMobile ? 'small' : 'medium'}
+              >
+                {isMobile ? 'Book' : 'Book a visit'}
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Main Content */}
       <Box sx={{ height: 'calc(100% - 120px)' }}>
@@ -340,7 +348,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
         maxWidth='sm'
         fullWidth
       >
-        <DialogTitle>Cancel Appointment</DialogTitle>
+        <DialogTitle>Cancel appointment</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -361,7 +369,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCancellation} color='inherit'>
-            Keep Appointment
+            Keep appointment
           </Button>
           <Button
             onClick={handleConfirmCancellation}
@@ -369,7 +377,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
             variant='contained'
             disabled={appointmentActions.loading}
           >
-            {appointmentActions.loading ? 'Cancelling...' : 'Cancel Appointment'}
+            {appointmentActions.loading ? 'Cancelling…' : 'Cancel appointment'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -387,6 +395,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
         availableSlots={transformedAvailableSlots}
         serviceTypes={bookingWizard.serviceTypes}
         loading={bookingWizard.loading}
+        onRetryClinics={bookingWizard.loadClinics}
         onUpdateBookingData={bookingWizard.updateBookingData}
         onUpdatePatientData={bookingWizard.updatePatientData}
         onNextStep={bookingWizard.nextStep}

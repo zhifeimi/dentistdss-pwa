@@ -8,7 +8,6 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Alert,
   useTheme,
   Skeleton,
   Divider,
@@ -207,7 +206,7 @@ const DayScheduleCard: React.FC<DayScheduleCardProps> = ({ day, workingHours, on
         {regularHours.length > 0 && (
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-              Regular Hours
+              Regular hours
             </Typography>
             {regularHours.map(wh => renderWorkingHoursItem(wh, false))}
           </Box>
@@ -218,7 +217,7 @@ const DayScheduleCard: React.FC<DayScheduleCardProps> = ({ day, workingHours, on
           <Box sx={{ mb: 2 }}>
             {regularHours.length > 0 && <Divider sx={{ mb: 2 }} />}
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-              Specific Dates
+              Specific dates
             </Typography>
             {specificDateHours.map(wh => renderWorkingHoursItem(wh, true))}
           </Box>
@@ -226,11 +225,9 @@ const DayScheduleCard: React.FC<DayScheduleCardProps> = ({ day, workingHours, on
 
         {/* No working hours */}
         {dayWorkingHours.length === 0 && (
-          <Alert severity="info" sx={{ textAlign: 'center' }}>
-            <Typography variant="body2">
-              No working hours configured
-            </Typography>
-          </Alert>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Closed. No hours set for this day.
+          </Typography>
         )}
       </CardContent>
     </Card>
@@ -259,7 +256,7 @@ const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
     return (
       <Box>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-          Weekly Schedule
+          Weekly schedule
         </Typography>
         
         <Grid container spacing={2}>
@@ -284,7 +281,7 @@ const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        Weekly Schedule
+        Weekly schedule
       </Typography>
       
       <Grid container spacing={2}>

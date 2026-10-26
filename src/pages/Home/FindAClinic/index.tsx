@@ -1,11 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import {
-  Container,
-  Typography,
-  Grid,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Container, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { useSearchParams } from 'react-router';
 
 import SearchSection from '../../../components/FindAClinic/SearchSection';
 import MapSection from '../../../components/FindAClinic/MapSection';
@@ -13,7 +8,6 @@ import ClinicList from '../../../components/FindAClinic/ClinicList';
 
 import { useClinicSearch } from '../../../hooks/useClinicSearch';
 import { useMapControls } from '../../../hooks/useMapControls';
-import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
 import type { ClinicSearchResult } from '../../../types/api';
 
 interface ClinicWithCoords extends ClinicSearchResult {
@@ -26,31 +20,26 @@ interface ClinicWithCoords extends ClinicSearchResult {
 }
 
 /**
- * FindAClinic - Main clinic search and discovery page
- * 
- * Features:
- * - Interactive map with clinic markers
- * - Search functionality with keywords
- * - Responsive layout for mobile and desktop
- * - Real-time clinic data with geocoding
+ * FindAClinic — clinic search: results list first (what patients read),
+ * map beside it on wide screens and below it on phones.
+ * `?q=` (from the home page search) pre-fills and runs the search.
  */
 const FindAClinic: React.FC = React.memo(() => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [searchParams] = useSearchParams();
 
-  // State for geocoded clinics
   const [clinicsWithCoords, setClinicsWithCoords] = useState<ClinicWithCoords[]>([]);
 
-  // Custom hooks for separated concerns
   const {
     searchKeywords,
     setSearchKeywords,
     clinics,
     loading,
+    failed,
     handleSearch,
-    handleKeyPress,
-    clearResults
-  } = useClinicSearch();
+    clearResults,
+  } = useClinicSearch(searchParams.get('q') ?? '');
 
   const {
     selectedClinic,
@@ -61,79 +50,52 @@ const FindAClinic: React.FC = React.memo(() => {
     handleMarkerClick,
     handleInfoWindowClose,
     onMapLoad,
-    onMapUnmount
+    onMapUnmount,
   } = useMapControls();
 
-  // Convert selectedClinic to ClinicSearchResult for components
   const selectedClinicAsSearchResult = selectedClinic as ClinicSearchResult | null;
 
-  const { containerSpacing } = useResponsiveLayout(isMobile);
-
-  // Handle geocoded clinics from MapSection
   const handleClinicsWithCoordsChange = useCallback((geocodedClinics: ClinicWithCoords[]) => {
     setClinicsWithCoords(geocodedClinics);
   }, []);
 
   return (
-    <Container
-      maxWidth="xl"
-      sx={{
-        py: containerSpacing,
-        px: { xs: 2, sm: 3, md: 4 }
-      }}
-    >
-      <Typography
-        variant="h4"
-        component="h1"
-        gutterBottom
-        sx={{
-          mb: 3,
-          fontSize: { xs: '1.75rem', sm: '2rem', md: '2.125rem' },
-          textAlign: { xs: 'center', md: 'left' }
-        }}
-      >
-        Find a Dental Clinic
+    <Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, sm: 3, md: 4 } }}>
+      <Typography variant="h2" component="h1">
+        Find a clinic
+      </Typography>
+      <Typography sx={{ mt: 1, mb: 3, color: 'text.secondary', maxWidth: '60ch' }}>
+        Search by suburb, clinic name or treatment. Choose a clinic to see it on the map and book a
+        visit.
       </Typography>
 
-      {/* Search Section */}
       <SearchSection
         searchKeywords={searchKeywords}
         setSearchKeywords={setSearchKeywords}
         loading={loading}
         onSearch={handleSearch}
-        onKeyPress={handleKeyPress}
         onClearResults={clearResults}
-        isMobile={isMobile}
       />
 
-      {/* Map and Results Layout */}
-      <Grid
-        container
-        spacing={3}
+      <Box
         sx={{
-          width: '100%',
-          margin: 0,
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          flexWrap: 'nowrap',
-          alignItems: 'stretch',
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'minmax(340px, 5fr) 7fr' },
+          gap: 3,
+          alignItems: 'start',
         }}
       >
-        {/* Map Section */}
-        <Grid
-          size={{ xs: 12, md: 8 }}
-          sx={{
-            width: { xs: '100%', md: '66%' },
-            maxWidth: { xs: '100%', md: '66%' },
-            flexBasis: { xs: '100%', md: '66%' },
-            flexGrow: 0,
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            boxSizing: 'border-box',
-            paddingRight: { xs: 0, md: 1.5 },
-          }}
-        >
+        <ClinicList
+          clinics={clinicsWithCoords.length > 0 ? clinicsWithCoords : clinics}
+          selectedClinic={selectedClinicAsSearchResult}
+          loading={loading}
+          failed={failed}
+          onRetry={handleSearch}
+          hasQuery={searchKeywords.trim() !== ''}
+          isMobile={isMobile}
+          onClinicSelect={handleClinicSelect}
+        />
+        <Box sx={{ position: { md: 'sticky' }, top: { md: 88 } }}>
           <MapSection
             clinics={clinics}
             selectedClinic={selectedClinicAsSearchResult}
@@ -147,38 +109,12 @@ const FindAClinic: React.FC = React.memo(() => {
             onMapUnmount={onMapUnmount}
             onClinicsWithCoordsChange={handleClinicsWithCoordsChange}
           />
-        </Grid>
-
-        {/* Results List Section */}
-        <Grid
-          size={{ xs: 12, md: 4 }}
-          sx={{
-            width: { xs: '100%', md: '33%' },
-            maxWidth: { xs: '100%', md: '33%' },
-            flexBasis: { xs: '100%', md: '33%' },
-            flexGrow: 0,
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            boxSizing: 'border-box',
-            paddingLeft: { xs: 0, md: 1.5 },
-            marginTop: { xs: 3, md: 0 },
-          }}
-        >
-          <ClinicList
-            clinics={clinicsWithCoords.length > 0 ? clinicsWithCoords : clinics}
-            selectedClinic={selectedClinicAsSearchResult}
-            loading={loading}
-            isMobile={isMobile}
-            onClinicSelect={handleClinicSelect}
-          />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Container>
   );
 });
 
-// Display name for debugging
 FindAClinic.displayName = 'FindAClinic';
 
 export default FindAClinic;

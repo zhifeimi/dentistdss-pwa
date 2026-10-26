@@ -23,12 +23,12 @@ const CommunicationsPage: React.FC = () => {
       <Card variant="outlined" sx={{ height: '100%' }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Communication Tools
+            Communication tools
           </Typography>
           <List dense>
             <ListItem>
               <ListItemText
-                primary="Appointment Reminders"
+                primary="Appointment reminders"
                 secondary="Send automated reminders to patients"
               />
             </ListItem>

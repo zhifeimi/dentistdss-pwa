@@ -1,13 +1,12 @@
 import React, { Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router';
-import { Typography } from '@mui/material';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../context/auth';
 import RouteFallback from '../components/RouteFallback';
+import { returnPathAfterLogin } from '../utils/returnPath';
 
 // Route-level code splitting: every page is a lazy chunk so the anonymous first
 // view does not pay for dashboard, calendar, maps, markdown, or Learn assets.
 // Directory pages import their index.tsx directly to avoid barrel hazards.
-const ChatInterface = React.lazy(() => import('../pages/Dashboard/ChatBotDentist/index.tsx'));
 const Login = React.lazy(() => import('../pages/Home/Login/index.tsx'));
 const Signup = React.lazy(() => import('../pages/Home/Signup/index.tsx'));
 const Welcome = React.lazy(() => import('../pages/Home/Welcome/index.tsx'));
@@ -20,20 +19,22 @@ const QuizPage = React.lazy(() => import('../pages/Home/Quiz/index.tsx'));
 const FindAClinic = React.lazy(() => import('../pages/Home/FindAClinic/index.tsx'));
 const ClinicAdminSignup = React.lazy(() => import('../pages/Home/Signup/ClinicAdmin/index.tsx'));
 const TermsAndConditions = React.lazy(() => import('../pages/TermsAndConditions/index.tsx'));
+const PendingApproval = React.lazy(() => import('../pages/PendingApproval/index.tsx'));
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, loading } = useAuth();
+    const location = useLocation();
 
     return (
         <Suspense fallback={<RouteFallback />}>
             <Routes>
                 <Route
                     path="/login"
-                    element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />}
+                    element={!isAuthenticated ? <Login /> : <Navigate to={returnPathAfterLogin(location.state)} replace />}
                 />
                 <Route
                     path="/signup"
-                    element={!isAuthenticated ? <Signup /> : <Navigate to="/dashboard" replace />}
+                    element={!isAuthenticated ? <Signup /> : <Navigate to={returnPathAfterLogin(location.state)} replace />}
                 />
                 <Route
                     path="/signup/clinic-staff"
@@ -63,32 +64,6 @@ const AppRoutes: React.FC = () => {
                     path="/quiz"
                     element={<QuizPage />}
                 />
-                <Route
-                    path="/chat"
-                    element={
-                        loading ? (
-                            <RouteFallback />
-                        ) : isAuthenticated ? (
-                            <>
-                                <Typography
-                                    variant="h4"
-                                    component="h1"
-                                    gutterBottom
-                                    align="center"
-                                    sx={{
-                                        mb: { xs: 2, sm: 3, md: 4 },
-                                        fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' }
-                                    }}
-                                >
-                                    Dentabot - Your Dental Assistant
-                                </Typography>
-                                <ChatInterface />
-                            </>
-                        ) : (
-                            <Navigate to="/login" replace />
-                        )
-                    }
-                />
                 {/* Dashboard routes are now handled by AppShell based on public location dictionary */}
                 <Route
                     path="/dashboard/*"
@@ -96,8 +71,7 @@ const AppRoutes: React.FC = () => {
                 />
                 <Route
                     path="/pending-approval"
-                    element={<Typography variant="h5" align="center" sx={{ mt: 4 }}>Your account is pending approval. Please check
-                        your email or contact support.</Typography>}
+                    element={<PendingApproval />}
                 />
                 <Route
                     path="/find-a-clinic"

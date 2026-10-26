@@ -1,38 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { Link as RouterLink } from 'react-router';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
   Alert,
-  Grid,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  LinearProgress,
-  useTheme,
-  useMediaQuery,
+  Box,
+  Button,
+  Skeleton,
+  Typography,
 } from '@mui/material';
-import {
-  Event as EventIcon,
-  Person as PersonIcon,
-  MedicalServices as MedicalServicesIcon,
-  TrendingUp as TrendingUpIcon,
-  Assignment as AssignmentIcon,
-  AccessTime as AccessTimeIcon,
-} from '@mui/icons-material';
-import { getResponsivePadding, getResponsiveMargin } from '../../../utils/mobileOptimization';
+import { alpha } from '@mui/material/styles';
 import { useAuth } from '../../../context/auth';
-import {
-  getDashboardWelcomeMessage,
-  getStatusChip,
-  formatAppointmentTime,
-  formatAppointmentText,
-  getAppointmentServiceType
-} from '../../../utils/chatUtils';
+import { getStatusChip } from '../../../utils/chatUtils';
 import api from '../../../services';
-import dayjs from '../../../utils/dayjs';
+import dayjs, { type Dayjs } from '../../../utils/dayjs';
 import { UserRole, Appointment, Clinic } from '../../../types';
 
 interface OverviewPageProps {
@@ -44,25 +23,180 @@ interface PatientData {
   [key: string]: any;
 }
 
+// Two things each role most often comes to the dashboard to do.
+const ACTIONS: Record<UserRole, { label: string; to: string }[]> = {
+  PATIENT: [
+    { label: 'Book a visit', to: '/appointments?book=new' },
+    { label: 'Find a clinic', to: '/find-a-clinic' },
+  ],
+  DENTIST: [
+    { label: 'Open schedule', to: '/schedule' },
+    { label: 'Summarise notes', to: '/ai-summarize' },
+  ],
+  RECEPTIONIST: [
+    { label: 'Book an appointment', to: '/appointments' },
+    { label: 'Patients', to: '/patients' },
+  ],
+  CLINIC_ADMIN: [
+    { label: 'Review approvals', to: '/approvals' },
+    { label: 'Working hours', to: '/working-hours' },
+  ],
+  SYSTEM_ADMIN: [
+    { label: 'Review approvals', to: '/approvals' },
+    { label: 'Users', to: '/users' },
+  ],
+};
+
+const CLOSED = new Set(['CANCELLED', 'COMPLETED', 'NO_SHOW']);
+
+const clock = (time?: string) => (time ? dayjs(`2000-01-01T${time}`).format('h:mm a') : '');
+const startsAt = (a: Appointment) => dayjs(`${a.appointmentDate}T${a.startTime || '00:00:00'}`);
+const byStart = (a: Appointment, b: Appointment) => startsAt(a).valueOf() - startsAt(b).valueOf();
+
+const greeting = (role: UserRole, firstName?: string, lastName?: string) => {
+  const hour = dayjs().hour();
+  const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const name = role === 'DENTIST' && lastName ? `Dr ${lastName}` : firstName;
+  return name ? `${part}, ${name}` : part;
+};
+
+/** A ruled row of the day ledger: time in the gutter, who and what beside it. */
+const AgendaRow: React.FC<{
+  appointment: Appointment;
+  showDentist: boolean;
+  isNext: boolean;
+  isPast: boolean;
+  ruled: boolean;
+}> = ({ appointment, showDentist, isNext, isPast, ruled }) => (
+  <Box
+    component="li"
+    sx={(theme) => ({
+      display: 'grid',
+      gridTemplateColumns: { xs: '72px 1fr', sm: '88px 1fr auto' },
+      columnGap: 2,
+      rowGap: 0.75,
+      alignItems: 'center',
+      px: { xs: 2, sm: 2.5 },
+      py: 1.75,
+      borderTop: ruled ? 1 : 0,
+      borderColor: 'divider',
+      boxShadow: isNext ? `inset 3px 0 0 ${theme.palette.primary.main}` : 'none',
+      bgcolor: isNext ? alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.05 : 0.1) : 'transparent',
+      color: isPast ? 'text.secondary' : 'text.primary',
+    })}
+  >
+    <Box sx={{ fontVariantNumeric: 'tabular-nums' }}>
+      <Typography variant="subtitle2" component="p" sx={{ color: 'inherit' }}>
+        {clock(appointment.startTime) || 'Time TBC'}
+      </Typography>
+      {appointment.endTime && (
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          to {clock(appointment.endTime)}
+        </Typography>
+      )}
+    </Box>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="subtitle2" component="p" noWrap sx={{ color: 'inherit' }}>
+        {appointment.patientName || 'Patient'}
+        {isNext && (
+          <Box component="span" sx={{ ml: 1, color: 'primary.main', fontWeight: 700 }}>
+            Next
+          </Box>
+        )}
+      </Typography>
+      <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
+        {[appointment.serviceName || appointment.serviceType || appointment.reasonForVisit, showDentist && appointment.dentistName]
+          .filter(Boolean)
+          .join(', ') || 'Appointment'}
+      </Typography>
+    </Box>
+    {appointment.status && (
+      <Box sx={{ gridColumn: { xs: 2, sm: 'auto' }, justifySelf: 'start' }}>
+        {getStatusChip(appointment.status)}
+      </Box>
+    )}
+  </Box>
+);
+
+/** The current time, drawn in place of the rule between two rows. */
+const NowLine: React.FC = () => (
+  <Box
+    component="li"
+    sx={{
+      display: 'grid',
+      gridTemplateColumns: { xs: '72px 1fr', sm: '88px 1fr' },
+      columnGap: 2,
+      alignItems: 'center',
+      px: { xs: 2, sm: 2.5 },
+      height: 20,
+    }}
+  >
+    <Typography
+      variant="caption"
+      sx={{
+        justifySelf: 'start',
+        px: 0.75,
+        borderRadius: 1,
+        bgcolor: 'secondary.main',
+        color: 'secondary.contrastText',
+        fontWeight: 700,
+        lineHeight: '18px',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      <Box component="span" sx={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Now, </Box>
+      {dayjs().format('h:mm a')}
+    </Typography>
+    <Box sx={{ height: 2, bgcolor: 'secondary.main', borderRadius: 1 }} />
+  </Box>
+);
+
+const Panel: React.FC<{ title: string; meta?: string; children: React.ReactNode }> = ({ title, meta, children }) => (
+  <Box
+    component="section"
+    sx={{ bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1.5, overflow: 'hidden' }}
+  >
+    <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2, display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+      <Typography variant="h6" component="h2">
+        {title}
+      </Typography>
+      {meta && (
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {meta}
+        </Typography>
+      )}
+    </Box>
+    {children}
+  </Box>
+);
+
+const Empty: React.FC<{ title: string; text: string }> = ({ title, text }) => (
+  <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 4, borderTop: 1, borderColor: 'divider' }}>
+    <Typography variant="subtitle1" component="p">
+      {title}
+    </Typography>
+    <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary', maxWidth: '52ch' }}>
+      {text}
+    </Typography>
+  </Box>
+);
+
 /**
- * OverviewPage - Dashboard overview page for all roles
- *
- * Features:
- * - Role-specific welcome message and content
- * - Today's appointments and quick stats
- * - Real API integration replacing mock data
- * - Responsive design with Material-UI
+ * OverviewPage — the first screen after sign-in. Clinic roles get today's
+ * appointments as a time-ruled ledger with a "now" line; patients get their
+ * next visit. Two role-specific actions sit beside the greeting.
  */
 const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => {
   const [clinicDetails, setClinicDetails] = useState<Clinic | null>(null);
-  const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  // A failed appointments request must not read as an empty day
+  const [appointmentsFailed, setAppointmentsFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   const { currentUser } = useAuth() || {};
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Load dashboard data based on user role
   useEffect(() => {
@@ -75,15 +209,16 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
 
       setLoading(true);
       setError('');
+      setAppointmentsFailed(false);
 
       try {
         // Independent requests fire concurrently so the dashboard's first
         // paint waits on the slowest single request instead of the serial
-        // sum. Each section keeps its own failure fallback: a failed request
-        // warns and leaves that section empty without blocking the others.
+        // sum. A failed request doesn't block the others: clinic details are
+        // optional, and failed appointments show an error with a retry.
         const tasks: Promise<void>[] = [];
+        const today = dayjs().format('YYYY-MM-DD');
 
-        // Load clinic details if available
         if (currentUser?.clinicId) {
           tasks.push(
             api.clinic.getClinicById(currentUser.clinicId)
@@ -94,31 +229,35 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
           );
         }
 
-        // Load role-specific data
         if (userRole === 'DENTIST') {
-          // Load today's appointments for dentist
-          const today = dayjs().format('YYYY-MM-DD');
           tasks.push(
             api.appointment.getDentistAppointments(currentUser.id, today)
-              .then((appointmentsResponse) => setTodayAppointments(appointmentsResponse || []))
+              .then((response) => setAppointments(response || []))
               .catch((err) => {
                 console.warn('Could not load dentist appointments:', err);
-                setTodayAppointments([]);
+                setAppointmentsFailed(true);
+              })
+          );
+        } else if ((userRole === 'RECEPTIONIST' || userRole === 'CLINIC_ADMIN') && currentUser.clinicId) {
+          tasks.push(
+            api.appointment.getClinicAppointments(Number(currentUser.clinicId), today)
+              .then((response) => setAppointments(response || []))
+              .catch((err) => {
+                console.warn('Could not load clinic appointments:', err);
+                setAppointmentsFailed(true);
               })
           );
         } else if (userRole === 'PATIENT') {
-          // Load patient appointments and profile in parallel; each falls
-          // back independently.
           tasks.push(
             Promise.allSettled([
               api.appointment.getPatientAppointments(currentUser.id),
               api.user.getProfile(currentUser.id),
             ]).then(([appointmentsResult, profileResult]) => {
               if (appointmentsResult.status === 'fulfilled') {
-                setTodayAppointments(appointmentsResult.value || []);
+                setAppointments(appointmentsResult.value || []);
               } else {
                 console.warn('Could not load patient appointments:', appointmentsResult.reason);
-                setTodayAppointments([]);
+                setAppointmentsFailed(true);
               }
               if (profileResult.status === 'fulfilled') {
                 setPatientData(profileResult.value || null);
@@ -140,434 +279,313 @@ const OverviewPage: React.FC<OverviewPageProps> = ({ userRole = 'PATIENT' }) => 
     };
 
     loadDashboardData();
-  }, [currentUser?.id, currentUser?.clinicId, userRole]);
-
-  // Get welcome message using utility function
-  const welcomeMessage = getDashboardWelcomeMessage(userRole, currentUser, clinicDetails);
+  }, [currentUser?.id, currentUser?.clinicId, userRole, attempt]);
 
   if (loading) {
     return (
-      <Box sx={{ p: getResponsivePadding('medium') }}>
-        <LinearProgress />
-        <Typography
-          variant="body2"
-          sx={{
-            mt: 1,
-            textAlign: 'center',
-            fontSize: { xs: '0.8rem', sm: '0.875rem' }
-          }}
-        >
-          Loading your dashboard...
-        </Typography>
+      <Box aria-busy="true" aria-label="Loading your overview">
+        <Skeleton width={160} />
+        <Skeleton variant="text" sx={{ fontSize: '2rem', maxWidth: 360 }} />
+        <Skeleton variant="rounded" height={88} sx={{ mt: 3 }} />
+        <Skeleton variant="rounded" height={280} sx={{ mt: 3 }} />
       </Box>
     );
   }
 
   if (error) {
-    return (
-      <Box sx={{ p: getResponsivePadding('medium') }}>
-        <Alert
-          severity="error"
-          sx={{
-            fontSize: { xs: '0.85rem', sm: '0.9rem' },
-            '& .MuiAlert-message': {
-              fontSize: 'inherit'
-            }
-          }}
-        >
-          {error}
-        </Alert>
-      </Box>
-    );
+    return <Alert severity="error">{error}</Alert>;
   }
 
-  const getRoleIcon = (role: UserRole) => {
-    const iconProps = { color: 'primary' as const, sx: { fontSize: { xs: '1.2rem', sm: '1.5rem' } } };
-    switch (role) {
-      case 'DENTIST': return <MedicalServicesIcon {...iconProps} />;
-      case 'PATIENT': return <PersonIcon {...iconProps} />;
-      case 'CLINIC_ADMIN': return <TrendingUpIcon {...iconProps} />;
-      case 'RECEPTIONIST': return <AccessTimeIcon {...iconProps} />;
-      case 'SYSTEM_ADMIN': return <AssignmentIcon {...iconProps} />;
-      default: return <PersonIcon {...iconProps} />;
-    }
-  };
-
-  const getRoleDescription = (role: UserRole): string => {
-    switch (role) {
-      case 'DENTIST': return "Here's your clinical overview for today. Check your appointments and patient updates.";
-      case 'PATIENT': return "Track your dental health journey and manage your appointments.";
-      case 'CLINIC_ADMIN': return "Manage your clinic operations from this dashboard.";
-      case 'RECEPTIONIST': return "Manage patient appointments and clinic communications.";
-      case 'SYSTEM_ADMIN': return "Monitor system operations and manage platform-wide settings.";
-      default: return "Welcome to your dashboard.";
-    }
-  };
+  const clinicName = clinicDetails?.name || currentUser?.clinicName;
+  const now = dayjs();
+  const showsAgenda = userRole === 'DENTIST' || userRole === 'RECEPTIONIST' || userRole === 'CLINIC_ADMIN';
 
   return (
-    <Box sx={{ p: getResponsivePadding('medium') }}>
-      <Typography
-        variant={isMobile ? "h5" : "h4"}
-        gutterBottom
+    <Box>
+      <Box
         sx={{
-          fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-          fontWeight: 600,
-          mb: getResponsiveMargin('medium')
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: 2,
+          mb: { xs: 3, md: 4 },
         }}
       >
-        {welcomeMessage}
-      </Typography>
+        <Box>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {now.format('dddd D MMMM')}
+          </Typography>
+          <Typography variant="h4" component="h1" sx={{ mt: 0.5 }}>
+            {greeting(userRole, currentUser?.firstName, currentUser?.lastName)}
+          </Typography>
+          {clinicName && userRole !== 'PATIENT' && (
+            <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>{clinicName}</Typography>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {ACTIONS[userRole]?.map((action, index) => (
+            <Button
+              key={action.to}
+              component={RouterLink}
+              to={action.to}
+              variant={index === 0 ? 'contained' : 'outlined'}
+            >
+              {action.label}
+            </Button>
+          ))}
+        </Box>
+      </Box>
 
-      <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
-        {/* Welcome Card */}
-        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 4 }}>
-          <Card
-            sx={{
-              minHeight: 300,
-              borderRadius: 2,
-              transition: theme.transitions.create(['box-shadow'], {
-                duration: theme.transitions.duration.shorter,
-              }),
-              '&:hover': {
-                boxShadow: theme.shadows[4],
-              }
-            }}
-          >
-            <CardContent sx={{ p: getResponsivePadding('medium') }}>
-              <Typography
-                variant={isMobile ? "subtitle1" : "h6"}
-                gutterBottom
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: { xs: 0.5, sm: 1 },
-                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                  fontWeight: 600,
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  textAlign: { xs: 'center', sm: 'left' }
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  {getRoleIcon(userRole)}
-                  Dashboard Overview
-                </Box>
-              </Typography>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
-                  lineHeight: { xs: 1.5, sm: 1.6 },
-                  textAlign: { xs: 'center', sm: 'left' }
-                }}
-              >
-                {getRoleDescription(userRole)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      {appointmentsFailed && (
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => setAttempt((n) => n + 1)}>
+              Retry
+            </Button>
+          }
+        >
+          Couldn't load your appointments. Check your connection and retry.
+        </Alert>
+      )}
 
-        {/* Today's Appointments - For Dentist and Patient */}
-        {(userRole === 'DENTIST' || userRole === 'PATIENT') && (
-          <Grid size={{ xs: 12, md: 8 }}>
-            <Card
+      {showsAgenda && !appointmentsFailed && (
+        <StaffToday
+          appointments={appointments}
+          showDentist={userRole !== 'DENTIST'}
+          now={now}
+          noClinic={userRole !== 'DENTIST' && !currentUser?.clinicId}
+        />
+      )}
+
+      {userRole === 'PATIENT' && !appointmentsFailed && (
+        <PatientUpcoming appointments={appointments} lastVisit={patientData?.lastVisit} now={now} />
+      )}
+
+      {userRole === 'SYSTEM_ADMIN' && (
+        <Panel title="Platform">
+          <Empty
+            title="Approvals and accounts"
+            text="Clinic and staff sign-ups waiting for a decision are under Approvals. Accounts and roles are under Users."
+          />
+        </Panel>
+      )}
+    </Box>
+  );
+};
+
+const StaffToday: React.FC<{
+  appointments: Appointment[];
+  showDentist: boolean;
+  now: Dayjs;
+  noClinic: boolean;
+}> = ({ appointments, showDentist, now, noClinic }) => {
+  const day = [...appointments].sort(byStart);
+  const open = day.filter((a) => !CLOSED.has(String(a.status)));
+  const awaiting = open.filter((a) => a.status === 'REQUESTED').length;
+  const confirmed = open.filter((a) => a.status === 'CONFIRMED').length;
+  const next = open.find((a) => a.startTime && startsAt(a).isAfter(now));
+  const nowIndex = day.findIndex((a) => !a.startTime || startsAt(a).isAfter(now));
+
+  const stats = [
+    { label: 'Booked today', value: String(open.length) },
+    { label: 'Confirmed', value: String(confirmed) },
+    { label: 'Awaiting confirmation', value: String(awaiting), attention: awaiting > 0 },
+    {
+      label: 'Next',
+      value: next ? clock(next.startTime) : open.length ? 'Done for today' : 'Nothing booked',
+      detail: next?.patientName,
+    },
+  ];
+
+  return (
+    <>
+      <Box
+        component="dl"
+        sx={{
+          m: 0,
+          mb: 3,
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 1.5,
+          overflow: 'hidden',
+          // Hairlines between cells, whichever way the grid wraps
+          gap: '1px',
+          bgcolor: 'divider',
+        }}
+      >
+        {stats.map((stat) => (
+          <Box key={stat.label} sx={{ bgcolor: 'background.paper', px: { xs: 2, sm: 2.5 }, py: 2 }}>
+            <Typography component="dt" variant="body2" sx={{ color: 'text.secondary' }}>
+              {stat.label}
+            </Typography>
+            <Typography
+              component="dd"
               sx={{
-                minHeight: 300,
-                minWidth: 300,
-                borderRadius: 2,
-                transition: theme.transitions.create(['box-shadow'], {
-                  duration: theme.transitions.duration.shorter,
-                }),
-                '&:hover': {
-                  boxShadow: theme.shadows[4],
-                }
+                m: 0,
+                mt: 0.5,
+                fontSize: '1.625rem',
+                fontWeight: 700,
+                lineHeight: 1.2,
+                fontVariantNumeric: 'tabular-nums',
+                color: stat.attention ? 'secondary.main' : 'text.primary',
               }}
             >
-              <CardContent sx={{ p: getResponsivePadding('medium') }}>
-                <Typography
-                  variant={isMobile ? "subtitle1" : "h6"}
-                  gutterBottom
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: { xs: 0.5, sm: 1 },
-                    fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                    fontWeight: 600
-                  }}
-                >
-                  <EventIcon color="primary" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }} />
-                  {userRole === 'DENTIST' ? "Today's Appointments" : "My Appointments"}
+              {stat.value}
+              {stat.detail && (
+                <Typography component="span" variant="body2" sx={{ display: 'block', color: 'text.secondary', fontWeight: 500 }}>
+                  {stat.detail}
                 </Typography>
+              )}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
 
-                {todayAppointments.length === 0 ? (
-                  <Alert
-                    severity="info"
-                    sx={{
-                      fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                      '& .MuiAlert-message': {
-                        fontSize: 'inherit'
-                      }
-                    }}
-                  >
-                    {userRole === 'DENTIST' ?
-                      "No appointments scheduled for today." :
-                      "You have no upcoming appointments."
-                    }
-                  </Alert>
-                ) : (
-                  <List sx={{ p: 0 }}>
-                    {todayAppointments.slice(0, 5).map((appointment, index) => (
-                      <ListItem
-                        key={appointment.id || index}
-                        divider={index < todayAppointments.length - 1}
-                        sx={{
-                          px: { xs: 0, sm: 1 },
-                          py: { xs: 1, sm: 1.5 },
-                          flexDirection: { xs: 'column', sm: 'row' },
-                          alignItems: { xs: 'flex-start', sm: 'center' }
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: { xs: 'auto', sm: 56 }, mr: { xs: 0, sm: 2 } }}>
-                          <AccessTimeIcon
-                            color="action"
-                            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                          />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <Box sx={{
-                              display: 'flex',
-                              alignItems: { xs: 'flex-start', sm: 'center' },
-                              gap: 1,
-                              flexDirection: { xs: 'column', sm: 'row' }
-                            }}>
-                              <Typography
-                                variant="subtitle2"
-                                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
-                              >
-                                {formatAppointmentTime(appointment)}
-                              </Typography>
-                              {getStatusChip(appointment.status)}
-                            </Box>
-                          }
-                          secondary={
-                            <Box sx={{ mt: { xs: 0.5, sm: 0 } }}>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                              >
-                                {formatAppointmentText(appointment, userRole)}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
-                              >
-                                {getAppointmentServiceType(appointment)}
-                                {appointment.notes && ` - ${appointment.notes}`}
-                              </Typography>
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+      <Panel title="Today's appointments" meta={day.length ? `${day.length} in total` : undefined}>
+        {noClinic ? (
+          <Empty
+            title="Your account isn't linked to a clinic yet"
+            text="Once your clinic approves your account, its appointments for the day will show here."
+          />
+        ) : day.length === 0 ? (
+          <Empty
+            title="No appointments today"
+            text="New bookings appear here as patients make them."
+          />
+        ) : (
+          <Box component="ol" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+            {day.map((appointment, index) => (
+              <React.Fragment key={appointment.id ?? index}>
+                {index === nowIndex && <NowLine />}
+                <AgendaRow
+                  appointment={appointment}
+                  showDentist={showDentist}
+                  isNext={appointment === next}
+                  ruled={index !== nowIndex}
+                  isPast={Boolean(appointment.endTime) && dayjs(`${appointment.appointmentDate}T${appointment.endTime}`).isBefore(now)}
+                />
+              </React.Fragment>
+            ))}
+          </Box>
         )}
+      </Panel>
+    </>
+  );
+};
 
-        {/* Quick Stats - Role specific */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card
-            sx={{
-              minHeight: 300,
-              minWidth: 300,
-              borderRadius: 2,
-              transition: theme.transitions.create(['box-shadow'], {
-                duration: theme.transitions.duration.shorter,
-              }),
-              '&:hover': {
-                boxShadow: theme.shadows[4],
-              }
-            }}
-          >
-            <CardContent sx={{ p: getResponsivePadding('medium') }}>
-              <Typography
-                variant={isMobile ? "subtitle1" : "h6"}
-                gutterBottom
+const PatientUpcoming: React.FC<{
+  appointments: Appointment[];
+  lastVisit?: string;
+  now: Dayjs;
+}> = ({ appointments, lastVisit, now }) => {
+  const today = now.format('YYYY-MM-DD');
+  const upcoming = appointments
+    .filter((a) => Boolean(a.appointmentDate) && a.appointmentDate >= today && !CLOSED.has(String(a.status)))
+    .sort(byStart);
+  const [next, ...later] = upcoming;
+
+  return (
+    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', lg: '5fr 7fr' }, alignItems: 'start' }}>
+      <Panel title="Your next visit">
+        {next ? (
+          <Box sx={{ px: { xs: 2, sm: 2.5 }, pb: 2.5 }}>
+            <Typography sx={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.2 }}>
+              {dayjs(next.appointmentDate).format('dddd D MMMM')}
+            </Typography>
+            <Typography sx={{ mt: 0.5, fontVariantNumeric: 'tabular-nums' }}>
+              {clock(next.startTime)}
+              {next.endTime && ` to ${clock(next.endTime)}`}
+            </Typography>
+            <Box component="dl" sx={{ m: 0, mt: 2, display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 2, rowGap: 0.75 }}>
+              {[
+                ['Clinic', next.clinicName],
+                ['Dentist', next.dentistName],
+                ['For', next.serviceName || next.serviceType || next.reasonForVisit],
+              ]
+                .filter(([, value]) => value)
+                .map(([label, value]) => (
+                  <React.Fragment key={label}>
+                    <Typography component="dt" variant="body2" sx={{ color: 'text.secondary' }}>
+                      {label}
+                    </Typography>
+                    <Typography component="dd" variant="body2" sx={{ m: 0, fontWeight: 600 }}>
+                      {value}
+                    </Typography>
+                  </React.Fragment>
+                ))}
+            </Box>
+            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+              {next.status && getStatusChip(next.status)}
+              <Button component={RouterLink} to="/appointments" size="small">
+                Manage appointments
+              </Button>
+            </Box>
+          </Box>
+        ) : (
+          <Empty
+            title="No visits booked"
+            text="Book a check-up with a clinic near you. Most clinics recommend one every six to twelve months."
+          />
+        )}
+        {lastVisit && (
+          <Typography variant="body2" sx={{ px: { xs: 2, sm: 2.5 }, py: 1.5, borderTop: 1, borderColor: 'divider', color: 'text.secondary' }}>
+            Last visit {dayjs(lastVisit).isValid() ? dayjs(lastVisit).format('D MMMM YYYY') : lastVisit}
+          </Typography>
+        )}
+      </Panel>
+
+      <Panel title="Later" meta={later.length ? `${later.length} booked` : undefined}>
+        {later.length === 0 ? (
+          <Empty title="Nothing else booked" text="Visits you book after your next one will be listed here." />
+        ) : (
+          <Box component="ol" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+            {later.map((appointment, index) => (
+              <Box
+                component="li"
+                key={appointment.id ?? index}
                 sx={{
-                  display: 'flex',
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '88px 1fr', sm: '104px 1fr auto' },
+                  columnGap: 2,
+                  rowGap: 0.75,
                   alignItems: 'center',
-                  gap: { xs: 0.5, sm: 1 },
-                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                  fontWeight: 600
+                  px: { xs: 2, sm: 2.5 },
+                  py: 1.75,
+                  borderTop: 1,
+                  borderColor: 'divider',
                 }}
               >
-                <AssignmentIcon color="primary" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }} />
-                Quick Stats
-              </Typography>
-
-              {userRole === 'DENTIST' && (
-                <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    gutterBottom
-                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                  >
-                    Today's Schedule
+                <Box sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <Typography variant="subtitle2" component="p">
+                    {dayjs(appointment.appointmentDate).format('ddd D MMM')}
                   </Typography>
-                  <Typography
-                    variant={isMobile ? "h5" : "h4"}
-                    color="primary"
-                    sx={{
-                      fontSize: { xs: '1.75rem', sm: '2rem', md: '2.125rem' },
-                      fontWeight: 700
-                    }}
-                  >
-                    {todayAppointments.length}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                  >
-                    Appointments
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {clock(appointment.startTime)}
                   </Typography>
                 </Box>
-              )}
-
-              {userRole === 'PATIENT' && patientData && (
-                <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    gutterBottom
-                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                  >
-                    Next Appointment
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle2" component="p" noWrap>
+                    {appointment.serviceName || appointment.serviceType || 'Appointment'}
                   </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontSize: { xs: '0.9rem', sm: '1rem' },
-                      fontWeight: 500,
-                      mb: 1
-                    }}
-                  >
-                    {todayAppointments.length > 0 ?
-                      new Date(todayAppointments[0].appointmentDate || todayAppointments[0].createdAt).toLocaleDateString() :
-                      'Not scheduled'
-                    }
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      mt: 1,
-                      fontSize: { xs: '0.75rem', sm: '0.8rem' }
-                    }}
-                  >
-                    Last Visit: {patientData.lastVisit || 'No previous visits'}
+                  <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
+                    {[appointment.dentistName, appointment.clinicName].filter(Boolean).join(', ')}
                   </Typography>
                 </Box>
-              )}
-
-              {userRole === 'CLINIC_ADMIN' && (
-                <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    gutterBottom
-                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                  >
-                    Clinic Status
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontSize: { xs: '0.9rem', sm: '1rem' },
-                      fontWeight: 500,
-                      mb: 0.5
-                    }}
-                  >
-                    {clinicDetails?.name || 'Clinic Name'}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
-                  >
-                    Active Operations
-                  </Typography>
-                </Box>
-              )}
-
-              {userRole === 'RECEPTIONIST' && (
-                <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    gutterBottom
-                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                  >
-                    Today's Schedule
-                  </Typography>
-                  <Typography
-                    variant={isMobile ? "h5" : "h4"}
-                    color="primary"
-                    sx={{
-                      fontSize: { xs: '1.75rem', sm: '2rem', md: '2.125rem' },
-                      fontWeight: 700
-                    }}
-                  >
-                    {todayAppointments.length}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                  >
-                    Appointments to Manage
-                  </Typography>
-                </Box>
-              )}
-
-              {userRole === 'SYSTEM_ADMIN' && (
-                <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    gutterBottom
-                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                  >
-                    System Status
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontSize: { xs: '0.9rem', sm: '1rem' },
-                      fontWeight: 500,
-                      mb: 0.5
-                    }}
-                  >
-                    Platform Active
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
-                  >
-                    All Systems Operational
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+                {appointment.status && (
+                  <Box sx={{ gridColumn: { xs: 2, sm: 'auto' }, justifySelf: 'start' }}>
+                    {getStatusChip(appointment.status)}
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Panel>
     </Box>
   );
 };

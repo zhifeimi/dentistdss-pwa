@@ -1,9 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 import { useChatState } from '../../../hooks/useChatState';
 import { useChatAPI } from '../../../hooks/useChatAPI';
 import FloatingChatButton from './FloatingChatButton';
 import ChatDialog from './ChatDialog';
+
+export const OPEN_DENTABOT_EVENT = 'dentistdss:open-dentabot';
 
 /**
  * Floating Chat Helper Props Interface
@@ -48,6 +50,17 @@ const FloatingChatHelper: React.FC<FloatingChatHelperProps> = () => {
       }
       return !prev;
     });
+  }, [chatState.stateActions]);
+
+  // Other public-page controls (e.g. the home page's "Ask Dentabot") open the
+  // helper by dispatching OPEN_DENTABOT_EVENT on window.
+  useEffect(() => {
+    const open = () => {
+      chatState.stateActions.clearError();
+      setIsDialogOpen(true);
+    };
+    window.addEventListener(OPEN_DENTABOT_EVENT, open);
+    return () => window.removeEventListener(OPEN_DENTABOT_EVENT, open);
   }, [chatState.stateActions]);
 
   const handleCloseDialog = useCallback(() => {

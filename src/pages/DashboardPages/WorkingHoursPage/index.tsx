@@ -16,11 +16,11 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Schedule as ScheduleIcon,
   Refresh as RefreshIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import api from '../../../services';
 import { WorkingHours } from '../../../types';
 import WorkingHoursForm from './components/WorkingHoursForm';
@@ -142,49 +142,14 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
     );
   }
 
-  // Loading state
-  if (loading) {
-    return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          minHeight: '400px' 
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ p: getResponsivePadding(isSmallMobile ? 'small' : isMobile ? 'medium' : 'large') }}>
-      {/* Header */}
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? 2 : 0
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <ScheduleIcon color="primary" />
-          <Typography 
-            variant={isMobile ? 'h5' : 'h4'} 
-            component="h1"
-            sx={{ fontWeight: 600 }}
-          >
-            Working Hours Management
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+  const header = (
+    <PageHeader
+      title="Opening hours"
+      description="The hours patients can book at your clinic, day by day."
+      actions={
+        <>
           <Tooltip title="Refresh working hours">
-            <IconButton 
+            <IconButton
               onClick={handleRefresh}
               disabled={refreshing}
               color="primary"
@@ -192,7 +157,7 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
               <RefreshIcon />
             </IconButton>
           </Tooltip>
-          
+
           {!isMobile && (
             <Button
               variant="contained"
@@ -200,16 +165,34 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
               onClick={handleAddWorkingHours}
               sx={{ minWidth: 160 }}
             >
-              Add Working Hours
+              Add hours
             </Button>
           )}
+        </>
+      }
+    />
+  );
+
+  // Loading state
+  if (loading) {
+    return (
+      <Box>
+        {header}
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress aria-label="Loading opening hours" />
         </Box>
       </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {header}
 
       {/* Error Alert */}
       {error && (
-        <Alert 
-          severity="error" 
+        <Alert
+          severity="error"
           sx={{ mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium') }}
           onClose={() => setError('')}
         >
@@ -218,31 +201,27 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
       )}
 
       {/* Summary Statistics */}
-      <Card 
-        sx={{ 
+      <Card
+        sx={{
           mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
-          background: theme.palette.mode === 'dark' 
-            ? 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)'
-            : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-          color: 'white'
         }}
       >
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <BusinessIcon />
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Schedule Overview
+              Summary
             </Typography>
           </Box>
-          
+
           <Grid container spacing={2}>
             <Grid size={{ xs: 6, sm: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {stats.totalDays}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  Total Schedules
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Schedules
                 </Typography>
               </Box>
             </Grid>
@@ -251,8 +230,8 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {stats.openDays}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  Open Days
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Open days
                 </Typography>
               </Box>
             </Grid>
@@ -261,8 +240,8 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {stats.emergencyHours}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  Emergency Hours
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Emergency hours
                 </Typography>
               </Box>
             </Grid>
@@ -271,8 +250,8 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
                 <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {stats.withBreaks}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  With Breaks
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  With breaks
                 </Typography>
               </Box>
             </Grid>

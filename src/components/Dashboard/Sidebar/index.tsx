@@ -1,6 +1,9 @@
 import React from 'react';
+import { Link as RouterLink } from 'react-router';
 import {
+  Avatar,
   Box,
+  Chip,
   Drawer,
   List,
   ListItem,
@@ -8,20 +11,12 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-  Avatar,
-  Chip,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import { alpha } from '@mui/material/styles';
+import { Wordmark } from '../../shared/BrandMark';
 import { getDisplayName, getInitials } from '../../../utils/dashboard/dashboardUtils';
 import { roleMeta } from '../../../utils/dashboard/roleConfig';
 import { User, UserRole, DashboardSection } from '../../../types';
-
-// Constants for accessibility
-const TOUCH_TARGETS = {
-  MINIMUM: 44, // Minimum touch target size for accessibility
-};
 
 interface SidebarProps {
   isSmUp: boolean;
@@ -38,9 +33,12 @@ interface SidebarProps {
   activeRoleSections: DashboardSection[];
   activeSectionKey: string;
   setActiveSectionKey: (sectionKey: string) => void;
-  logout: () => void;
 }
 
+/**
+ * Sidebar — brand, the clinic and role the user is working as, the role's
+ * sections, and who is signed in. Permanent from `sm` up, a drawer below.
+ */
 const Sidebar: React.FC<SidebarProps> = ({
   isSmUp,
   mobileOpen,
@@ -53,187 +51,132 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeRoleSections,
   activeSectionKey,
   setActiveSectionKey,
-  logout,
 }) => {
-  const theme = useTheme();
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
   const avatarSrc = currentUser?.avatarUrl || currentUser?.photoURL || currentUser?.profilePicture || '';
+  const roleLabel = activeRoleKey ? roleMeta[activeRoleKey as UserRole]?.label : undefined;
 
   const drawerContent = (
-    <Box sx={{ 
-      height: '100%', 
-      display: 'flex', 
-      flexDirection: 'column',
-      position: 'relative'
-    }}>
-      {/* Header */}
-      <Box sx={{ 
-        p: { xs: 2, sm: 3 }, 
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        backgroundColor: theme.palette.background.paper
-      }}>
-        {/* User Profile Section */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          mb: 2,
-          gap: { xs: 1.5, sm: 2 }
-        }}>
-          <Avatar
-            src={avatarSrc}
-            sx={{ 
-              width: { xs: 40, sm: 48 }, 
-              height: { xs: 40, sm: 48 },
-              bgcolor: 'primary.main',
-              fontSize: { xs: '1rem', sm: '1.2rem' }
-            }}
-          >
-            {getInitials(currentUser)}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography 
-              variant={isSmallMobile ? "body2" : "subtitle1"} 
-              sx={{ 
-                fontWeight: 'medium',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {getDisplayName(currentUser)}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'text.secondary',
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {currentUser?.email}
-            </Typography>
-          </Box>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Same height as the header so the two hairlines meet */}
+      <Box
+        sx={{
+          minHeight: { xs: 56, sm: 64 },
+          px: 2.5,
+          display: 'flex',
+          alignItems: 'center',
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Box
+          component={RouterLink}
+          to="/"
+          aria-label="DentistDSS home"
+          sx={{ display: 'inline-flex', textDecoration: 'none', borderRadius: 1 }}
+        >
+          <Wordmark size={28} />
         </Box>
+      </Box>
 
-        {/* Clinic Info */}
+      {/* Where and as whom the user is working */}
+      <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5 }}>
         {currentUser?.clinicName && (
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1, 
-            mb: 2,
-            p: 1.5,
-            backgroundColor: theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
-            borderRadius: 1
-          }}>
-            <LocalHospitalIcon sx={{ 
-              fontSize: { xs: '1rem', sm: '1.1rem' }, 
-              color: 'primary.main' 
-            }} />
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                fontWeight: 'medium',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                flex: 1
-              }}
-            >
-              {currentUser.clinicName}
-            </Typography>
-          </Box>
+          <Typography variant="subtitle2" noWrap title={currentUser.clinicName}>
+            {currentUser.clinicName}
+          </Typography>
         )}
-
-        {/* Role Selector */}
-        {rolesWithComponents.length > 1 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="caption" sx={{ 
-              color: 'text.secondary', 
-              fontWeight: 'medium',
-              mb: 1,
-              display: 'block'
-            }}>
-              Switch Role
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {rolesWithComponents.map((roleWithComponent) => (
+        {rolesWithComponents.length > 1 ? (
+          <Box
+            role="group"
+            aria-label="Switch role"
+            sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.75 }}
+          >
+            {rolesWithComponents.map(({ key }) => {
+              const active = activeRoleKey === key;
+              return (
                 <Chip
-                  key={roleWithComponent.key}
-                  label={roleMeta[roleWithComponent.key]?.label}
+                  key={key}
+                  label={roleMeta[key]?.label}
                   size="small"
-                  variant={activeRoleKey === roleWithComponent.key ? 'filled' : 'outlined'}
-                  color={activeRoleKey === roleWithComponent.key ? 'primary' : 'default'}
-                  onClick={() => setActiveRoleKey(roleWithComponent.key)}
-                  sx={{
-                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                    height: { xs: 24, sm: 28 },
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: activeRoleKey === roleWithComponent.key 
-                        ? 'primary.dark' 
-                        : theme.palette.mode === 'light' ? 'grey.100' : 'grey.800'
-                    }
-                  }}
+                  variant={active ? 'filled' : 'outlined'}
+                  color={active ? 'primary' : 'default'}
+                  aria-pressed={active}
+                  onClick={() => setActiveRoleKey(key)}
                 />
-              ))}
-            </Box>
+              );
+            })}
           </Box>
+        ) : (
+          roleLabel && (
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {roleLabel}
+            </Typography>
+          )
         )}
       </Box>
 
-      {/* Navigation */}
-      <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
-        <Typography variant="overline" sx={{
-          px: 2,
-          mb: 1,
-          display: 'block',
-          color: 'text.secondary',
-          fontWeight: 'bold'
-        }}>{activeRoleKey ? roleMeta[activeRoleKey]?.label : 'Dashboard'}</Typography>
-        <List component="nav" sx={{ px: 1 }}>
-          {activeRoleSections.map((section) => (
-            <ListItem key={section.id} disablePadding>
+      <List sx={{ flex: 1, overflow: 'auto', px: 1.5, py: 0.5 }}>
+        {activeRoleSections.map((section) => {
+          const selected = section.id === activeSectionKey;
+          return (
+            <ListItem key={section.id} disablePadding sx={{ mb: 0.25 }}>
               <ListItemButton
-                selected={section.id === activeSectionKey}
+                selected={selected}
+                aria-current={selected ? 'page' : undefined}
                 onClick={() => {
                   setActiveSectionKey(section.id);
-                  if (!isSmUp) handleDrawerToggle(); // Close mobile drawer on selection
+                  if (!isSmUp) handleDrawerToggle();
                 }}
-                sx={{
-                  borderRadius: 1,
-                  py: { xs: 1.5, sm: 1 },
-                  minHeight: TOUCH_TARGETS.MINIMUM,
-                  '&.Mui-selected': {
-                    backgroundColor: theme.palette.mode === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.16)',
-                    '&:hover': { backgroundColor: theme.palette.mode === 'light' ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.24)' }
-                  },
-                  '&:hover': { backgroundColor: theme.palette.mode === 'light' ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.08)' },
-                  my: 0.5
-                }}
+                sx={{ minHeight: 44, px: 1.5 }}
               >
-                <ListItemIcon sx={{
-                  color: section.id === activeSectionKey ? 'primary.main' : 'text.secondary',
-                  minWidth: { xs: '32px', sm: '36px' }
-                }}>{section.icon}</ListItemIcon>
+                <ListItemIcon sx={{ color: 'text.secondary', '& svg': { fontSize: 20 } }}>
+                  {section.icon}
+                </ListItemIcon>
                 <ListItemText
                   primary={section.label}
                   slotProps={{
-                    primary: {
-                      sx: {
-                        fontWeight: section.id === activeSectionKey ? 'medium' : 'regular',
-                        fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                      }
-                    }
+                    primary: { variant: 'body2', sx: { fontWeight: selected ? 650 : 500 } },
                   }}
                 />
               </ListItemButton>
             </ListItem>
-          ))}
-        </List>
+          );
+        })}
+      </List>
+
+      {/* Signed-in user */}
+      <Box
+        sx={{
+          px: 2.5,
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          borderTop: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Avatar
+          src={avatarSrc}
+          sx={(theme) => ({
+            width: 36,
+            height: 36,
+            fontSize: '0.875rem',
+            fontWeight: 650,
+            bgcolor: alpha(theme.palette.primary.main, 0.12),
+            color: 'primary.main',
+          })}
+        >
+          {getInitials(currentUser)}
+        </Avatar>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+            {getDisplayName(currentUser)}
+          </Typography>
+          <Typography variant="caption" noWrap component="p" sx={{ color: 'text.secondary' }}>
+            {currentUser?.email}
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );
@@ -244,25 +187,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         variant={isSmUp ? 'permanent' : 'temporary'}
         open={isSmUp ? true : mobileOpen}
         onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better for SEO and accessibility
-          sx: {
-            '& .MuiBackdrop-root': {
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            }
-          }
-        }}
+        ModalProps={{ keepMounted: true }}
         sx={{
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: drawerWidth,
-            backgroundColor: theme.palette.background.paper,
-            color: theme.palette.text.primary,
-            borderRight: `1px solid ${theme.palette.divider}`,
-            transition: theme.transitions.create(['background-color'], {
-              duration: theme.transitions.duration.standard,
-            }),
-          }
+            bgcolor: 'background.paper',
+          },
         }}
       >
         {drawerContent}

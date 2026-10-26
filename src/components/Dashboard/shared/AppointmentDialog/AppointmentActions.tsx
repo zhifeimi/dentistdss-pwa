@@ -55,7 +55,7 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
           )}
           {appointment.status === 'CONFIRMED' && onMarkNoShow && (
             <Button onClick={() => onMarkNoShow(appointment)} variant='outlined' color='warning'>
-              No-Show
+              No-show
             </Button>
           )}
           {appointment.status !== 'COMPLETED' &&
@@ -74,7 +74,7 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
           variant='contained'
           disabled={loading}
         >
-          {loading ? 'Saving...' : 'Save Changes'}
+          {loading ? 'Saving…' : 'Save Changes'}
         </Button>
       )}
     </DialogActions>

@@ -237,15 +237,15 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
                 </FormControl>
               </Grid>
 
-              {/* Day of Week (for recurring) */}
+              {/* Day of week (for recurring) */}
               {formData.isRecurring && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControl fullWidth error={!!errors.dayOfWeek}>
-                    <InputLabel>Day of Week</InputLabel>
+                    <InputLabel>Day of week</InputLabel>
                     <Select
                       value={formData.dayOfWeek}
                       onChange={(e: SelectChangeEvent<number>) => handleChange('dayOfWeek', e.target.value)}
-                      label="Day of Week"
+                      label="Day of week"
                     >
                       {daysOfWeek.map((day) => (
                         <MenuItem key={day.value} value={day.value}>
@@ -260,7 +260,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
               {/* Time Range */}
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TimePicker
-                  label="Start Time"
+                  label="Start time"
                   value={formData.startTime ? dayjs(formData.startTime) : null}
                   onChange={(value) => handleChange('startTime', value && 'toDate' in value ? (value as any).toDate() : value)}
                   slotProps={{
@@ -275,7 +275,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TimePicker
-                  label="End Time"
+                  label="End time"
                   value={formData.endTime ? dayjs(formData.endTime) : null}
                   onChange={(value) => handleChange('endTime', value && 'toDate' in value ? (value as any).toDate() : value)}
                   slotProps={{
@@ -291,7 +291,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
               {/* Date Range */}
               <Grid size={{ xs: 12, sm: 6 }}>
                 <DatePicker
-                  label={formData.isRecurring ? "Effective From" : "Date"}
+                  label={formData.isRecurring ? "Effective from" : "Date"}
                   value={formData.effectiveFrom ? dayjs(formData.effectiveFrom) : null}
                   onChange={(value) => handleChange('effectiveFrom', value && 'toDate' in value ? (value as any).toDate() : value)}
                   slotProps={{
@@ -307,7 +307,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
               {formData.isRecurring && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <DatePicker
-                    label="Effective Until"
+                    label="Effective until"
                     value={formData.effectiveUntil ? dayjs(formData.effectiveUntil) : null}
                     onChange={(value) => handleChange('effectiveUntil', value && 'toDate' in value ? (value as any).toDate() : value)}
                     slotProps={{
@@ -337,7 +337,7 @@ const AddAvailabilityDialog: React.FC<AddAvailabilityDialogProps> = ({ open, onC
             disabled={submitting || loading}
             startIcon={submitting && <CircularProgress size={16} />}
           >
-            {submitting ? 'Creating...' : 'Create Availability'}
+            {submitting ? 'Creating…' : 'Create availability'}
           </Button>
         </DialogActions>
       </Dialog>

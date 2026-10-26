@@ -85,27 +85,6 @@ const useDarkMode = (): UseDarkModeReturn => {
         }
     }, []);
 
-    // Apply theme-related CSS custom properties for additional styling support
-    useEffect(() => {
-        if (typeof document !== 'undefined') {
-            const root = document.documentElement;
-
-            if (darkMode) {
-                root.style.setProperty('--theme-mode', 'dark');
-                root.style.setProperty('--theme-background', '#131316');
-                root.style.setProperty('--theme-surface', '#1c1c21');
-                root.style.setProperty('--theme-text-primary', '#f4f4f5');
-                root.style.setProperty('--theme-text-secondary', '#a1a1aa');
-            } else {
-                root.style.setProperty('--theme-mode', 'light');
-                root.style.setProperty('--theme-background', '#f7f7f8');
-                root.style.setProperty('--theme-surface', '#ffffff');
-                root.style.setProperty('--theme-text-primary', '#131316');
-                root.style.setProperty('--theme-text-secondary', '#6b6b76');
-            }
-        }
-    }, [darkMode]);
-
     return {
         darkMode,
         toggleDarkMode,

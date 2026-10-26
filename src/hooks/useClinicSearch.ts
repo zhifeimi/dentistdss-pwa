@@ -6,6 +6,8 @@ interface UseClinicSearchReturn {
   searchKeywords: string;
   clinics: ClinicSearchResult[];
   loading: boolean;
+  /** The last search request failed (not the same as no matches) */
+  failed: boolean;
   isOnline: boolean;
   setSearchKeywords: (keywords: string) => void;
   handleSearch: () => void;
@@ -48,12 +50,14 @@ const useOnlineStatus = (): boolean => {
  * - Keyboard event handling
  * - Global error handling integration
  */
-export const useClinicSearch = (): UseClinicSearchReturn => {
-  // State management
-  const [searchKeywords, setSearchKeywords] = useState<string>('');
-  const [debouncedSearchKeywords, setDebouncedSearchKeywords] = useState<string>('');
+export const useClinicSearch = (initialKeywords = ''): UseClinicSearchReturn => {
+  // State management. An initial query (e.g. from the home page search)
+  // starts searching on mount without waiting for the debounce.
+  const [searchKeywords, setSearchKeywords] = useState<string>(initialKeywords);
+  const [debouncedSearchKeywords, setDebouncedSearchKeywords] = useState<string>(initialKeywords);
   const [clinics, setClinics] = useState<ClinicSearchResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [failed, setFailed] = useState<boolean>(false);
 
   // Network status detection
   const isOnline = useOnlineStatus();
@@ -62,6 +66,7 @@ export const useClinicSearch = (): UseClinicSearchReturn => {
    * Perform clinic search API call
    */
   const performSearch = useCallback(async (keywords: string): Promise<void> => {
+    setFailed(false);
     if (!keywords.trim()) {
       setLoading(false);
       setClinics([]);
@@ -81,10 +86,10 @@ export const useClinicSearch = (): UseClinicSearchReturn => {
       } else {
         setClinics([]);
       }
-    } catch (err) {
+    } catch {
+      // The API layer already reports the error; the list shows it with a retry
       setClinics([]);
-      // Let the error bubble up to global error handling
-      throw err;
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -137,6 +142,7 @@ export const useClinicSearch = (): UseClinicSearchReturn => {
    */
   const clearResults = useCallback(() => {
     setClinics([]);
+    setFailed(false);
     setDebouncedSearchKeywords('');
   }, []);
 
@@ -147,6 +153,7 @@ export const useClinicSearch = (): UseClinicSearchReturn => {
     setSearchKeywords('');
     setDebouncedSearchKeywords('');
     setClinics([]);
+    setFailed(false);
     setLoading(false);
   }, []);
 
@@ -155,6 +162,7 @@ export const useClinicSearch = (): UseClinicSearchReturn => {
     searchKeywords,
     clinics,
     loading,
+    failed,
     isOnline,
 
     // Actions
@@ -166,6 +174,6 @@ export const useClinicSearch = (): UseClinicSearchReturn => {
 
     // Computed values
     hasResults: clinics.length > 0,
-    isEmpty: !loading && clinics.length === 0 && searchKeywords.trim() !== '',
+    isEmpty: !loading && !failed && clinics.length === 0 && searchKeywords.trim() !== '',
   };
 };

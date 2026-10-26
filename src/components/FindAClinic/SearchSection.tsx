@@ -1,15 +1,15 @@
-import React, { ChangeEvent, KeyboardEvent } from 'react';
+import React, { ChangeEvent } from 'react';
 import {
-  Paper,
-  TextField,
-  Button,
-  Box,
-  Typography,
   Alert,
+  Box,
+  Button,
   CircularProgress,
+  IconButton,
+  InputAdornment,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
-import { TOUCH_TARGETS } from '../../utils/mobileOptimization';
 
 interface SearchSectionProps {
   searchKeywords: string;
@@ -17,20 +17,12 @@ interface SearchSectionProps {
   loading: boolean;
   error?: string;
   onSearch: () => void;
-  onKeyPress: (event: KeyboardEvent<HTMLInputElement>) => void;
   onClearResults: () => void;
-  isMobile: boolean;
 }
 
 /**
- * SearchSection Component
- *
- * Responsive search interface with:
- * - Mobile-first design with proper touch targets
- * - Auto-search functionality with debouncing
- * - Loading states and error handling
- * - Accessibility features (ARIA labels, semantic HTML)
- * - Clear search functionality
+ * SearchSection — clinic search field. Typing searches after a short pause
+ * (see useClinicSearch); Enter or the button searches immediately.
  */
 const SearchSection = React.memo<SearchSectionProps>(({
   searchKeywords,
@@ -38,9 +30,7 @@ const SearchSection = React.memo<SearchSectionProps>(({
   loading,
   error = '',
   onSearch,
-  onKeyPress,
   onClearResults,
-  isMobile
 }) => {
 
   const handleClear = (): void => {
@@ -49,127 +39,68 @@ const SearchSection = React.memo<SearchSectionProps>(({
   };
 
   return (
-    <Paper 
-      elevation={3} 
-      sx={{ 
-        p: { xs: 2, sm: 3 }, 
-        mb: 3,
-        borderRadius: 2,
-      }}
-    >
-      <Box>
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            gap: { xs: 1, sm: 2 }, 
-            alignItems: 'center',
-            flexDirection: { xs: 'column', sm: 'row' }
+    <Box sx={{ mb: 3, maxWidth: 720 }}>
+      <Box
+        component="form"
+        role="search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSearch();
+        }}
+        sx={{ display: 'flex', gap: 1.5, flexDirection: { xs: 'column', sm: 'row' } }}
+      >
+        <TextField
+          fullWidth
+          placeholder="Suburb, clinic or treatment"
+          value={searchKeywords}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchKeywords(e.target.value)}
+          slotProps={{
+            htmlInput: {
+              'aria-label': 'Search for dental clinics',
+              type: 'search',
+              autoComplete: 'off',
+              enterKeyHint: 'search',
+            },
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              endAdornment: (loading || searchKeywords) && (
+                <InputAdornment position="end" sx={{ gap: 0.5 }}>
+                  {loading && <CircularProgress size={18} aria-label="Searching" />}
+                  {searchKeywords && (
+                    <IconButton size="small" onClick={handleClear} aria-label="Clear search">
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </InputAdornment>
+              ),
+            },
           }}
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading || !searchKeywords.trim()}
+          aria-label="Search for clinics"
+          sx={{ flexShrink: 0 }}
         >
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Start typing to search clinics (auto-search enabled)..."
-            value={searchKeywords}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchKeywords(e.target.value)}
-            onKeyPress={onKeyPress}
-            slotProps={{
-              htmlInput: {
-                'aria-label': 'Search for dental clinics',
-                type: 'search',
-                autoComplete: 'off',
-              },
-              input: {
-                startAdornment: (
-                  <SearchIcon
-                    sx={{
-                      mr: 1,
-                      color: 'action.active',
-                      fontSize: { xs: 20, sm: 24 }
-                    }}
-                  />
-                ),
-                endAdornment: (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {loading && (
-                      <CircularProgress
-                        size={isMobile ? 16 : 20}
-                        sx={{ mr: 1 }}
-                      />
-                    )}
-                    {searchKeywords && (
-                      <Button
-                        size="small"
-                        onClick={handleClear}
-                        sx={{
-                          minWidth: 'auto',
-                          p: 0.5,
-                          color: 'action.active'
-                        }}
-                        aria-label="Clear search"
-                      >
-                        <ClearIcon fontSize="small" />
-                      </Button>
-                    )}
-                  </Box>
-                ),
-              },
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                minHeight: { xs: TOUCH_TARGETS.MINIMUM, sm: 56 },
-                fontSize: { xs: '16px', sm: '14px' }, // Prevent zoom on iOS
-              }
-            }}
-          />
-          
-          <Button
-            variant="contained"
-            onClick={onSearch}
-            disabled={loading || !searchKeywords.trim()}
-            sx={{ 
-              minWidth: { xs: '100%', sm: 120 },
-              minHeight: { xs: TOUCH_TARGETS.MINIMUM, sm: 56 },
-              fontSize: { xs: '1rem', sm: '0.875rem' },
-              fontWeight: 500,
-            }}
-            aria-label="Search for clinics"
-          >
-            {loading ? 'Searching...' : 'Search'}
-          </Button>
-        </Box>
-        
-        <Typography 
-          variant="caption" 
-          color="text.secondary" 
-          sx={{ 
-            mt: 1, 
-            display: 'block',
-            textAlign: { xs: 'center', sm: 'left' },
-            fontSize: { xs: '0.75rem', sm: '0.75rem' }
-          }}
-        >
-          Search happens automatically after you stop typing.
-        </Typography>
+          {loading ? 'Searching…' : 'Search'}
+        </Button>
       </Box>
+      <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+        Results update as you type.
+      </Typography>
 
-      {/* Error Alert */}
       {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
-            mt: 2,
-            '& .MuiAlert-message': {
-              fontSize: { xs: '0.875rem', sm: '0.875rem' }
-            }
-          }}
-          role="alert"
-          aria-live="polite"
-        >
+        <Alert severity="error" sx={{ mt: 2 }} role="alert">
           {error}
         </Alert>
       )}
-    </Paper>
+    </Box>
   );
 });
 

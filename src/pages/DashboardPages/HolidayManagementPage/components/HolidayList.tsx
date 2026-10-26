@@ -7,9 +7,7 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Alert,
   Collapse,
-  useTheme,
   Skeleton,
   Divider,
 } from '@mui/material';
@@ -22,6 +20,7 @@ import {
   Repeat as RepeatIcon,
 } from '@mui/icons-material';
 import { Holiday, HolidayType } from '../../../../types';
+import EmptyState from '../../../../components/Dashboard/shared/EmptyState';
 
 interface HolidayListProps {
   holidays: Holiday[];
@@ -59,7 +58,6 @@ const getHolidayTypeColor = (type: HolidayType): 'default' | 'primary' | 'second
  * HolidayCard - Individual holiday display card
  */
 const HolidayCard: React.FC<HolidayCardProps> = ({ holiday, onEdit }) => {
-  const theme = useTheme();
   const [expanded, setExpanded] = useState<boolean>(false);
 
   const handleExpandClick = () => {
@@ -84,17 +82,9 @@ const HolidayCard: React.FC<HolidayCardProps> = ({ holiday, onEdit }) => {
   };
 
   return (
-    <Card 
-      sx={{ 
-        mb: 2,
-        border: holiday.isUpcoming ? `2px solid ${theme.palette.primary.main}` : undefined,
-        boxShadow: holiday.isUpcoming ? theme.shadows[4] : theme.shadows[1],
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          boxShadow: theme.shadows[6],
-          transform: 'translateY(-2px)'
-        }
-      }}
+    <Card
+      variant="outlined"
+      sx={{ mb: 2, borderColor: holiday.isUpcoming ? 'primary.main' : 'divider' }}
     >
       <CardContent>
         {/* Header */}
@@ -115,7 +105,7 @@ const HolidayCard: React.FC<HolidayCardProps> = ({ holiday, onEdit }) => {
               {holiday.isRecurring && (
                 <Chip 
                   label="Recurring" 
-                  color="secondary" 
+                  variant="outlined"
                   size="small"
                   icon={<RepeatIcon />}
                 />
@@ -165,9 +155,9 @@ const HolidayCard: React.FC<HolidayCardProps> = ({ holiday, onEdit }) => {
           <ScheduleIcon color="action" fontSize="small" />
           <Typography variant="body2" color="text.secondary">
             {holiday.isFullDayClosure ? (
-              'Full Day Closure'
+              'Full day closure'
             ) : (
-              `Special Hours: ${holiday.specialOpeningTime ? formatTime(holiday.specialOpeningTime) : 'N/A'} - ${holiday.specialClosingTime ? formatTime(holiday.specialClosingTime) : 'N/A'}`
+              `Special hours: ${holiday.specialOpeningTime ? formatTime(holiday.specialOpeningTime) : 'N/A'} - ${holiday.specialClosingTime ? formatTime(holiday.specialClosingTime) : 'N/A'}`
             )}
           </Typography>
         </Box>
@@ -190,7 +180,7 @@ const HolidayCard: React.FC<HolidayCardProps> = ({ holiday, onEdit }) => {
           {holiday.emergencyContact && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Emergency Contact
+                Emergency contact
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PhoneIcon color="action" fontSize="small" />
@@ -263,14 +253,9 @@ const HolidayList: React.FC<HolidayListProps> = ({ holidays, onEditHoliday, load
   // Empty state
   if (holidays.length === 0) {
     return (
-      <Alert severity="info" sx={{ textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>
-          No holidays found
-        </Typography>
-        <Typography variant="body2">
-          Click "Add Holiday" to create your first holiday entry.
-        </Typography>
-      </Alert>
+      <EmptyState title="No holidays yet">
+        Add public holidays and planned closures so patients can't book those days.
+      </EmptyState>
     );
   }
 
@@ -287,7 +272,7 @@ const HolidayList: React.FC<HolidayListProps> = ({ holidays, onEditHoliday, load
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        All Holidays ({holidays.length})
+        All holidays ({holidays.length})
       </Typography>
       
       {sortedHolidays.map((holiday) => (

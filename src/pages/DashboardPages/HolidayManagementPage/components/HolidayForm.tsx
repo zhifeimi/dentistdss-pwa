@@ -54,11 +54,11 @@ interface HolidayFormData {
 }
 
 const holidayTypeOptions: { value: HolidayType; label: string }[] = [
-  { value: 'NATIONAL_HOLIDAY', label: 'National Holiday' },
-  { value: 'CLINIC_CLOSURE', label: 'Clinic Closure' },
-  { value: 'STAFF_TRAINING', label: 'Staff Training' },
+  { value: 'NATIONAL_HOLIDAY', label: 'National holiday' },
+  { value: 'CLINIC_CLOSURE', label: 'Clinic closure' },
+  { value: 'STAFF_TRAINING', label: 'Staff training' },
   { value: 'MAINTENANCE', label: 'Maintenance' },
-  { value: 'EMERGENCY_CLOSURE', label: 'Emergency Closure' },
+  { value: 'EMERGENCY_CLOSURE', label: 'Emergency closure' },
   { value: 'VACATION', label: 'Vacation' },
   { value: 'OTHER', label: 'Other' },
 ];
@@ -256,7 +256,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
       >
         <DialogTitle>
           <Typography variant="h6" component="div">
-            {holiday ? 'Edit Holiday' : 'Add New Holiday'}
+            {holiday ? 'Edit holiday' : 'Add new holiday'}
           </Typography>
         </DialogTitle>
 
@@ -268,11 +268,11 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
           )}
 
           <Grid container spacing={3}>
-            {/* Holiday Name */}
+            {/* Holiday name */}
             <Grid size={12}>
               <TextField
                 fullWidth
-                label="Holiday Name"
+                label="Holiday name"
                 value={formData.name}
                 onChange={(e) => handleFieldChange('name', e.target.value)}
                 error={hasFieldError('name')}
@@ -282,10 +282,10 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
               />
             </Grid>
 
-            {/* Holiday Date */}
+            {/* Holiday date */}
             <Grid size={{ xs: 12, sm: 6 }}>
               <DatePicker
-                label="Holiday Date"
+                label="Holiday date"
                 value={formData.holidayDate}
                 onChange={(date) => handleFieldChange('holidayDate', date)}
                 disabled={loading}
@@ -299,14 +299,14 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
               />
             </Grid>
 
-            {/* Holiday Type */}
+            {/* Holiday type */}
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth required>
-                <InputLabel>Holiday Type</InputLabel>
+                <InputLabel>Holiday type</InputLabel>
                 <Select
                   value={formData.type}
                   onChange={handleSelectChange}
-                  label="Holiday Type"
+                  label="Holiday type"
                   disabled={loading}
                 >
                   {holidayTypeOptions.map((option) => (
@@ -332,7 +332,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
               />
             </Grid>
 
-            {/* Full Day Closure Switch */}
+            {/* Full day closure Switch */}
             <Grid size={12}>
               <FormControlLabel
                 control={
@@ -342,16 +342,16 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
                     disabled={loading}
                   />
                 }
-                label="Full Day Closure"
+                label="Full day closure"
               />
             </Grid>
 
-            {/* Special Hours (only if not full day closure) */}
+            {/* Special hours (only if not full day closure) */}
             {!formData.isFullDayClosure && (
               <>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
-                    label="Special Opening Time"
+                    label="Special opening time"
                     value={formData.specialOpeningTime}
                     onChange={(time) => handleFieldChange('specialOpeningTime', time)}
                     disabled={loading}
@@ -366,7 +366,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
 
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TimePicker
-                    label="Special Closing Time"
+                    label="Special closing time"
                     value={formData.specialClosingTime}
                     onChange={(time) => handleFieldChange('specialClosingTime', time)}
                     disabled={loading}
@@ -391,7 +391,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
                     disabled={loading}
                   />
                 }
-                label="Recurring Holiday (Annual)"
+                label="Recurring holiday (annual)"
               />
             </Grid>
 
@@ -399,7 +399,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             <Grid size={12}>
               <TextField
                 fullWidth
-                label="Emergency Contact (Optional)"
+                label="Emergency contact (optional)"
                 value={formData.emergencyContact}
                 onChange={(e) => handleFieldChange('emergencyContact', e.target.value)}
                 placeholder="Phone number or contact information for emergencies"
@@ -423,7 +423,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
             disabled={loading}
             startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
           >
-            {loading ? 'Saving...' : 'Save Holiday'}
+            {loading ? 'Saving…' : 'Save holiday'}
           </Button>
         </DialogActions>
       </Dialog>

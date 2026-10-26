@@ -319,7 +319,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = memo(({
                       <ListItemIcon>
                         <NoShowIcon fontSize="small" />
                       </ListItemIcon>
-                      <ListItemText>Mark No-Show</ListItemText>
+                      <ListItemText>Mark as no-show</ListItemText>
                     </MenuItem>
                   )}
 

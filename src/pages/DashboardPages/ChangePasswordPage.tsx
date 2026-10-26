@@ -141,22 +141,10 @@ const ChangePasswordPage: React.FC = () => {
             >
                 <Box
                     sx={{
-                        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                        color: 'white',
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
                         p: { xs: 3, sm: 4 },
                         textAlign: 'center',
-                        position: 'relative',
-                        '&::before': {
-                            content: '""',
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            width: '80px',
-                            height: '80px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            borderRadius: '50%',
-                            transform: 'translate(20px, -20px)',
-                        }
                     }}
                 >
                     <LockResetIcon
@@ -172,7 +160,7 @@ const ChangePasswordPage: React.FC = () => {
                         gutterBottom
                         sx={{ fontWeight: 600, mb: 1 }}
                     >
-                        Change Password
+                        Change password
                     </Typography>
                     <Typography
                         variant="body1"
@@ -195,7 +183,7 @@ const ChangePasswordPage: React.FC = () => {
                                     mb: 1
                                 }}
                             >
-                                Security Settings
+                                Security settings
                             </Typography>
                             <Typography
                                 variant="body2"
@@ -223,7 +211,7 @@ const ChangePasswordPage: React.FC = () => {
                                     <TextField
                                         fullWidth
                                         name="newPassword"
-                                        label="New Password"
+                                        label="New password"
                                         type="password"
                                         value={formData.newPassword}
                                         onChange={handleInputChange}
@@ -248,7 +236,7 @@ const ChangePasswordPage: React.FC = () => {
                                 <TextField
                                     fullWidth
                                     name="confirmPassword"
-                                    label="Confirm New Password"
+                                    label="Confirm new password"
                                     type="password"
                                     value={formData.confirmPassword}
                                     onChange={handleInputChange}
@@ -304,15 +292,9 @@ const ChangePasswordPage: React.FC = () => {
                                     startIcon={loading ? null : <SaveIcon />}
                                     sx={{
                                         minHeight: 48,
-                                        borderRadius: 2,
                                         px: 3,
                                         order: { xs: 1, sm: 2 },
                                         position: 'relative',
-                                        background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-                                        boxShadow: `0 3px 5px 2px ${theme.palette.primary.main}30`,
-                                        '&:hover': {
-                                            background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
-                                        },
                                     }}
                                 >
                                     {loading && (
@@ -328,7 +310,7 @@ const ChangePasswordPage: React.FC = () => {
                                             }}
                                         />
                                     )}
-                                    {loading ? 'Changing...' : 'Save Changes'}
+                                    {loading ? 'Changing…' : 'Save changes'}
                                 </Button>
                             </Box>
                         </Box>

@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  alpha,
   Container,
-  Paper,
   Typography,
   Button,
   RadioGroup,
   FormControlLabel,
+  FormLabel,
   Radio,
   Box,
   LinearProgress,
   useTheme,
-  useMediaQuery,
-  Grid,
   FormControl
 } from '@mui/material';
-import { green, red } from '@mui/material/colors';
 
 interface QuizQuestion {
   id: string;
@@ -87,7 +85,6 @@ const quizQuestions: QuizQuestion[] = userProvidedQuestions.map((item, index) =>
  */
 const Quiz: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isDarkMode = theme.palette.mode === 'dark';
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
@@ -150,6 +147,14 @@ const Quiz: React.FC = () => {
   const currentQuestion = quizQuestions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / quizQuestions.length) * 100;
 
+  const card = {
+    p: { xs: 2.5, sm: 4 },
+    bgcolor: 'background.paper',
+    border: 1,
+    borderColor: 'divider',
+    borderRadius: 2,
+  } as const;
+
   if (showResults) {
     let score = 0;
     quizQuestions.forEach(q => {
@@ -159,60 +164,47 @@ const Quiz: React.FC = () => {
     });
 
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Paper elevation={3}
-          sx={{ p: isMobile ? 2 : 4, borderRadius: 2, bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
-          <Typography variant={isMobile ? "h5" : "h4"} component="h1" align="center" gutterBottom
-            color={isDarkMode ? theme.palette.primary.light : theme.palette.primary.main} sx={{ mb: 3 }}>
-            Quiz Results
+      <Container component="main" maxWidth="md" sx={{ py: { xs: 3, sm: 6 } }}>
+        <Box sx={card}>
+          <Typography variant="h4" component="h1">
+            Your results
           </Typography>
-          <Typography variant="h6" align="center" sx={{ mb: 3 }} color={isDarkMode ? 'grey.300' : 'text.secondary'}>
-            Your Score: {score} out of {quizQuestions.length}
+          <Typography sx={{ mt: 1, color: 'text.secondary' }}>
+            Your habits match our recommendation on {score} of {quizQuestions.length} questions.
           </Typography>
-          {quizQuestions.map(q => {
-            const userAnswer = userAnswers[q.id];
-            const isCorrect = userAnswer !== undefined && q.correctAnswers.includes(userAnswer);
-            return (
-              <Paper
-                key={q.id}
-                elevation={1}
-                sx={{
-                  p: 2,
-                  mb: 2,
-                  borderRadius: '8px',
-                  borderLeft: `5px solid ${isCorrect ? (isDarkMode ? green[300] : green[500]) : (isDarkMode ? red[300] : red[500])}`,
-                  bgcolor: isDarkMode ? 'grey.700' : (isCorrect ? green[50] : red[50])
-                }}
-              >
-                <Typography variant="subtitle1"
-                  sx={{ fontWeight: 'bold', color: isDarkMode ? 'grey.100' : 'text.primary' }}>
-                  {q.question}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, color: isDarkMode ? 'grey.300' : 'text.secondary' }}>
-                  Your answer:
-                  <Typography component="span" sx={{
-                    fontWeight: 'bold',
-                    color: isCorrect ? (isDarkMode ? green[300] : green[700]) : (isDarkMode ? red[300] : red[700])
-                  }}>
-                    {userAnswer || "Not answered"}
+          <Box component="ol" sx={{ listStyle: 'none', p: 0, m: 0, mt: 3 }}>
+            {quizQuestions.map(q => {
+              const userAnswer = userAnswers[q.id];
+              const isCorrect = userAnswer !== undefined && q.correctAnswers.includes(userAnswer);
+              const tone = isCorrect ? 'success.main' : 'error.main';
+              return (
+                <Box
+                  component="li"
+                  key={q.id}
+                  sx={{ py: 2, pl: 2, borderTop: 1, borderColor: 'divider', position: 'relative' }}
+                >
+                  <Box sx={{ position: 'absolute', left: 0, top: 16, bottom: 16, width: 3, borderRadius: 1, bgcolor: tone }} />
+                  <Typography sx={{ fontWeight: 650 }}>{q.question}</Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
+                    Your answer:{' '}
+                    <Box component="span" sx={{ fontWeight: 650, color: tone }}>
+                      {userAnswer || 'Not answered'}
+                    </Box>
                   </Typography>
-                </Typography>
-                <Typography variant="body2" sx={{ color: isDarkMode ? 'grey.300' : 'text.secondary' }}>
-                  Our recommendation(s):
-                  <Typography component="span"
-                    sx={{ fontWeight: 'bold', color: isDarkMode ? green[300] : green[700] }}>
-                    {q.correctAnswers.join(', ')}
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    We recommend:{' '}
+                    <Box component="span" sx={{ fontWeight: 650, color: 'text.primary' }}>
+                      {q.correctAnswers.join(', ')}
+                    </Box>
                   </Typography>
-                </Typography>
-              </Paper>
-            );
-          })}
-          <Box sx={{ textAlign: 'center', mt: 4 }}>
-            <Button variant="contained" color="primary" onClick={handleRetakeQuiz}>
-              Retake Quiz
-            </Button>
+                </Box>
+              );
+            })}
           </Box>
-        </Paper>
+          <Button variant="contained" onClick={handleRetakeQuiz} sx={{ mt: 3 }}>
+            Retake quiz
+          </Button>
+        </Box>
       </Container>
     );
   }
@@ -220,75 +212,65 @@ const Quiz: React.FC = () => {
   if (!currentQuestion) {
     return (
       <Container maxWidth="md" sx={{ py: 4, textAlign: 'center' }}>
-        <Typography variant="h6">Loading quiz...</Typography>
+        <Typography variant="h6">Loading quiz…</Typography>
       </Container>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper elevation={3}
-        sx={{ p: isMobile ? 2 : 3, borderRadius: 2, bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
-        <Typography variant={isMobile ? "h6" : "h5"} component="h1" align="center" gutterBottom
-          color={isDarkMode ? theme.palette.primary.light : theme.palette.primary.main} sx={{ mb: 1 }}>
-          Dental Hygiene Quiz
+    <Container component="main" maxWidth="md" sx={{ py: { xs: 3, sm: 6 } }}>
+      <Box sx={card}>
+        <Typography variant="h4" component="h1">
+          Dental hygiene quiz
         </Typography>
-        <Box sx={{ width: '100%', mb: 2 }}>
-          <LinearProgress variant="determinate" value={progress} />
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 0.5 }}>
-            Question {currentQuestionIndex + 1} of {quizQuestions.length}
-          </Typography>
-        </Box>
+        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+          Question {currentQuestionIndex + 1} of {quizQuestions.length}
+        </Typography>
+        <LinearProgress
+          variant="determinate"
+          value={progress}
+          aria-label="Quiz progress"
+          sx={{ mt: 1.5, mb: 4, height: 6, borderRadius: 3 }}
+        />
 
-        <Box sx={{ minHeight: isMobile ? 'auto' : '100px', mb: 2 }}>
-          <Typography variant={isMobile ? "subtitle1" : "h6"} component="h2"
-            sx={{ fontWeight: 'medium', color: isDarkMode ? 'grey.100' : 'text.primary' }}>
+        <FormControl component="fieldset" fullWidth>
+          <FormLabel
+            component="legend"
+            sx={{ typography: 'h6', color: 'text.primary', mb: 2, '&.Mui-focused': { color: 'text.primary' } }}
+          >
             {currentQuestion.question}
-          </Typography>
-        </Box>
-
-        <FormControl component="fieldset" fullWidth sx={{ mb: 3, minHeight: isMobile ? 'auto' : '200px' }}>
+          </FormLabel>
           <RadioGroup
-            aria-label={currentQuestion.question}
             name={`question-${currentQuestion.id}`}
             value={userAnswers[currentQuestion.id] || ''}
             onChange={(e) => handleOptionSelect(currentQuestion.id, e.target.value)}
+            sx={{ gap: 1.5 }}
           >
-            <Grid container spacing={1.5}>
-              {currentQuestion.options.map((option, index) => (
-                <Grid size={{ xs: 12, md: 12, lg: 12 }} key={index}>
-                  <FormControlLabel
-                    value={option}
-                    control={<Radio sx={{
-                      color: isDarkMode ? 'grey.400' : 'grey.600',
-                      '&.Mui-checked': {
-                        color: theme.palette.primary.main,
-                      }
-                    }} />}
-                    label={option}
-                    sx={{
-                      width: '100%',
-                      p: 1,
-                      borderRadius: '4px',
-                      bgcolor: userAnswers[currentQuestion.id] === option
-                        ? (isDarkMode ? theme.palette.primary.dark : theme.palette.primary.light)
-                        : (isDarkMode ? 'grey.700' : 'grey.100'),
-                      color: userAnswers[currentQuestion.id] === option
-                        ? (isDarkMode ? 'white' : theme.palette.primary.contrastText)
-                        : (isDarkMode ? 'grey.100' : 'text.primary'),
-                      '&:hover': {
-                        bgcolor: isDarkMode ? theme.palette.primary.dark : theme.palette.primary.light,
-                        opacity: 0.9
-                      }
-                    }}
-                  />
-                </Grid>
-              ))}
-            </Grid>
+            {currentQuestion.options.map((option) => {
+              const selected = userAnswers[currentQuestion.id] === option;
+              return (
+                <FormControlLabel
+                  key={option}
+                  value={option}
+                  control={<Radio />}
+                  label={option}
+                  sx={{
+                    m: 0,
+                    px: 1,
+                    py: 0.5,
+                    border: 1,
+                    borderRadius: 1,
+                    borderColor: selected ? 'primary.main' : 'divider',
+                    bgcolor: selected ? alpha(theme.palette.primary.main, isDarkMode ? 0.16 : 0.08) : 'transparent',
+                    '&:hover': { borderColor: 'primary.main' },
+                  }}
+                />
+              );
+            })}
           </RadioGroup>
         </FormControl>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
           <Button variant="outlined" onClick={handlePreviousQuestion} disabled={currentQuestionIndex === 0}>
             Previous
           </Button>
@@ -297,12 +279,12 @@ const Quiz: React.FC = () => {
               Next
             </Button>
           ) : (
-            <Button variant="contained" color="success" onClick={() => setShowResults(true)}>
-              View Results
+            <Button variant="contained" onClick={() => setShowResults(true)}>
+              See results
             </Button>
           )}
         </Box>
-      </Paper>
+      </Box>
     </Container>
   );
 };

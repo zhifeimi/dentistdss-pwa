@@ -17,14 +17,6 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
         activeStep={currentStep}
         alternativeLabel={!isMobile}
         orientation={isMobile ? 'vertical' : 'horizontal'}
-        sx={{
-          '& .MuiStepLabel-root': {
-            fontSize: isMobile ? '0.875rem' : '1rem',
-          },
-          '& .MuiStepIcon-root.Mui-active, & .MuiStepIcon-root.Mui-completed': {
-            color: 'primary.main',
-          },
-        }}
       >
         {steps.map((label) => (
           <Step key={label}>

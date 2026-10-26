@@ -3,6 +3,7 @@ import {
   Box,
   Typography,
   Alert,
+  Button,
   CircularProgress,
   Card,
   CardContent,
@@ -20,6 +21,8 @@ const ClinicSelectionStep = ({
   selectedClinic,
   onSelectClinic,
   error,
+  loadError,
+  onRetry,
   loading,
 }) => {
   if (loading) {
@@ -30,10 +33,22 @@ const ClinicSelectionStep = ({
     );
   }
 
+  // A failed load must not read as "no clinics"
+  if (loadError) {
+    return (
+      <Alert
+        severity="error"
+        action={onRetry && <Button color="inherit" size="small" onClick={onRetry}>Retry</Button>}
+      >
+        Couldn't load clinics. Check your connection and retry.
+      </Alert>
+    );
+  }
+
   if (!clinics || clinics.length === 0) {
     return (
-      <Alert severity="warning">
-        No clinics available. Please contact support.
+      <Alert severity="info">
+        No clinics are taking online bookings yet.
       </Alert>
     );
   }
@@ -69,7 +84,7 @@ const ClinicSelectionStep = ({
             <CardContent sx={{ display: 'flex', alignItems: 'center', py: 2 }}>
               <FormControlLabel
                 value={clinic.id}
-                control={<Radio />}
+                control={<Radio slotProps={{ input: { 'aria-label': clinic.name } }} />}
                 label=""
                 sx={{ mr: 2 }}
               />

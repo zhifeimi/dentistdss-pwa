@@ -1,23 +1,20 @@
 import React from 'react';
 import {
   Box,
-  Typography,
+  Button,
   Paper,
   Alert,
   List,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import {
-  SmartToy as SmartToyIcon,
-  MedicalServices as DentistIcon,
-} from '@mui/icons-material';
+import { MedicalServices as DentistIcon } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
 import useAIChat from '../../../hooks/useAIChat';
-import ChatHeader from '../../../components/shared/ChatComponents/ChatHeader';
 import ChatMessage from '../../../components/shared/ChatComponents/ChatMessage';
 import ChatInput from '../../../components/shared/ChatComponents/ChatInput';
 import { getWelcomeMessage, getQuickActions } from '../../../utils/chatUtils';
+import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import {
   getResponsivePadding,
   getResponsiveMargin
@@ -57,54 +54,24 @@ const AIDentistPage: React.FC = () => {
   const quickActions = getQuickActions('aidentist', setQuickInput);
 
   return (
-    <Box sx={{
-      p: getResponsivePadding('medium'),
-      maxWidth: { xs: '100%', sm: '100%', md: 1200 },
-      mx: 'auto',
-      height: '100%'
-    }}>
-      <Typography
-        variant={isMobile ? "h5" : "h4"}
-        gutterBottom
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: { xs: 1, sm: 1.5 },
-          fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-          fontWeight: 600,
-          mb: getResponsiveMargin('medium'),
-          flexDirection: { xs: 'column', sm: 'row' },
-          textAlign: { xs: 'center', sm: 'left' }
-        }}
-      >
-        <SmartToyIcon
-          color="primary"
-          sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
-        />
-        {isMobile ? 'AI Assistant' : 'AI Clinical Assistant'}
-      </Typography>
+    <>
+      <PageHeader
+        title="Clinical assistant"
+        description="Ask about symptoms, treatment options and clinical guidelines. Check its answers against your own clinical judgement."
+        actions={<Button variant="outlined" onClick={() => clearConversation()}>New conversation</Button>}
+      />
 
       <Paper
-        elevation={2}
+        variant="outlined"
         sx={{
-          height: { xs: 'calc(100vh - 200px)', sm: 'calc(100vh - 180px)', md: '70vh' },
+          height: { xs: '62dvh', md: '70vh' },
+          minHeight: 420,
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: { xs: 1, sm: 2 },
+          borderRadius: 2,
           overflow: 'hidden'
         }}
       >
-        <ChatHeader
-          icon={<DentistIcon color="primary" />}
-          title={isMobile ? "AI Dentist" : "AI Dentist - Clinical Decision Support"}
-          subtitle={isMobile ?
-            "Clinical support & guidance" :
-            "Ask about patient symptoms, treatment options, clinical guidelines, or diagnostic support"
-          }
-          onClear={clearConversation}
-          isMobile={isMobile}
-        />
-
         {/* Messages Area */}
         <Box sx={{
           flex: 1,
@@ -154,15 +121,15 @@ const AIDentistPage: React.FC = () => {
           onSend={sendMessage}
           onKeyPress={handleKeyPress}
           placeholder={isMobile ?
-            "Ask about symptoms, treatments..." :
-            "Ask about patient symptoms, treatment options, clinical guidelines..."
+            "Ask about symptoms, treatments…" :
+            "Ask about patient symptoms, treatment options, clinical guidelines…"
           }
           isLoading={isLoading}
           quickActions={quickActions}
           isMobile={isMobile}
         />
       </Paper>
-    </Box>
+    </>
   );
 };
 

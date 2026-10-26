@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import useSystemSettings from '../../../../hooks/useSystemSettings';
 import SettingItem from './SettingItem';
@@ -138,7 +137,7 @@ const SystemSettingsSection = memo((): React.ReactElement => {
       <Box sx={{ width: '100%' }}>
         <LinearProgress />
         <Typography variant="body2" sx={{ mt: 1, textAlign: 'center' }}>
-          Loading system settings...
+          Loading system settings…
         </Typography>
       </Box>
     );
@@ -146,31 +145,9 @@ const SystemSettingsSection = memo((): React.ReactElement => {
 
   return (
     <Box>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 1, 
-        mb: 3,
-        flexDirection: isMobile ? 'column' : 'row',
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SettingsIcon color="primary" />
-          <Typography variant="h5" component="h2">
-            System Settings
-          </Typography>
-        </Box>
-        
-        <Typography 
-          variant="body2" 
-          color="text.secondary"
-          sx={{ 
-            ml: isMobile ? 0 : 'auto',
-            textAlign: isMobile ? 'center' : 'right',
-          }}
-        >
-          {settings.length} setting{settings.length !== 1 ? 's' : ''} configured
-        </Typography>
-      </Box>
+      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+        {settings.length} setting{settings.length !== 1 ? 's' : ''} configured
+      </Typography>
 
       {error && (
         <Alert 
@@ -182,7 +159,7 @@ const SystemSettingsSection = memo((): React.ReactElement => {
         </Alert>
       )}
 
-      {/* Add New Setting Form */}
+      {/* Add new setting Form */}
       <SettingForm
         key={formKey}
         onSave={handleAddSetting}
@@ -194,13 +171,13 @@ const SystemSettingsSection = memo((): React.ReactElement => {
       {settings.length > 0 && (
         <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
           <TextField
-            label="Search Settings"
+            label="Search settings"
             value={searchQuery}
             onChange={handleSearchChange}
             fullWidth
             variant="outlined"
             size={isMobile ? 'small' : 'medium'}
-            placeholder="Search by key, value, or description..."
+            placeholder="Search by key, value, or description…"
             slotProps={{
               input: {
                 startAdornment: (

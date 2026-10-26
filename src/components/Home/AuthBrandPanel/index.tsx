@@ -1,67 +1,57 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
-import {
-  Chat as ChatIcon,
-  CalendarMonth as CalendarIcon,
-  Lock as LockIcon,
-  LocalHospital as HospitalIcon,
-} from '@mui/icons-material';
-import GradientMesh from '../../../pages/Home/Welcome/sections/GradientMesh';
+import { Box, Typography, useTheme } from '@mui/material';
+import { CheckRounded } from '@mui/icons-material';
+import { BrandMark } from '../../shared/BrandMark';
 
-const BULLETS = [
-  { icon: ChatIcon, text: 'Dentabot answers dental questions 24/7' },
-  { icon: CalendarIcon, text: 'Book trusted clinics online in minutes' },
-  { icon: LockIcon, text: 'Your records, private by design' },
+const POINTS = [
+  'Search clinics near you and book a time online',
+  'Ask Dentabot about a symptom at any hour',
+  'Your records stay between you and your clinic',
 ];
 
 /**
- * AuthBrandPanel — the right-hand brand panel of the login/signup pages
- * (hidden below md): gradient mesh, wordmark, three product bullets.
+ * AuthBrandPanel — the deep-green side panel of the login and patient
+ * sign-up pages (hidden below md). Same inverted band as "For clinics".
  */
-const AuthBrandPanel: React.FC = () => (
-  <GradientMesh>
+const AuthBrandPanel: React.FC = () => {
+  const isDark = useTheme().palette.mode === 'dark';
+  return (
     <Box
       sx={{
         height: '100%',
+        p: 5,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
-        gap: 3,
-        p: 5,
+        justifyContent: 'space-between',
+        gap: 6,
+        bgcolor: isDark ? '#0F2B26' : '#073B34',
+        color: '#ECF5F2',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-        <HospitalIcon sx={{ color: 'primary.main', fontSize: 32 }} />
-        <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+        <BrandMark size={28} tone="inverse" />
+        <Typography component="span" sx={{ fontWeight: 750, fontSize: '1.0625rem', letterSpacing: '-0.02em' }}>
           DentistDSS
         </Typography>
       </Box>
-      <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.7, maxWidth: 360 }}>
-        Your dental clinic, intelligently assisted — answers, booking, and
-        records in one place.
-      </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-        {BULLETS.map(({ icon: Icon, text }) => (
-          <Box key={text} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
-              sx={{
-                display: 'inline-flex',
-                p: 0.75,
-                borderRadius: 2,
-                color: 'primary.main',
-                bgcolor: 'rgba(108, 71, 255, 0.10)',
-              }}
-            >
-              <Icon fontSize="small" />
+      <Box>
+        <Typography variant="h4" component="p" sx={{ color: 'inherit', maxWidth: '16ch' }}>
+          Dental care without the phone queue
+        </Typography>
+        <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, mt: 3, display: 'grid', gap: 1.5 }}>
+          {POINTS.map((point) => (
+            <Box component="li" key={point} sx={{ display: 'flex', gap: 1.25, alignItems: 'flex-start' }}>
+              <CheckRounded sx={{ fontSize: 20, mt: '2px', color: '#6FCDB8' }} />
+              <Typography sx={{ color: '#C9DDD7' }}>{point}</Typography>
             </Box>
-            <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-              {text}
-            </Typography>
-          </Box>
-        ))}
+          ))}
+        </Box>
       </Box>
+      <Typography variant="body2" sx={{ color: '#A9C9C0' }}>
+        Patients and clinic staff log in here.
+      </Typography>
     </Box>
-  </GradientMesh>
-);
+  );
+};
 
 export default AuthBrandPanel;

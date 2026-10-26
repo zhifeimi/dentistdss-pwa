@@ -59,7 +59,7 @@ export const roleMeta: Record<UserRole, RoleMeta> = {
     color: 'secondary',
   },
   CLINIC_ADMIN: {
-    label: 'Clinic Admin',
+    label: 'Clinic admin',
     icon: <AdminPanelSettingsIcon />,
     color: 'warning',
   },
@@ -69,7 +69,7 @@ export const roleMeta: Record<UserRole, RoleMeta> = {
     color: 'info',
   },
   SYSTEM_ADMIN: {
-    label: 'System Admin',
+    label: 'System admin',
     icon: <SettingsIcon />,
     color: 'error',
   },
@@ -87,21 +87,21 @@ const navigationSections: Record<UserRole, DashboardSection[]> = {
     },
     {
       id: 'appointments',
-      label: 'My Appointments',
+      label: 'My appointments',
       icon: <EventIcon />,
       path: '/appointments',
       component: AppointmentsPage
     },
     {
       id: 'dental-records',
-      label: 'Dental Records',
+      label: 'Dental records',
       icon: <HealthAndSafetyIcon />,
       path: '/dental-records',
       component: DentalRecordsPage
     },
     {
       id: 'ai-receptionist',
-      label: 'AI Receptionist',
+      label: 'AI receptionist',
       icon: <SmartToyIcon />,
       path: '/ai-receptionist',
       component: AIReceptionistPage
@@ -139,28 +139,28 @@ const navigationSections: Record<UserRole, DashboardSection[]> = {
     },
     {
       id: 'patient-records',
-      label: 'Patient Records',
+      label: 'Patient records',
       icon: <NotesIcon />,
       path: '/patient-records',
       component: PatientRecordsPage
     },
     {
       id: 'ai-dentist',
-      label: 'AI Dentist',
+      label: 'AI dentist',
       icon: <SmartToyIcon />,
       path: '/ai-dentist',
       component: AIDentistPage
     },
     {
       id: 'ai-summarize',
-      label: 'AI Summarize',
+      label: 'AI summaries',
       icon: <SummarizeIcon />,
       path: '/ai-summarize',
       component: AISummarizePage
     },
     {
       id: 'profile',
-      label: 'My Profile',
+      label: 'My profile',
       icon: <PersonIcon />,
       path: '/profile',
       component: ProfilePage
@@ -184,35 +184,35 @@ const navigationSections: Record<UserRole, DashboardSection[]> = {
     },
     {
       id: 'staff',
-      label: 'Staff Management',
+      label: 'Staff',
       icon: <PeopleIcon />,
       path: '/staff',
       component: UserManagementPage
     },
     {
       id: 'approvals',
-      label: 'Pending Staff Approvals',
+      label: 'Approvals',
       icon: <PendingActionsIcon />,
       path: '/approvals',
       component: ApprovalsPage
     },
     {
       id: 'holidays',
-      label: 'Holiday Management',
+      label: 'Holidays',
       icon: <CalendarTodayIcon />,
       path: '/holidays',
       component: HolidayManagementPage
     },
     {
       id: 'working-hours',
-      label: 'Working Hours',
+      label: 'Working hours',
       icon: <ScheduleIcon />,
       path: '/working-hours',
       component: WorkingHoursPage
     },
     {
       id: 'settings',
-      label: 'Clinic Settings',
+      label: 'Clinic settings',
       icon: <SettingsIcon />,
       path: '/settings',
       component: SettingsPage
@@ -274,21 +274,21 @@ const navigationSections: Record<UserRole, DashboardSection[]> = {
     },
     {
       id: 'approvals',
-      label: 'Pending Approvals',
+      label: 'Approvals',
       icon: <PendingActionsIcon />,
       path: '/approvals',
       component: ApprovalsPage
     },
     {
       id: 'users',
-      label: 'System Users',
+      label: 'Users',
       icon: <PeopleIcon />,
       path: '/users',
       component: UserManagementPage
     },
     {
       id: 'settings',
-      label: 'System Settings',
+      label: 'System settings',
       icon: <SettingsIcon />,
       path: '/settings',
       component: SettingsPage
