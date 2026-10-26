@@ -51,8 +51,9 @@ const useFormValidation = (): UseFormValidationReturn => {
     if (!email) {
       return 'Email is required';
     }
-    const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
-    if (!emailRegex.test(email)) {
+    // Loose on purpose: allow "+" tags and long domain endings (.dental,
+    // .com.au); the server decides what's deliverable
+    if (!/^[^\s@]+@([^\s@.]+\.)+[^\s@.]{2,}$/.test(email)) {
       return 'Please enter a valid email address';
     }
     return '';

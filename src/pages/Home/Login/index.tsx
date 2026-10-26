@@ -22,6 +22,7 @@ import AuthLayout from '../../../components/Home/AuthLayout';
 import GoogleAuthProvider from '../../../components/Auth/GoogleAuthProvider';
 import GoogleSignInButton from '../../../components/Auth/GoogleSignInButton';
 import { returnPathAfterLogin } from '../../../utils/returnPath';
+import useFormValidation from '../../../hooks/useFormValidation';
 
 /**
  * Login - User authentication page
@@ -45,6 +46,7 @@ const Login: React.FC = () => {
   const { login, googleIdLogin } = useAuth() || {};
   const navigate = useNavigate();
   const location = useLocation();
+  const { validateEmail } = useFormValidation();
 
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -71,17 +73,6 @@ const Login: React.FC = () => {
       resizeObserver.disconnect();
     };
   }, [containerRef]);
-
-  const validateEmail = (emailToValidate: string): string => {
-    if (!emailToValidate) {
-      return 'Email is required';
-    }
-    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-    if (!emailRegex.test(emailToValidate)) {
-      return 'Please enter a valid email address';
-    }
-    return '';
-  };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;

@@ -17,7 +17,7 @@ async function mockSignupApi(page: Page): Promise<void> {
 async function fillAccount(page: Page): Promise<void> {
   await page.locator('input[name="firstName"]').fill('Sam');
   await page.locator('input[name="lastName"]').fill('Lee');
-  await page.locator('input[name="email"]').fill('sam@harbour.com.au');
+  await page.locator('input[name="email"]').fill('sam+staff@harbour.dental');
   await page.locator('input[name="password"]').fill('CorrectHorse1!');
   await page.locator('input[name="confirmPassword"]').fill('CorrectHorse1!');
 }
@@ -58,7 +58,7 @@ test('a new clinic waits for the DentistDSS team after verifying its email', asy
     ['city', 'Sydney'],
     ['state', 'NSW'],
     ['zipCode', '2000'],
-    ['businessEmail', 'hello@harbour.com.au'],
+    ['businessEmail', 'hello@harbour.dental'],
     ['phoneNumber', '0291234567'],
   ]) {
     await page.locator(`input[name="${name}"]`).fill(value);
