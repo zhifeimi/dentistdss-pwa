@@ -63,7 +63,7 @@ const PrivacyPolicy: React.FC = () => {
           DentistDSS Privacy Policy
         </Typography>
         <Typography component="p" color="text.secondary" sx={{ mb: 3 }}>
-          DRAFT — not yet in effect
+          Effective date: 27 October 2026
         </Typography>
         <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
           This policy explains how Zhifei Mi and the DentistDSS team (&quot;DentistDSS&quot;,
@@ -350,7 +350,7 @@ const PrivacyPolicy: React.FC = () => {
             <li>
               <strong>
                 Configured self-hosted OpenAI-compatible AI endpoint and OpenAI (conditional AI
-                processing; DRAFT):
+                processing):
               </strong>{' '}
               where the GenAI service is enabled and configured, DentistDSS sends the current prompt,
               recent conversation messages, and relevant prompt-template context to the configured
@@ -408,6 +408,13 @@ const PrivacyPolicy: React.FC = () => {
             DentistDSS does not use your prompts, responses, Google Sign-In information, clinical
             records, or images to train or fine-tune its own AI models. We do not sell AI content or
             use it for targeted advertising.
+          </Typography>
+          <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
+            OpenAI&apos;s own handling of information is subject to the terms and settings for the
+            configured service and the{' '}
+            <Link href="https://openai.com/privacy/" target="_blank" rel="noopener noreferrer">
+              OpenAI Privacy Policy
+            </Link>.
           </Typography>
           <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
             Please do not submit another person&apos;s health information or identifying documents
@@ -530,7 +537,7 @@ const PrivacyPolicy: React.FC = () => {
         <PolicySection id="international-transfers" title="10. International data transfers">
           <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
             DentistDSS uses providers whose infrastructure may operate in multiple countries,
-            including Vercel, Cloudflare, Google, and the email delivery provider. Your information
+            including Vercel, Cloudflare, Google, OpenAI, and the email delivery provider. Your information
             may therefore be processed outside the state or country where you live. Self-hosted
             databases and an Australian clinic or default map location do not mean that all data is
             stored exclusively in Australia or any other single region. Provider locations and

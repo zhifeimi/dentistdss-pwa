@@ -31,12 +31,12 @@ const renderPolicy = () => {
 };
 
 describe('Privacy policy', () => {
-  it('renders a draft without an effective date and preserves the original sections and anchors', () => {
+  it('renders an effective policy and preserves the original sections and anchors', () => {
     const policy = renderPolicy();
 
     expect(screen.getByRole('heading', { level: 1, name: 'DentistDSS Privacy Policy' })).toBeVisible();
-    expect(policy).toHaveTextContent(/draft/i);
-    expect(policy).not.toHaveTextContent(/effective date\s*:/i);
+    expect(policy).toHaveTextContent('Effective date: 27 October 2026');
+    expect(policy).not.toHaveTextContent(/draft/i);
 
     const navigation = screen.getByRole('navigation', { name: 'Privacy policy sections' });
     expect(within(navigation).getAllByRole('link')).toHaveLength(sections.length);
@@ -107,6 +107,8 @@ describe('Privacy policy', () => {
     expect(policy.querySelector('a[href*="cloud.google.com/vertex-ai"]')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /google cloud.*data.governance/i }))
       .not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'OpenAI Privacy Policy' }))
+      .toHaveAttribute('href', 'https://openai.com/privacy/');
     expect(ai).toHaveTextContent(/dentistdss does not.{0,250}(?:train|fine.tune).{0,80}(?:its|our) own (?:ai )?models/i);
   });
 
