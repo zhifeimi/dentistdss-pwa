@@ -332,7 +332,7 @@ const PrivacyPolicy: React.FC = () => {
               the backend and processes connection, request, and security information.
             </li>
             <li>
-              <strong>Database and backend infrastructure:</strong> self-hosted PostgreSQL, MongoDB,
+              <strong>Database and backend infrastructure:</strong> PostgreSQL, MongoDB,
               GridFS, and Redis store the account, service, clinical, AI, session-security, and audit
               information described above. Redis does not store the raw DentistDSS access tokens.
             </li>
@@ -349,7 +349,7 @@ const PrivacyPolicy: React.FC = () => {
             </li>
             <li>
               <strong>
-                Configured self-hosted OpenAI-compatible AI endpoint and OpenAI (conditional AI
+                Configured self-hosted AI endpoint and OpenAI (conditional AI
                 processing):
               </strong>{' '}
               where the GenAI service is enabled and configured, DentistDSS sends the current prompt,
