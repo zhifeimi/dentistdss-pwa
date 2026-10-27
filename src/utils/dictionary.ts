@@ -12,7 +12,7 @@ interface Dictionary {
 
 const dictionary: Dictionary = {
   locations: {
-    public: ['/', '/login', '/signup', "/signup/clinic-staff", "/signup/clinic-admin", "/terms",
+    public: ['/', '/login', '/signup', "/signup/clinic-staff", "/signup/clinic-admin", "/terms", "/privacy",
       "/signup/verify", "/verify-email-code", "/book", "/learn", "/quiz", "/find-a-clinic", "/pending-approval"],
   },
   modes: {

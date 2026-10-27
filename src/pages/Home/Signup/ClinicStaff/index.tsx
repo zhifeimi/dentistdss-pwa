@@ -398,6 +398,11 @@ const ClinicStaff: React.FC = () => {
               <MuiLink component={RouterLink} to="/terms" target="_blank" rel="noopener">
                 Terms &amp; Conditions
               </MuiLink>
+              . For information about privacy, read our{' '}
+              <MuiLink component={RouterLink} to="/privacy" target="_blank" rel="noopener">
+                Privacy Policy
+              </MuiLink>
+              .
             </Typography>
 
             <Grid container spacing={1} sx={{mt: 2}}>

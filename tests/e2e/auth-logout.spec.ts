@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test';
 import { mockAuthenticatedSession } from './support/authenticatedSession';
 
+test.beforeEach(async ({ page, baseURL }) => {
+  const appOrigin = new URL(baseURL ?? 'http://localhost:3000').origin;
+  await page.route('**/*', (route) => {
+    const url = new URL(route.request().url());
+    if (url.origin !== appOrigin || /^\/(?:api|auth|oauth2?|genai)(?:\/|$)/.test(url.pathname)) {
+      return route.abort();
+    }
+    return route.continue();
+  });
+});
+
 test('logout immediately removes authenticated actions and protects the dashboard', async ({ page }) => {
   let logoutStarted = false;
   let logoutFinished = false;
@@ -57,7 +68,7 @@ test('logout immediately removes authenticated actions and protects the dashboar
     expect(logoutFinished).toBe(false);
 
     await page.getByRole('link', { name: 'Privacy Policy', exact: true }).click();
-    await expect(page).toHaveURL(/\/terms$/);
+    await expect(page).toHaveURL(/\/privacy$/);
     await expect(page.getByRole('heading', { name: 'DentistDSS Privacy Policy' })).toBeVisible();
     await expect(page.getByRole('banner').getByRole('link', { name: 'Log in', exact: true })).toBeVisible();
     await expect(page.getByRole('banner').getByRole('link', { name: 'Sign up', exact: true })).toBeVisible();
@@ -67,7 +78,8 @@ test('logout immediately removes authenticated actions and protects the dashboar
     releaseLogout();
     await expect.poll(() => logoutFinished).toBe(true);
 
-    await page.goto('/terms');
+    await page.goto('/privacy');
+    await expect(page.getByRole('heading', { name: 'DentistDSS Privacy Policy' })).toBeVisible();
     await expect(page.getByRole('banner').getByRole('link', { name: 'Log in', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Dashboard', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Messages', exact: true })).toHaveCount(0);

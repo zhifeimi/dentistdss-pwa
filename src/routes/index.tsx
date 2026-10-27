@@ -19,6 +19,7 @@ const QuizPage = React.lazy(() => import('../pages/Home/Quiz/index.tsx'));
 const FindAClinic = React.lazy(() => import('../pages/Home/FindAClinic/index.tsx'));
 const ClinicAdminSignup = React.lazy(() => import('../pages/Home/Signup/ClinicAdmin/index.tsx'));
 const TermsAndConditions = React.lazy(() => import('../pages/TermsAndConditions/index.tsx'));
+const PrivacyPolicy = React.lazy(() => import('../pages/PrivacyPolicy/index.tsx'));
 const PendingApproval = React.lazy(() => import('../pages/PendingApproval/index.tsx'));
 
 const AppRoutes: React.FC = () => {
@@ -84,6 +85,10 @@ const AppRoutes: React.FC = () => {
                 <Route
                     path="/terms"
                     element={<TermsAndConditions />}
+                />
+                <Route
+                    path="/privacy"
+                    element={<PrivacyPolicy />}
                 />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

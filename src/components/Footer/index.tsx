@@ -72,8 +72,11 @@ const Footer: React.FC = () => {
               <Link href="mailto:dentistdss@gmail.com" variant="body2" sx={linkSx}>
                 dentistdss@gmail.com
               </Link>
-              <Link component={RouterLink} to="/terms" onClick={scrollToTop} variant="body2" sx={linkSx}>
+              <Link component={RouterLink} to="/privacy" onClick={scrollToTop} variant="body2" sx={linkSx}>
                 Privacy Policy
+              </Link>
+              <Link component={RouterLink} to="/terms" onClick={scrollToTop} variant="body2" sx={linkSx}>
+                Terms &amp; Conditions
               </Link>
             </Box>
           </Grid>

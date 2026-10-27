@@ -1,4 +1,5 @@
 const CACHE_NAME = 'dentistdss-pwa-v5';
+const LOADED_ASSETS_CACHE_NAME = `${CACHE_NAME}-loaded-assets`;
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -11,7 +12,7 @@ const CORE_ASSETS = [
   '/images/logo.png',
   '/images/fallback.png',
 ];
-const PRIVATE_PATH_PREFIXES = ['/api/', '/auth/', '/oauth/', '/genai/'];
+const PRIVATE_PATH_PREFIXES = ['/api/', '/auth/', '/oauth/', '/oauth2/', '/genai/'];
 const CACHEABLE_DESTINATIONS = new Set(['font', 'image', 'manifest', 'script', 'style', 'worker']);
 
 function isPrivateRequest(request, url) {
@@ -25,10 +26,15 @@ function canCache(response) {
     !response.headers.get('cache-control')?.toLowerCase().includes('no-store');
 }
 
+function isLoadedAssetUrl(url) {
+  return url.origin === self.location.origin && !url.username && !url.password &&
+    !url.href.includes('?') && !url.href.includes('#') &&
+    /^\/assets\/(?:[\w.-]+\/)*[\w.-]+-[\w-]{8}\.(?:js|css)$/.test(url.pathname);
+}
+
 // Hashed build assets are NOT install-precached: index.html statically
 // references every eagerly-emitted image/font (dozens of MB of Learn media),
 // so install-time HTML scraping forced a multi-MB first-visit download.
-// They are covered by the runtime cacheFirst handler on first use instead.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -41,11 +47,50 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((names) =>
         Promise.all(
-          names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name)),
+          names.filter((name) => name !== CACHE_NAME && name !== LOADED_ASSETS_CACHE_NAME)
+            .map((name) => caches.delete(name)),
         )
       )
       .then(() => self.clients.claim()),
   );
+});
+
+async function cacheLoadedAssets(urls) {
+  const requests = urls.flatMap((value) => {
+    if (typeof value !== 'string') return [];
+    try {
+      const url = new URL(value);
+      if (!isLoadedAssetUrl(url)) return [];
+      return [
+        new Request(url.href, {
+          credentials: 'omit',
+          cache: 'no-store',
+          redirect: 'error',
+          mode: 'same-origin',
+        }),
+      ];
+    } catch {
+      return [];
+    }
+  });
+  if (!requests.length) return;
+
+  const cache = await caches.open(LOADED_ASSETS_CACHE_NAME);
+  await Promise.all(requests.map(async (request) => {
+    try {
+      if (await cache.match(request)) return;
+      const response = await fetch(request);
+      const vary = response.headers.get('vary')?.trim().toLowerCase();
+      if (canCache(response) && (!vary || vary === 'origin')) await cache.put(request, response);
+    } catch {
+      return;
+    }
+  }));
+}
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'CACHE_LOADED_ASSETS' || !Array.isArray(event.data.urls)) return;
+  event.waitUntil(cacheLoadedAssets(event.data.urls));
 });
 
 async function networkFirst(request) {
@@ -67,6 +112,22 @@ async function networkFirst(request) {
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
+
+  const url = new URL(request.url);
+  if (
+    (request.destination === 'script' || request.destination === 'style') &&
+    request.headers.get('origin') === self.location.origin && isLoadedAssetUrl(url)
+  ) {
+    const response = await caches.open(LOADED_ASSETS_CACHE_NAME)
+      .then((loadedAssets) => loadedAssets.match(request, { ignoreVary: true }))
+      .catch(() => undefined);
+    if (
+      response && canCache(response) &&
+      response.headers.get('vary')?.trim().toLowerCase() === 'origin'
+    ) {
+      return response;
+    }
+  }
 
   try {
     const response = await fetch(request);
