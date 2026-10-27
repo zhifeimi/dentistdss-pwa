@@ -83,17 +83,25 @@ describe('Privacy policy', () => {
     expect(policy).not.toHaveTextContent('HIPAA- and GDPR-compliant');
   });
 
-  it('describes the configured AI endpoint without obsolete Google AI claims', () => {
+  it('describes the self-hosted AI endpoint and OpenAI as its upstream provider', () => {
     const policy = renderPolicy();
+    const sharing = screen.getByRole('heading', { level: 2, name: '5. Who we share information with' })
+      .closest('section')!;
     const ai = screen.getByRole('heading', { level: 2, name: '6. AI processing and model training' })
       .closest('section')!;
 
-    expect(ai).toHaveTextContent(/configured.{0,40}openai.compatible.{0,40}endpoint/i);
+    for (const section of [sharing, ai]) {
+      expect(section).toHaveTextContent(/configured.{0,40}self.hosted.{0,40}openai.compatible.{0,40}endpoint/i);
+      expect(section).toHaveTextContent(
+        /current prompt.{0,50}recent conversation messages.{0,50}relevant prompt.template context.{0,100}endpoint.{0,40}forwards.{0,30}openai.{0,30}upstream provider/i,
+      );
+      expect(section).not.toHaveTextContent(
+        /openai[^.]*\b(?:train(?:s|ing)?|fine.tun(?:e|ing)|retention|retain(?:s|ed)?|located|business associate agreement|baa)\b/i,
+      );
+      expect(section).not.toHaveTextContent(/no (?:other|further|additional) (?:third.parties|providers)/i);
+    }
     expect(ai).toHaveTextContent(/openai.compatible.{0,60}(?:describes|refers to).{0,30}interface/i);
-    expect(ai).toHaveTextContent(/does not (?:establish|imply|mean).{0,30}openai.{0,30}operat.{0,40}(?:or|nor).{0,40}receiv.{0,20}data/i);
-    expect(ai).toHaveTextContent(
-      /openai.compatible[^.]*interface[^.]*does not (?:establish|imply|mean)[^.]*openai[^.]*operat[^.]*receiv[^.]*data/i,
-    );
+    expect(ai).toHaveTextContent(/term alone does not identify.{0,30}provider.{0,40}openai operates the endpoint/i);
     expect(policy).not.toHaveTextContent(/vertex ai|gemini/i);
     expect(policy).not.toHaveTextContent(/google cloud.{0,100}data.governance/i);
     expect(policy.querySelector('a[href*="cloud.google.com/vertex-ai"]')).not.toBeInTheDocument();

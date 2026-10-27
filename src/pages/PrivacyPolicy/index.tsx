@@ -348,11 +348,15 @@ const PrivacyPolicy: React.FC = () => {
               clinic name to Google Maps or Apple Maps when you choose them.
             </li>
             <li>
-              <strong>Configured OpenAI-compatible AI endpoint (conditional AI processing; DRAFT):</strong>{' '}
+              <strong>
+                Configured self-hosted OpenAI-compatible AI endpoint and OpenAI (conditional AI
+                processing; DRAFT):
+              </strong>{' '}
               where the GenAI service is enabled and configured, DentistDSS sends the current prompt,
-              recent conversation messages, and prompt-template context to the configured endpoint
-              to generate a response. The default history is up to 10 recent messages and is
-              configurable. See the AI processing section below.
+              recent conversation messages, and relevant prompt-template context to the configured
+              self-hosted endpoint, which forwards them to OpenAI as an upstream provider to generate
+              a response. The default history is up to 10 recent messages and is configurable. See
+              the AI processing section below.
             </li>
             <li>
               <strong>SMTP email delivery provider:</strong> processes recipient email addresses,
@@ -379,11 +383,12 @@ const PrivacyPolicy: React.FC = () => {
         <PolicySection id="ai-processing" title="6. AI processing and model training">
           <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
             Where the GenAI service is enabled and configured, the DentistDSS backend sends the
-            current prompt and recent conversation messages to its configured{' '}
-            <strong>OpenAI-compatible AI endpoint</strong>. &quot;OpenAI-compatible&quot; describes
-            the interface; it does not establish that OpenAI operates the endpoint or receives the
-            data. By default, up to 10 recent messages are included; this history limit is
-            configurable. Built-in prompt context can include a
+            current prompt, recent conversation messages, and relevant prompt-template context to
+            its configured <strong>self-hosted OpenAI-compatible AI endpoint</strong>, which
+            forwards them to OpenAI as an upstream provider to generate a response.
+            &quot;OpenAI-compatible&quot; describes the interface; the term alone does not identify
+            the provider or establish that OpenAI operates the endpoint. By default, up to 10 recent
+            messages are included; this history limit is configurable. Built-in prompt context can include a
             display name derived from the local part of your email address, your primary account
             role, whether you are authenticated, and role-specific instructions. Built-in prompts
             do not include your full email address, user ID, clinic ID, or session ID. Custom prompt
