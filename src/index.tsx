@@ -11,6 +11,11 @@ import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import { AuthProvider } from './context/auth'; // Import AuthProvider
 
+// Static SEO tags (from index.html or the prerendered page) describe the URL
+// the crawler asked for. React renders its own per-route tags from here on, so
+// drop the static copies to avoid duplicates after client-side navigation.
+document.head.querySelectorAll('[data-seo]').forEach((element) => element.remove());
+
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Failed to find the root element');
 

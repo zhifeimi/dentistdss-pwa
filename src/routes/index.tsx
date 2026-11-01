@@ -21,6 +21,7 @@ const ClinicAdminSignup = React.lazy(() => import('../pages/Home/Signup/ClinicAd
 const TermsAndConditions = React.lazy(() => import('../pages/TermsAndConditions/index.tsx'));
 const PrivacyPolicy = React.lazy(() => import('../pages/PrivacyPolicy/index.tsx'));
 const PendingApproval = React.lazy(() => import('../pages/PendingApproval/index.tsx'));
+const NotFound = React.lazy(() => import('../pages/NotFound/index.tsx'));
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, loading } = useAuth();
@@ -90,7 +91,9 @@ const AppRoutes: React.FC = () => {
                     path="/privacy"
                     element={<PrivacyPolicy />}
                 />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                {/* A real Not Found page (noindex). Vercel also answers unknown
+                    paths with HTTP 404, so they never index as copies of "/". */}
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </Suspense>
     );

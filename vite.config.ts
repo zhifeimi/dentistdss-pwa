@@ -1,6 +1,12 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { loadEnv, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { notFoundSeoHtml, replaceSeoTags, shellSeoHtml } from './src/seo/build.ts';
+import { STATIC_PAGES } from './src/seo/pages.ts';
+import { normalizeSiteUrl } from './src/seo/site.ts';
+import { buildSitemapXml } from './src/seo/sitemap.ts';
 
 const sourceDirectory = decodeURIComponent(new URL('./src', import.meta.url).pathname);
 
@@ -21,8 +27,34 @@ function apiPreconnectPlugin(mode: string): Plugin {
   };
 }
 
+/**
+ * SEO output: default head tags in index.html, plus build/404.html (the page
+ * Vercel serves, with HTTP 404, for unknown paths) and build/sitemap.xml, all
+ * generated from the registry in src/seo.
+ */
+function seoPlugin(mode: string): Plugin {
+  const siteUrl = normalizeSiteUrl(loadEnv(mode, process.cwd(), '').VITE_SITE_URL);
+  let outDir = '';
+  return {
+    name: 'dentistdss-seo',
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    transformIndexHtml: (html) => html.replace('<!--SEO_TAGS-->', shellSeoHtml(siteUrl)),
+    async closeBundle() {
+      if (this.environment && this.environment.name !== 'client') return;
+      const indexHtml = await readFile(resolve(outDir, 'index.html'), 'utf8');
+      await writeFile(
+        resolve(outDir, '404.html'),
+        replaceSeoTags(indexHtml, notFoundSeoHtml(siteUrl)),
+      );
+      await writeFile(resolve(outDir, 'sitemap.xml'), buildSitemapXml(STATIC_PAGES, siteUrl));
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), apiPreconnectPlugin(mode)],
+  plugins: [react(), apiPreconnectPlugin(mode), seoPlugin(mode)],
   server: {
     port: 3000,
     host: true,

@@ -3,6 +3,7 @@ import React from 'react';
 import Header from '../../components/Home/Header';
 import FloatingChatHelper from '../../components/Home/Helper';
 import Footer from '../../components/Footer';
+import { RouteSeo } from '../../seo/Seo';
 
 interface HomeProps {
   children?: React.ReactNode;
@@ -11,7 +12,7 @@ interface HomeProps {
   toggleDarkMode: () => void;
 }
 
-/** Public layout: fixed header, page content, Dentabot helper, footer. */
+/** Public layout: page metadata, fixed header, page content, Dentabot helper, footer. */
 const Home: React.FC<HomeProps> = ({ children, isMobile, darkMode, toggleDarkMode }) => {
   return (
     <>
@@ -23,6 +24,7 @@ const Home: React.FC<HomeProps> = ({ children, isMobile, darkMode, toggleDarkMod
           minHeight: '70vh',
         }}
       >
+        <RouteSeo />
         <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} isMobile={isMobile} />
         {children}
         <FloatingChatHelper darkMode={darkMode} toggleDarkMode={toggleDarkMode} isMobile={isMobile} />

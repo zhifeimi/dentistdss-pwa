@@ -54,6 +54,7 @@ By default the app expects the backend API gateway at `http://localhost:8080`. S
 | `VITE_API_GENAI_PATH` | `/genai` | GenAI service path |
 | `VITE_GOOGLE_CLIENT_ID` | _(empty)_ | Google sign-in OAuth client ID |
 | `VITE_GOOGLE_MAPS_API_KEY` | _(empty)_ | Google Maps key for clinic search |
+| `VITE_SITE_URL` | `https://dentist.zhifei.org` | Canonical origin for SEO tags and the sitemap |
 
 Every `VITE_*` value is embedded in the public browser bundle. Never put a server-side secret in one, and restrict the Maps key by hostname and API in Google Cloud.
 
@@ -108,6 +109,7 @@ src/
   context/           # auth, dashboard, and theme providers
   hooks/             # data and UI hooks (appointments, schedule, chat, maps)
   services/          # Axios API clients, session, chatbot SSE transport
+  seo/               # SEO registry, <Seo> tags, JSON-LD, sitemap and build helpers
   utils/             # dictionary, dashboard role config, date helpers
 public/              # service worker, manifest, icons
 scripts/             # deno-tool.ts wrapper and Vercel Deno installer
@@ -116,11 +118,21 @@ tests/               # unit, integration, components, utils (Vitest); e2e (Playw
 
 ### Adding or renaming a page
 
-Routing is split across three registries. Check every one that applies, or the page may render in the wrong shell or be missing from navigation:
+Routing is split across several registries. Check every one that applies, or the page may render in the wrong shell, be missing from navigation, or return HTTP 404 on a fresh load:
 
 - `src/routes/index.tsx` — public and top-level routes.
-- `src/utils/dictionary.ts` — which paths `AppShell` treats as public.
+- `src/seo/pages.ts` — title, description, canonical, robots rule and structured data for each public route; indexable pages also go into the sitemap.
+- `src/utils/dictionary.ts` — `locations.app` lists the signed-in paths that `AppShell` renders in the dashboard shell. Every other path renders in the public shell, and unknown paths get the Not Found page.
 - `src/utils/dashboard/roleConfig.tsx` — role-specific dashboard navigation, routes, and lazy-loaded components.
+- `vercel.json` — `rewrites` serve the app shell for SPA routes. Any other path gets `build/404.html` with HTTP 404, so new routes must be listed. Signed-in paths also get an `X-Robots-Tag: noindex` header.
+
+`tests/unit/seo.test.ts` fails when these registries disagree.
+
+## SEO
+
+- **Canonical domain**: `https://dentist.zhifei.org`. `vercel.json` sends `dentist.mizhifei.press` and `dentistdss.vercel.app` there with a permanent redirect.
+- **Metadata**: `RouteSeo` (in the public layout) renders the registry entry for the current path, and React 19 hoists the tags into `<head>`. Dynamic pages render `<Seo>` themselves.
+- **Build output**: the Vite `dentistdss-seo` plugin writes default tags into `index.html` and generates `build/404.html` and `build/sitemap.xml` from the registry. `public/robots.txt` points crawlers at the sitemap.
 
 ## How it talks to the backend
 
