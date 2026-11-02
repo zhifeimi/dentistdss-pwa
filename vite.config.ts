@@ -30,11 +30,24 @@ function apiPreconnectPlugin(mode: string): Plugin {
   };
 }
 
-/** Default SEO tags (title, description, social card) for the SPA shell. */
+/** Default SEO tags (title, description, social card) and the font preload for the SPA shell. */
 function seoShellPlugin(siteUrl: string): Plugin {
   return {
     name: 'dentistdss-seo-shell',
-    transformIndexHtml: (html) => html.replace('<!--SEO_TAGS-->', shellSeoHtml(siteUrl)),
+    transformIndexHtml: (html, ctx) => {
+      const withTags = html.replace('<!--SEO_TAGS-->', shellSeoHtml(siteUrl));
+      // Preload the latin Atkinson face (the one every page uses) so text
+      // renders in it without waiting for the CSS to be parsed. Build only:
+      // the bundle lists the hashed file name.
+      const font = Object.keys(ctx.bundle ?? {})
+        .find((file) => /atkinson-hyperlegible-next-latin-wght-normal-[\w-]+\.woff2$/.test(file));
+      return font
+        ? withTags.replace(
+          '</head>',
+          `  <link rel="preload" href="/${font}" as="font" type="font/woff2" crossorigin />\n  </head>`,
+        )
+        : withTags;
+    },
   };
 }
 
@@ -165,7 +178,7 @@ export default defineConfig(({ mode }) => {
         'tests/**/*.{test,spec}.{js,ts,jsx,tsx}',
         'src/**/*.{test,spec}.{js,ts,jsx,tsx}',
       ],
-      exclude: ['build/**', 'tests/e2e/**'],
+      exclude: ['build/**', 'tests/e2e/**', 'tests/og/**'],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],

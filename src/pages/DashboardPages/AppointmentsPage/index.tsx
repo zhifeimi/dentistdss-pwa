@@ -34,6 +34,7 @@ import useAppointmentBooking from '../../../hooks/appointment/useAppointmentBook
 import { Appointment, UserRole } from '../../../types';
 import type { NewAppointmentData } from '../../../components/Dashboard/shared/AppointmentCalendar/types';
 import type { AvailableSlot } from '../../../components/Dashboard/shared/BookingWizard/types';
+import { trackEvent } from '../../../analytics';
 
 interface AppointmentsPageProps {
   userRole?: UserRole;
@@ -98,6 +99,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     bookingWizard.resetBooking();
     setPendingClinicId(bookClinicId);
     setShowBookingWizard(true);
+    trackEvent('Booking started', { fromClinicLink: true });
     setSearchParams({}, { replace: true });
     // bookingWizard's identity changes every render; the inputs above are the triggers.
   }, [bookClinicId]);
@@ -195,6 +197,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     bookingWizard.resetBooking();
     setPendingClinicId(null);
     setShowBookingWizard(true);
+    trackEvent('Booking started', { fromClinicLink: false });
   }, [bookingWizard]);
 
   const handleBookingComplete = useCallback((newAppointment: Appointment) => {

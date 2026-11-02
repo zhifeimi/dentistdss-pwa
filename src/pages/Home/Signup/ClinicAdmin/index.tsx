@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -23,6 +23,7 @@ import { Link as RouterLink, useNavigate } from 'react-router';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import api from '../../../../services';
+import { trackEvent } from '../../../../analytics';
 import PasswordStrengthIndicator from '../../../../components/PasswordStrengthIndicator';
 import { isPasswordStrong } from '../../../../utils/passwordStrength';
 import ConfirmationDialog from '../../../../components/ConfirmationDialog';
@@ -102,7 +103,14 @@ const ClinicAdmin: React.FC = () => {
   const handleClickShowPassword = () => setShowPassword(!showPassword);
   const handleClickShowConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
 
+  // Counted once per visit, on the first edit: someone started registering.
+  const registrationStarted = useRef(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!registrationStarted.current) {
+      registrationStarted.current = true;
+      trackEvent('Clinic registration started');
+    }
     const { name, value } = e.target;
     const newFormData = { ...formData, [name]: value };
     setFormData(newFormData);
@@ -182,6 +190,7 @@ const ClinicAdmin: React.FC = () => {
       };
 
       await api.auth.signupClinicAdmin(payload);
+      trackEvent('Clinic registration submitted', { listedPublicly });
 
       setDialogTitle('Sign-up submitted');
       setDialogMessage('Signup request submitted! Please check your email for verification. Your clinic registration is pending approval by the DentistDSS team.');

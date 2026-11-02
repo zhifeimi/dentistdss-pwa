@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import api from '../../services';
+import { trackEvent } from '../../analytics';
 import type { Appointment, CreateAppointmentRequest } from '../../types/api';
 import type { UrgencyLevel } from '../../types/common';
 import type { BookingData, PatientData, ServiceType } from './useAppointmentBooking';
@@ -125,6 +126,7 @@ export const useBookingSubmission = () => {
       const newAppointment = await api.appointment.createAppointment(
         appointmentData,
       );
+      trackEvent('Booking requested');
       await handleBookingSuccess(newAppointment, context);
       return newAppointment;
     } catch (error: any) {

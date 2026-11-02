@@ -16,6 +16,8 @@ import {
 import { DEFAULT_SITE_URL, normalizePath, normalizeSiteUrl, SITE_URL } from '../../src/seo/site';
 import { buildSitemapXml } from '../../src/seo/sitemap';
 import { buildSeoTags, renderSeoTagsToHtml } from '../../src/seo/tags';
+import { OG_CARDS, ogCardPath } from '../../src/seo/ogCards';
+import { existsSync } from 'node:fs';
 import dictionary, { isAppPath } from '../../src/utils/dictionary';
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -139,6 +141,25 @@ describe('content pages', () => {
   });
 });
 
+describe('share cards', () => {
+  it('has an image file for every card and every page that names one', () => {
+    for (const card of OG_CARDS) {
+      expect(existsSync(resolve(process.cwd(), `public${ogCardPath(card)}`)), card.key).toBe(true);
+    }
+    for (const page of PUBLIC_PAGES) {
+      if (!page.ogImage) continue;
+      expect(existsSync(resolve(process.cwd(), `public${page.ogImage}`)), page.path).toBe(true);
+    }
+  });
+
+  it('gives the main pages their own card and keeps article photos', () => {
+    expect(findPage('/learn')).toMatchObject({ ogImage: '/og/learn.png', ogImageAlt: 'Dental health guides' });
+    expect(findPage('/for-clinics/online-booking')?.ogImage).toBe('/og/for-clinics-online-booking.png');
+    expect(findPage('/learn/gum-disease')?.ogImage).toBe('/images/learn/gum-disease.webp');
+    expect(findPage('/')?.ogImage).toBeUndefined();
+  });
+});
+
 describe('SEO tags', () => {
   const tagsFor = (path: string) => buildSeoTags(findPage(path)!);
   const canonicalOf = (path: string) =>
@@ -160,7 +181,8 @@ describe('SEO tags', () => {
   });
 
   it('includes social card tags with an absolute image URL', () => {
-    expect(tagsFor('/learn')).toContainEqual({
+    // The home page uses the default card; pages with their own card are covered below.
+    expect(tagsFor('/')).toContainEqual({
       tag: 'meta',
       attrs: { property: 'og:image', content: 'https://dentist.zhifei.org/og/default.png' },
     });

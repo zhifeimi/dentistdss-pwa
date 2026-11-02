@@ -340,6 +340,8 @@ describe('service worker caching policy', () => {
   });
 
   describe('fetch handler bypass (never intercepted, never cached)', () => {
+    const analyticsScriptRequest = new Request(`${ORIGIN}/_vercel/insights/script.js`);
+    Object.defineProperty(analyticsScriptRequest, 'destination', { value: 'script' });
     const oauth2NonceAssetRequest = new Request(`${ORIGIN}/oauth2/nonce`);
     Object.defineProperty(oauth2NonceAssetRequest, 'destination', { value: 'script' });
     const fetchBypassCases: Array<[string, Request]> = [
@@ -355,6 +357,8 @@ describe('service worker caching policy', () => {
       ['oauth2 token navigation', navigationRequest(`${ORIGIN}/oauth2/token`)],
       ['genai path', new Request(`${ORIGIN}/genai/chatbot/help`)],
       ['genai navigation', navigationRequest(`${ORIGIN}/genai/chatbot/help`)],
+      ['Vercel analytics script', analyticsScriptRequest],
+      ['Vercel Speed Insights script', new Request(`${ORIGIN}/_vercel/speed-insights/script.js`)],
       ['cross-origin request', new Request('https://api.example.com/api/anything')],
       [
         'same-origin request carrying an Authorization header',

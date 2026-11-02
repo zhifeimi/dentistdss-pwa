@@ -29,6 +29,8 @@ for (const { path, h1, indexable } of pages) {
     expect(html).toContain(`>${h1.replaceAll("'", '&#x27;')}</h1>`);
     // Content is inline: no hidden segments waiting for a script to reveal them.
     expect(html).not.toMatch(/<div hidden id="S:|<template id="B:/);
+    // The body font is preloaded so text renders in it straight away.
+    expect(html).toMatch(/<link rel="preload" href="\/assets\/atkinson-hyperlegible-next-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/);
     if (indexable) {
       expect(html).toContain(`<link data-seo rel="canonical" href="${SITE}${path}" />`);
     } else {
@@ -37,6 +39,25 @@ for (const { path, h1, indexable } of pages) {
     }
   });
 }
+
+test('main pages share their own card, and the card image is served', async ({ request }) => {
+  const html = await (await request.get('/for-clinics')).text();
+  expect(html).toContain(`<meta data-seo property="og:image" content="${SITE}/og/for-clinics.png" />`);
+  const image = await request.get('/og/for-clinics.png');
+  expect(image.status()).toBe(200);
+  expect(image.headers()['content-type']).toBe('image/png');
+});
+
+test('Find a clinic waits to load Google Maps until the map is near the screen', async ({ page }) => {
+  const mapsRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('maps.googleapis.com')) mapsRequests.push(request.url());
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/find-a-clinic');
+  await expect(page.getByRole('heading', { level: 1, name: 'Find a clinic' })).toBeVisible();
+  expect(mapsRequests).toEqual([]);
+});
 
 test('the home page describes the site and organisation in JSON-LD', async ({ request }) => {
   const html = await (await request.get('/')).text();
