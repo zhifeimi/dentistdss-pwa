@@ -79,7 +79,10 @@ const readHeader = (headers: unknown, name: string): string | undefined => {
 
 const createBrowserEffects = (): BrowserEffects => ({
   createSessionChannel: (onMessage): SessionChannel | undefined => {
-    if (typeof BroadcastChannel === 'undefined') {
+    // Only browser tabs need syncing. Outside a browser (the build-time
+    // prerender runs under Deno, which has BroadcastChannel) an open channel
+    // would also keep the process from exiting.
+    if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
       return undefined;
     }
 

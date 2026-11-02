@@ -5,7 +5,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useLocation } from 'react-router';
-import dictionary from '../../utils/dictionary';
+import { isAppPath } from '../../utils/dictionary';
 
 import Home from '../../pages/Home';
 import RouteFallback from '../RouteFallback';
@@ -29,8 +29,9 @@ const AppShell: React.FC<AppShellProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const location = useLocation();
 
-  // Show help FAB only on public pages
-  const isPublicPage = dictionary.locations.public.includes(location.pathname);
+  // Signed-in app paths get the dashboard shell; everything else, including
+  // unknown paths (which render the Not Found page), gets the public shell.
+  const isPublicPage = !isAppPath(location.pathname);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>

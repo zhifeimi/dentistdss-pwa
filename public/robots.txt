@@ -1,3 +1,8 @@
 # https://www.robotstxt.org/robotstxt.html
+# Nothing is blocked on purpose: a crawler has to fetch a page to see its
+# noindex. Account screens carry a noindex meta tag, and signed-in app paths
+# are served with "X-Robots-Tag: noindex" (vercel.json).
 User-agent: *
-Disallow:
+Allow: /
+
+Sitemap: https://dentist.zhifei.org/sitemap.xml

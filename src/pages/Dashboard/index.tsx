@@ -43,14 +43,19 @@ const Dashboard: React.FC<DashboardProps> = ({
   }
 
   return (
-    <DashboardLayout
-      roles={currentUser.roles}
-      darkMode={darkMode}
-      toggleDarkMode={toggleDarkMode}
-      logout={logout}
-    >
-      {children}
-    </DashboardLayout>
+    <>
+      {/* Signed-in pages are private: keep them out of search results. */}
+      <title>Dashboard | DentistDSS</title>
+      <meta name="robots" content="noindex, nofollow" />
+      <DashboardLayout
+        roles={currentUser.roles}
+        darkMode={darkMode}
+        toggleDarkMode={toggleDarkMode}
+        logout={logout}
+      >
+        {children}
+      </DashboardLayout>
+    </>
   );
 };
 

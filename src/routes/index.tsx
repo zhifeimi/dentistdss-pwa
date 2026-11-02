@@ -12,6 +12,9 @@ const Signup = React.lazy(() => import('../pages/Home/Signup/index.tsx'));
 const Welcome = React.lazy(() => import('../pages/Home/Welcome/index.tsx'));
 const Book = React.lazy(() => import('../pages/Home/Book/index.tsx'));
 const Learn = React.lazy(() => import('../pages/Home/Learn/index.tsx'));
+const LearnArticle = React.lazy(() => import('../pages/Home/LearnArticle/index.tsx'));
+const ForClinics = React.lazy(() => import('../pages/ForClinics/index.tsx'));
+const ClinicFeature = React.lazy(() => import('../pages/ForClinics/Feature.tsx'));
 const ClinicStaffSignup = React.lazy(() => import('../pages/Home/Signup/ClinicStaff/index.tsx'));
 const VerifyEmailPendingPage = React.lazy(() => import('../pages/VerifyEmail/Code/index.tsx'));
 const VerifyEmailPage = React.lazy(() => import('../pages/VerifyEmail/Token/index.tsx'));
@@ -21,6 +24,7 @@ const ClinicAdminSignup = React.lazy(() => import('../pages/Home/Signup/ClinicAd
 const TermsAndConditions = React.lazy(() => import('../pages/TermsAndConditions/index.tsx'));
 const PrivacyPolicy = React.lazy(() => import('../pages/PrivacyPolicy/index.tsx'));
 const PendingApproval = React.lazy(() => import('../pages/PendingApproval/index.tsx'));
+const NotFound = React.lazy(() => import('../pages/NotFound/index.tsx'));
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, loading } = useAuth();
@@ -62,6 +66,18 @@ const AppRoutes: React.FC = () => {
                     element={<Learn />}
                 />
                 <Route
+                    path="/learn/:slug"
+                    element={<LearnArticle />}
+                />
+                <Route
+                    path="/for-clinics"
+                    element={<ForClinics />}
+                />
+                <Route
+                    path="/for-clinics/:feature"
+                    element={<ClinicFeature />}
+                />
+                <Route
                     path="/quiz"
                     element={<QuizPage />}
                 />
@@ -90,7 +106,9 @@ const AppRoutes: React.FC = () => {
                     path="/privacy"
                     element={<PrivacyPolicy />}
                 />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                {/* A real Not Found page (noindex). Vercel also answers unknown
+                    paths with HTTP 404, so they never index as copies of "/". */}
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </Suspense>
     );

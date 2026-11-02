@@ -133,7 +133,7 @@ describe('service worker caching policy', () => {
     await installResult;
     expect(sw.cache.addAll).toHaveBeenCalledTimes(1);
     const assets = sw.cache.addAll.mock.calls[0][0] as string[];
-    expect(assets).toEqual(expect.arrayContaining(['/', '/index.html', '/offline.html']));
+    expect(assets).toEqual(expect.arrayContaining(['/', '/app-shell.html', '/offline.html']));
     expect(assets.every((path) => !path.startsWith('/assets/'))).toBe(true);
     // No per-asset cache.add calls and no index.html match/scrape during install.
     expect(sw.cache.add).not.toHaveBeenCalled();
@@ -415,9 +415,36 @@ describe('service worker caching policy', () => {
       await respondWith.mock.calls[0][0] as Response;
       await flush();
       expect(sw.fetchMock).toHaveBeenCalledTimes(1);
-      // Navigations are network-first: the application shell is stored for offline use.
+      // Navigations are network-first; each prerendered page is stored under
+      // its own path for offline use.
       expect(sw.cache.put).toHaveBeenCalledTimes(1);
-      expect(sw.cache.put).toHaveBeenCalledWith('/index.html', expect.any(Response));
+      expect(sw.cache.put).toHaveBeenCalledWith('/dashboard', expect.any(Response));
+    });
+
+    it('caches a navigation by path, ignoring its query string', async () => {
+      const request = navigationRequest(`${ORIGIN}/find-a-clinic?q=parramatta`);
+      const respondWith = vi.fn();
+      sw.handlers.fetch({ request, respondWith });
+
+      await respondWith.mock.calls[0][0] as Response;
+      await flush();
+      expect(sw.cache.put).toHaveBeenCalledWith('/find-a-clinic', expect.any(Response));
+    });
+
+    it('serves the cached copy of a previously visited page when offline', async () => {
+      sw.fetchMock.mockRejectedValue(new Error('offline'));
+      const page = new Response('<h1>Learn about oral health</h1>', { status: 200 });
+      sw.caches.match.mockImplementation(async (key: Request | string) =>
+        key === '/learn' ? page : undefined
+      );
+
+      const request = navigationRequest(`${ORIGIN}/learn`);
+      const respondWith = vi.fn();
+      sw.handlers.fetch({ request, respondWith });
+
+      const response = await respondWith.mock.calls[0][0] as Response;
+      expect(await response.text()).toContain('Learn about oral health');
+      expect(sw.caches.match).not.toHaveBeenCalledWith('/app-shell.html');
     });
 
     it.each(['/privacy', '/terms'])(
@@ -427,7 +454,7 @@ describe('service worker caching policy', () => {
         const appShell = new Response('<div id="root"></div>', { status: 200 });
         const offline = new Response('<h1>offline</h1>', { status: 200 });
         sw.caches.match.mockImplementation(async (key: Request | string) => {
-          if (key === '/index.html') return appShell;
+          if (key === '/app-shell.html') return appShell;
           if (key === '/offline.html') return offline;
           return undefined;
         });
@@ -438,7 +465,8 @@ describe('service worker caching policy', () => {
 
         const response = await respondWith.mock.calls[0][0] as Response;
         expect(await response.text()).toContain('<div id="root"></div>');
-        expect(sw.caches.match).toHaveBeenCalledWith('/index.html');
+        expect(sw.caches.match).toHaveBeenCalledWith(path);
+        expect(sw.caches.match).toHaveBeenCalledWith('/app-shell.html');
         expect(sw.caches.match).not.toHaveBeenCalledWith('/offline.html');
         expect(sw.cache.put).not.toHaveBeenCalled();
       },

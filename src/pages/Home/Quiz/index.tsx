@@ -10,9 +10,18 @@ import {
   Radio,
   Box,
   LinearProgress,
+  Link,
   useTheme,
   FormControl
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router';
+
+// Guides that cover what the questions ask about (bleeding gums, sugar, breath).
+const QUIZ_GUIDES = [
+  { label: 'Gum disease: early signs and prevention', to: '/learn/gum-disease' },
+  { label: 'Cavities and how to avoid them', to: '/learn/cavities' },
+  { label: 'Bad breath: the dental connection', to: '/learn/bad-breath' },
+];
 
 interface QuizQuestion {
   id: string;
@@ -201,9 +210,26 @@ const Quiz: React.FC = () => {
               );
             })}
           </Box>
-          <Button variant="contained" onClick={handleRetakeQuiz} sx={{ mt: 3 }}>
-            Retake quiz
-          </Button>
+          <Box component="section" aria-labelledby="keep-learning" sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+            <Typography id="keep-learning" variant="h6" component="h2">
+              Keep learning
+            </Typography>
+            <Box component="ul" sx={{ pl: 2.5, mt: 1, mb: 0 }}>
+              {QUIZ_GUIDES.map(({ label, to }) => (
+                <li key={to}>
+                  <Link component={RouterLink} to={to}>{label}</Link>
+                </li>
+              ))}
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1.5, mt: 3, flexWrap: 'wrap' }}>
+            <Button variant="contained" onClick={handleRetakeQuiz}>
+              Retake quiz
+            </Button>
+            <Button component={RouterLink} to="/find-a-clinic" variant="outlined">
+              Find a clinic
+            </Button>
+          </Box>
         </Box>
       </Container>
     );
@@ -223,6 +249,14 @@ const Quiz: React.FC = () => {
         <Typography variant="h4" component="h1">
           Dental hygiene quiz
         </Typography>
+        {currentQuestionIndex === 0 && (
+          <Typography sx={{ mt: 1.5, color: 'text.secondary', maxWidth: '60ch' }}>
+            Check your everyday habits against common dental advice: brushing, flossing, sugary food
+            and drinks, check-ups and your children's routine. There are {quizQuestions.length} quick
+            questions and you don't need an account. At the end you'll see which habits match our
+            recommendations and where to read more.
+          </Typography>
+        )}
         <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
           Question {currentQuestionIndex + 1} of {quizQuestions.length}
         </Typography>

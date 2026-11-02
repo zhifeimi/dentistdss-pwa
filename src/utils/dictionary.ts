@@ -3,6 +3,8 @@ import { Country } from '../types';
 interface Dictionary {
   locations: {
     public: string[];
+    /** Signed-in app paths (exact, or as a prefix followed by "/"). */
+    app: string[];
   };
   modes: {
     light: string;
@@ -14,12 +16,26 @@ const dictionary: Dictionary = {
   locations: {
     public: ['/', '/login', '/signup', "/signup/clinic-staff", "/signup/clinic-admin", "/terms", "/privacy",
       "/signup/verify", "/verify-email-code", "/book", "/learn", "/quiz", "/find-a-clinic", "/pending-approval"],
+    // Everything the dashboard shell owns: /dashboard plus the role routes in
+    // utils/dashboard/roleConfig.tsx and DashboardLayout's standalone routes.
+    // Keep in sync with vercel.json rewrites (tests/unit/seo.test.ts checks both).
+    app: ['/dashboard', '/overview', '/profile', '/change-password', '/appointments', '/schedule',
+      '/working-hours', '/holidays', '/patients', '/patient-records', '/dental-records', '/messages',
+      '/communications', '/approvals', '/staff', '/users', '/settings', '/ai-dentist',
+      '/ai-receptionist', '/ai-summarize'],
   },
   modes: {
     light: 'light',
     dark: 'dark',
   }
 }
+
+/**
+ * True for paths rendered in the signed-in dashboard shell. Every other path
+ * renders in the public shell, where unknown paths get the Not Found page.
+ */
+export const isAppPath = (pathname: string): boolean =>
+  dictionary.locations.app.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
 export const roleMapping: Record<string, string> = {
   'PATIENT': 'Patient',

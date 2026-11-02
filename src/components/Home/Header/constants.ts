@@ -5,7 +5,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   { label: 'Learn', path: '/learn' },
   { label: 'Quiz', path: '/quiz' },
   { label: 'Reading list', path: '/book' },
-  { label: 'For clinics', path: '/#for-clinics' },
+  { label: 'For clinics', path: '/for-clinics' },
 ];
 
 export const SCROLL_THRESHOLD = 8;

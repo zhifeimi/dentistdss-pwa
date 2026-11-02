@@ -31,12 +31,17 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
         <CardActionArea
             href={amazonLink}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="nofollow noopener noreferrer"
             aria-label={`${title} on Amazon`}
             sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2, bgcolor: 'action.hover' }}
         >
           <CardMedia
               component="img"
+              // Fixed box (150×220) so covers loaded from Amazon don't shift the layout.
+              width={150}
+              height={220}
+              loading="lazy"
+              decoding="async"
               sx={{
                 height: 220,
                 width: 150,
@@ -104,7 +109,7 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
               variant="outlined"
               href={amazonLink}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="nofollow noopener noreferrer"
               endIcon={<OpenInNewIcon/>}
 
           >

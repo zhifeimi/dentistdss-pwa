@@ -90,8 +90,10 @@ describe('Privacy policy', () => {
     const ai = screen.getByRole('heading', { level: 2, name: '6. AI processing and model training' })
       .closest('section')!;
 
+    expect(sharing).toHaveTextContent('Configured self-hosted AI endpoint and OpenAI');
+    expect(ai).toHaveTextContent('configured self-hosted OpenAI-compatible AI endpoint');
+
     for (const section of [sharing, ai]) {
-      expect(section).toHaveTextContent(/configured.{0,40}self.hosted.{0,40}openai.compatible.{0,40}endpoint/i);
       expect(section).toHaveTextContent(
         /current prompt.{0,50}recent conversation messages.{0,50}relevant prompt.template context.{0,100}endpoint.{0,40}forwards.{0,30}openai.{0,30}upstream provider/i,
       );

@@ -4,10 +4,103 @@
   "installCommand": "sh scripts/install-deno.sh",
   "buildCommand": "./.deno/bin/deno task build",
   "outputDirectory": "build",
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/:path(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "dentist.mizhifei.press"
+        }
+      ],
+      "destination": "https://dentist.zhifei.org/:path",
+      "permanent": true
+    },
+    {
+      "source": "/:path(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "dentistdss.vercel.app"
+        }
+      ],
+      "destination": "https://dentist.zhifei.org/:path",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/find-a-clinic",
+      "destination": "/find-a-clinic/index.html"
+    },
+    {
+      "source": "/learn",
+      "destination": "/learn/index.html"
+    },
+    {
+      "source": "/learn/:slug",
+      "destination": "/learn/:slug/index.html"
+    },
+    {
+      "source": "/for-clinics",
+      "destination": "/for-clinics/index.html"
+    },
+    {
+      "source": "/for-clinics/:feature",
+      "destination": "/for-clinics/:feature/index.html"
+    },
+    {
+      "source": "/quiz",
+      "destination": "/quiz/index.html"
+    },
+    {
+      "source": "/book",
+      "destination": "/book/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy/index.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/login/index.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/signup/index.html"
+    },
+    {
+      "source": "/signup/clinic-staff",
+      "destination": "/signup/clinic-staff/index.html"
+    },
+    {
+      "source": "/signup/clinic-admin",
+      "destination": "/signup/clinic-admin/index.html"
+    },
+    {
+      "source": "/verify-email-code",
+      "destination": "/verify-email-code/index.html"
+    },
+    {
+      "source": "/signup/verify",
+      "destination": "/signup/verify/index.html"
+    },
+    {
+      "source": "/pending-approval",
+      "destination": "/pending-approval/index.html"
+    },
+    {
+      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)",
+      "destination": "/app-shell.html"
+    },
+    {
+      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)/(.*)",
+      "destination": "/app-shell.html"
     }
   ],
   "headers": [
@@ -29,6 +122,33 @@
         {
           "key": "Permissions-Policy",
           "value": "camera=(), microphone=(), geolocation=(self)"
+        }
+      ]
+    },
+    {
+      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/app-shell.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
         }
       ]
     },

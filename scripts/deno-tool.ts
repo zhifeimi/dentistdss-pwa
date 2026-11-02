@@ -31,6 +31,8 @@ const stagedEntries = [
   'tsconfig.json',
   'tsconfig.node.json',
   'index.html',
+  // Read by tests/unit/seo.test.ts to check rewrites against the app's routes.
+  'vercel.json',
 ];
 
 const ignoredParts = new Set([

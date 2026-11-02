@@ -54,6 +54,7 @@ By default the app expects the backend API gateway at `http://localhost:8080`. S
 | `VITE_API_GENAI_PATH` | `/genai` | GenAI service path |
 | `VITE_GOOGLE_CLIENT_ID` | _(empty)_ | Google sign-in OAuth client ID |
 | `VITE_GOOGLE_MAPS_API_KEY` | _(empty)_ | Google Maps key for clinic search |
+| `VITE_SITE_URL` | `https://dentist.zhifei.org` | Canonical origin for SEO tags and the sitemap |
 
 Every `VITE_*` value is embedded in the public browser bundle. Never put a server-side secret in one, and restrict the Maps key by hostname and API in Google Cloud.
 
@@ -108,6 +109,8 @@ src/
   context/           # auth, dashboard, and theme providers
   hooks/             # data and UI hooks (appointments, schedule, chat, maps)
   services/          # Axios API clients, session, chatbot SSE transport
+  seo/               # SEO registry, <Seo> tags, JSON-LD, sitemap and build helpers
+  content/           # Learn articles (metadata + Markdown, drafts) and For clinics copy
   utils/             # dictionary, dashboard role config, date helpers
 public/              # service worker, manifest, icons
 scripts/             # deno-tool.ts wrapper and Vercel Deno installer
@@ -116,11 +119,23 @@ tests/               # unit, integration, components, utils (Vitest); e2e (Playw
 
 ### Adding or renaming a page
 
-Routing is split across three registries. Check every one that applies, or the page may render in the wrong shell or be missing from navigation:
+Routing is split across several registries. Check every one that applies, or the page may render in the wrong shell, be missing from navigation, or return HTTP 404 on a fresh load:
 
 - `src/routes/index.tsx` — public and top-level routes.
-- `src/utils/dictionary.ts` — which paths `AppShell` treats as public.
+- `src/seo/pages.ts` — title, description, canonical, robots rule and structured data for each public route; indexable pages also go into the sitemap. Learn articles and the For clinics pages are generated from `src/content/` (see [docs/seo/article-review.md](docs/seo/article-review.md) for adding or publishing an article).
+- `src/utils/dictionary.ts` — `locations.app` lists the signed-in paths that `AppShell` renders in the dashboard shell. Every other path renders in the public shell, and unknown paths get the Not Found page.
 - `src/utils/dashboard/roleConfig.tsx` — role-specific dashboard navigation, routes, and lazy-loaded components.
+- `vercel.json` — `rewrites` serve the app shell for SPA routes. Any other path gets `build/404.html` with HTTP 404, so new routes must be listed. Signed-in paths also get an `X-Robots-Tag: noindex` header.
+
+`tests/unit/seo.test.ts` fails when these registries disagree.
+
+## SEO
+
+- **Canonical domain**: `https://dentist.zhifei.org`. `vercel.json` sends `dentist.mizhifei.press` and `dentistdss.vercel.app` there with a permanent redirect.
+- **Metadata**: `RouteSeo` (in the public layout) renders the registry entry for the current path, and React 19 hoists the tags into `<head>`. Dynamic pages render `<Seo>` themselves.
+- **Prerendering**: `vite build` builds the browser bundle, then a server build of `src/entry-server.tsx`, then `src/seo/prerender.ts` renders every page in the registry to `build/<path>/index.html`, with its content, head tags and critical MUI CSS inline. Crawlers that don't run JavaScript, link previews and AI search tools read the real page. The browser still mounts with `createRoot`, replacing the static markup. The prerender also writes `build/app-shell.html` (the plain SPA shell for signed-in paths), `build/404.html` and `build/sitemap.xml`. The build fails if a page lacks a unique title, a canonical, exactly one `<h1>`, or valid JSON-LD.
+- **Build-time rendering rules**: code that runs during render (not in effects) must not need `window`, `document` or `localStorage`, and nothing imported at module scope may hold the process open. For example, the session `BroadcastChannel` is browser-only.
+- `public/robots.txt` points crawlers at the sitemap. `tests/e2e/seo.production.ts` checks the built HTML (`deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts playwright test --config tests/playwright.production-offline.config.ts`).
 
 ## How it talks to the backend
 
@@ -139,7 +154,7 @@ const response = await api.chatbot.send('help', prompt, {
 });
 ```
 
-- **Offline caching** — the service worker caches only same-origin navigations and static assets. API, auth, OAuth, and GenAI requests, and any request carrying an `Authorization` header, bypass the cache so authenticated or clinical data is never stored in the browser cache. Keep this behavior when changing `public/service-worker.js`.
+- **Offline caching** — the service worker caches only same-origin navigations (per path, falling back to `app-shell.html` offline) and static assets. API, auth, OAuth, and GenAI requests, and any request carrying an `Authorization` header, bypass the cache so authenticated or clinical data is never stored in the browser cache. Keep this behavior when changing `public/service-worker.js`.
 
 ## Dependency updates and security
 
@@ -160,7 +175,7 @@ Commit both the manifest change and the regenerated `deno.lock`. CI rejects stal
 
 ## Deployment
 
-Vercel creates Preview deployments for pull requests and feature branches; pushes to `main` deploy to production. `vercel.json` installs a pinned Deno 2.9.2 Linux binary after verifying its SHA-256 checksum, runs `deno task build`, serves `build/` with an SPA rewrite, and sets security headers.
+Vercel creates Preview deployments for pull requests and feature branches; pushes to `main` deploy to production. `vercel.json` installs a pinned Deno 2.9.2 Linux binary after verifying its SHA-256 checksum, runs `deno task build`, serves the prerendered pages from `build/` (signed-in paths get `app-shell.html`, unknown paths get `404.html` with HTTP 404), and sets security headers.
 
 Set `VITE_API_HOST=https://api.mizhifei.press` and `VITE_GOOGLE_CLIENT_ID` in the Vercel Production environment. Point Preview deployments at a separate staging API, or leave the host empty, so previews cannot reach production data. A new production origin must also be added to the backend CORS allowlist and to the Google OAuth client's Authorized JavaScript origins.
 
