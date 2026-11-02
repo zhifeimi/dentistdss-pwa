@@ -33,7 +33,7 @@ describe('prerendered page HTML', () => {
 
   it('swaps the shell defaults for the page tags, keeping one title and description', () => {
     expect(html.match(/<title/g)).toHaveLength(1);
-    expect(html).toContain(`<title data-seo>${learn.title.replace('&', '&amp;')}</title>`);
+    expect(html).toContain(`<title data-seo>${learn.title.replaceAll('&', '&amp;')}</title>`);
     expect(html.match(/name="description"/g)).toHaveLength(1);
     expect(html).toContain('<link data-seo rel="canonical" href="https://dentist.zhifei.org/learn" />');
   });

@@ -26,7 +26,7 @@ for (const { path, h1, indexable } of pages) {
 
     expect(html.match(/<title[\s>]/g)).toHaveLength(1);
     expect(html.match(/name="description"/g)).toHaveLength(1);
-    expect(html).toContain(`>${h1.replace("'", '&#x27;')}</h1>`);
+    expect(html).toContain(`>${h1.replaceAll("'", '&#x27;')}</h1>`);
     // Content is inline: no hidden segments waiting for a script to reveal them.
     expect(html).not.toMatch(/<div hidden id="S:|<template id="B:/);
     if (indexable) {
