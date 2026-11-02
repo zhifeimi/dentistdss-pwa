@@ -46,7 +46,7 @@ const ClinicList = React.memo<ClinicListProps>(({
   onClinicSelect,
 }) => {
   // Results that have a public page (/dentists/...) link to it.
-  const pagePaths = useClinicPagePaths(clinics.some((clinic) => Boolean(clinic.slug)));
+  const pagePaths = useClinicPagePaths(clinics);
   return (
   <Box component="section" aria-labelledby="clinic-results-heading" aria-busy={loading}>
     <Typography

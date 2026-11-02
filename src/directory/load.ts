@@ -39,10 +39,20 @@ export async function loadDirectory(options: LoadDirectoryOptions): Promise<Load
     return { directory, source: 'fixture', dropped };
   }
 
-  const host = (options.apiHost ?? '').trim().replace(/\/+$/, '');
-  if (!/^https:\/\/[^\s/]+$/.test(host)) {
-    log('No https VITE_API_HOST: building without clinic pages.');
+  const configured = (options.apiHost ?? '').trim();
+  if (!configured) {
+    log('No VITE_API_HOST: building without clinic pages.');
     return { directory: EMPTY, source: 'none', dropped: [] };
+  }
+  let host: string;
+  try {
+    const parsed = new URL(configured);
+    if (parsed.protocol !== 'https:' || parsed.pathname !== '/' || parsed.search || parsed.hash || parsed.username || parsed.password) {
+      throw new Error('not an HTTPS origin');
+    }
+    host = parsed.origin;
+  } catch {
+    throw new Error('VITE_API_HOST must be an HTTPS origin without a path, query or fragment');
   }
 
   const url = `${host}/api/public/clinics`;
@@ -57,6 +67,9 @@ export async function loadDirectory(options: LoadDirectoryOptions): Promise<Load
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const { directory, dropped } = validateDirectory(await response.json());
+      if (dropped.length > 0 && directory.clinics.length === 0) {
+        throw new Error('Public clinic directory contained no valid clinics');
+      }
       return { directory, source: 'api', dropped };
     } catch (error) {
       lastError = error;

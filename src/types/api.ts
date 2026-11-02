@@ -77,16 +77,6 @@ export interface CreateHolidayRequest {
   emergencyContact?: string;
 }
 
-// Working Hours types
-export type DayOfWeek =
-  | 'MONDAY'
-  | 'TUESDAY'
-  | 'WEDNESDAY'
-  | 'THURSDAY'
-  | 'FRIDAY'
-  | 'SATURDAY'
-  | 'SUNDAY';
-
 export interface ClinicService extends BaseEntity {
   name: string;
   description?: string;

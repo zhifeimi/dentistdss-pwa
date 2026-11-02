@@ -96,7 +96,7 @@ function summarise(clinic: PublicClinic): ClinicSummary {
   };
 }
 
-/** Clinic titles must be unique; two same-named clinics in one suburb get their street added. */
+/** Same-named clinics get their street added, then their unique slug if titles still collide. */
 function dedupeTitles(pages: DirectoryPage[]) {
   const seen = new Map<string, DirectoryPage[]>();
   for (const page of pages) seen.set(page.seo.title, [...(seen.get(page.seo.title) ?? []), page]);
@@ -107,6 +107,14 @@ function dedupeTitles(pages: DirectoryPage[]) {
       const where = page.clinic.address.street ?? page.clinic.address.postcode ?? page.clinic.slug;
       page.seo = { ...page.seo, title: `${page.clinic.name}, ${where} – ${page.clinic.address.suburb}` };
     }
+  }
+
+  const titles = new Set<string>();
+  for (const page of pages) {
+    if (page.kind === 'clinic' && titles.has(page.seo.title)) {
+      page.seo = { ...page.seo, title: `${page.clinic.name} – ${page.clinic.slug}` };
+    }
+    titles.add(page.seo.title);
   }
 }
 
@@ -218,7 +226,7 @@ export function buildDirectory(directory: PublicDirectory): DirectoryIndex {
   for (const clinic of directory.clinics) {
     const to = clinicPath(clinic);
     for (const slug of clinic.previousSlugs) {
-      const from = `${suburbPath(clinic.address.state, clinic.address.suburb)}/${slug}`;
+      const from = clinicPath({ slug, address: clinic.address });
       if (from !== to && !byPath.has(from)) redirects.push({ from, to });
     }
   }

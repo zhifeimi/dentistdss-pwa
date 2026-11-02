@@ -11,8 +11,8 @@ Searches like "dentist in Parramatta" and "<clinic name> dentist" are the larges
 | URL | Content | Indexed when |
 | --- | --- | --- |
 | `/dentists/{state}` | Suburbs in the state that have listed clinics | the state has at least one indexable suburb |
-| `/dentists/{state}/{suburb}` | The clinics in a suburb, with a map and opening hours | it has at least 3 listed clinics |
-| `/dentists/{state}/{suburb}/{slug}` | One clinic: address, map, hours, services, phone, website, "Book online" | it has a description, opening hours and at least one service |
+| `/dentists/{state}/{suburb}` | The clinics in a suburb | it has at least 3 listed clinics |
+| `/dentists/{state}/{suburb}/{slug}` | One clinic: address, directions link, hours, services, phone, website, "Book online" | it has a description, opening hours and at least one service |
 
 Pages that don't meet the bar are still served, but marked `noindex`, so there are no thin or doorway pages in search. Example: `/dentists/nsw/parramatta/smile-dental-parramatta`.
 
@@ -22,7 +22,7 @@ Both endpoints are unauthenticated and read-only, and they return only clinics t
 
 ### `GET /api/public/clinics`
 
-Returns every listed clinic. The build calls it once, so pagination is optional while there are fewer than about 2,000 clinics.
+Returns every listed clinic. The build makes one logical directory load, with up to three HTTP attempts on failure, so pagination is optional while there are fewer than about 2,000 clinics.
 
 ```json
 {
@@ -60,7 +60,7 @@ Returns one clinic in the same shape. For an old slug, it returns `301` with `Lo
 
 ## Field rules
 
-- **`slug`:** lowercase, hyphenated, unique and stable; generated from the name and suburb when a clinic is approved. A rename keeps the old value in `previousSlugs`, so the frontend can 301-redirect old URLs.
+- **`slug`:** lowercase, hyphenated, unique and stable; generated from the name and suburb when a clinic is approved. A rename keeps the old value in `previousSlugs`, so the frontend can send old URLs to the current clinic page with an instant meta refresh and a canonical link.
 - **`state`:** an Australian state or territory code (`NSW`, `VIC`, `QLD`, `WA`, `SA`, `TAS`, `ACT`, `NT`). The URL uses it in lowercase.
 - **`suburb`:** as entered by the clinic, with consistent capitalisation. The URL uses it lowercased and hyphenated.
 - **`operatingHours.dayOfWeek`:** `0` (Sunday) to `6` (Saturday), matching `OperatingHours` in `src/types/api.ts`.
@@ -69,8 +69,8 @@ Returns one clinic in the same shape. For an old slug, it returns `301` with `Lo
 ## Operational requirements
 
 - `Cache-Control: public, max-age=300` and an `ETag`.
-- Rate-limit by IP; the build makes one request per deployment.
-- CORS isn't needed, because the build calls the API server to server.
+- Rate-limit by IP; a deployment makes up to three HTTP requests when retries are needed.
+- CORS isn't needed for production builds, which call the API server to server. Browser navigation in development calls the API directly, so cross-origin local development needs CORS or a same-origin proxy.
 - **Rebuild trigger:** when a clinic is approved, updated, delisted or deleted, call the Vercel Deploy Hook for the `dentistdss` project. Debounce to at most one call per hour, so the static pages refresh without a deploy on every edit. Store the hook URL as a backend secret.
 - **Opt-in:** add a "Show my clinic in public search" setting (`listedPublicly`) to clinic settings, on by default for new clinics only if the clinic agrees in the registration terms.
 
@@ -79,9 +79,9 @@ Returns one clinic in the same shape. For an old slug, it returns `301` with `Lo
 - **Build:** `vite build` (see `src/directory/load.ts`) loads the directory:
   - It uses `PUBLIC_CLINICS_FIXTURE` when that is set.
   - Otherwise, when `VITE_API_HOST` is an https origin, it fetches `GET ${VITE_API_HOST}/api/public/clinics` (15 s timeout, 2 retries).
-  - With neither, it builds without clinic pages.
-- **Failures:** if an API host is configured and the fetch fails, the build fails, so Vercel keeps serving the last good deployment instead of dropping every clinic page.
-- **Validation:** records are checked (`src/directory/validate.ts`). A clinic with an invalid slug, no suburb or a non-Australian state is left out with a build warning. An open day without a valid time range is treated as closed. A website that isn't http(s) is dropped.
+  - With no fixture and an unset or blank `VITE_API_HOST`, it builds without clinic pages. A nonempty invalid host fails the build.
+- **Failures:** if an API host is configured and the fetch fails, the build fails, so Vercel keeps serving the last good deployment instead of dropping every clinic page. A nonempty API response whose clinics are all invalid also fails the build; an empty `clinics` list is allowed.
+- **Validation:** records are checked (`src/directory/validate.ts`). A clinic with an invalid slug, a missing or unusable suburb, or a non-Australian state is left out with a build warning. An open day without a valid time range is treated as closed. Malformed website URLs and timestamps are discarded.
 - **Pages** (`src/directory/model.ts`): `/dentists`, `/dentists/{state}`, `/dentists/{state}/{suburb}` and `/dentists/{state}/{suburb}/{slug}`.
   - The state segment is the lowercase state code.
   - The suburb segment uses the same slug rule as `ClinicSlugs.slugify`.

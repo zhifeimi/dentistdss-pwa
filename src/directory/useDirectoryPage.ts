@@ -36,10 +36,13 @@ let directoryRequest: Promise<DirectoryIndex> | null = null;
  * The whole directory, for pages reached by client-side navigation: the
  * build's same-origin copy, or the API itself in development.
  */
-export function loadDirectoryIndex(): Promise<DirectoryIndex> {
+export function loadDirectoryIndex(timeoutMs = 15_000): Promise<DirectoryIndex> {
   directoryRequest ??= (async () => {
     const url = import.meta.env.DEV ? `${config.api.baseUrl}/api/public/clinics` : DIRECTORY_DATA_PATH;
-    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const { directory } = validateDirectory(await response.json() as PublicDirectory);
     return buildDirectory(directory);

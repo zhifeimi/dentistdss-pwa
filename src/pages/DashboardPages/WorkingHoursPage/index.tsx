@@ -46,8 +46,13 @@ function toWeek(saved: OperatingHours[] | undefined): Week {
   return week;
 }
 
-const dayError = (day: OperatingHours) =>
-  day.isOpen && !(day.openTime < day.closeTime) ? 'Closing time must be after opening time' : '';
+const TIME = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
+
+const dayError = (day: OperatingHours) => {
+  if (!day.isOpen) return '';
+  if (!TIME.test(day.openTime) || !TIME.test(day.closeTime)) return 'Enter both opening and closing times';
+  return day.openTime < day.closeTime ? '' : 'Closing time must be after opening time';
+};
 
 /**
  * WorkingHoursPage — the clinic's opening hours, day by day. They are saved

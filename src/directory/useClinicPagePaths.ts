@@ -3,14 +3,14 @@ import { loadDirectoryIndex } from './useDirectoryPage';
 
 /**
  * Clinic slug -> public page path, for clinics that have a page in this
- * build. Loaded on demand; empty until then (or if the directory fails to
- * load), so links only ever point at pages that exist.
+ * build. Loaded on demand for each new result set, so a later search retries
+ * a failed load; links only ever point at pages that exist.
  */
-export function useClinicPagePaths(enabled: boolean): ReadonlyMap<string, string> {
+export function useClinicPagePaths(clinics: readonly { slug?: string | null }[]): ReadonlyMap<string, string> {
   const [paths, setPaths] = useState<ReadonlyMap<string, string>>(new Map());
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!clinics.some((clinic) => Boolean(clinic.slug))) return;
     let cancelled = false;
     loadDirectoryIndex().then(
       (index) => {
@@ -24,7 +24,7 @@ export function useClinicPagePaths(enabled: boolean): ReadonlyMap<string, string
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [clinics]);
 
   return paths;
 }

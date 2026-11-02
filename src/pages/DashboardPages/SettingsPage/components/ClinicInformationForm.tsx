@@ -29,7 +29,7 @@ import api from '../../../../services';
 import useFormValidation from '../../../../hooks/useFormValidation';
 import { COUNTRIES } from '../../../../utils/dictionary';
 import type { ClinicFormData, ClinicInformationFormProps } from '../../../../types/components';
-import { DIRECTORY_PATH, slugify, stateCodeOf } from '../../../../directory/paths';
+import { clinicPath, DIRECTORY_PATH, stateCodeOf } from '../../../../directory/paths';
 
 const DESCRIPTION_LIMIT = 2000;
 
@@ -330,7 +330,7 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
   // The page exists once the clinic is approved (it then has a slug) and listed.
   const stateCode = stateCodeOf(clinicData?.state);
   const publicPagePath = clinicData?.slug && clinicData.listedPublicly && stateCode && clinicData.city
-    ? `${DIRECTORY_PATH}/${stateCode.toLowerCase()}/${slugify(clinicData.city)}/${clinicData.slug}`
+    ? clinicPath({ slug: clinicData.slug, address: { state: stateCode, suburb: clinicData.city } })
     : null;
 
   if (loading) {

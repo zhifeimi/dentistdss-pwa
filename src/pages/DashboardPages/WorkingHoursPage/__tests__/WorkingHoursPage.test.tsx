@@ -78,6 +78,15 @@ describe('WorkingHoursPage', () => {
     expect(screen.getByRole('button', { name: 'Save opening hours' })).toBeDisabled();
   });
 
+  it('blocks saving an open day with a missing time', async () => {
+    renderPage();
+    fireEvent.change(await screen.findByLabelText('Monday opens'), { target: { value: '' } });
+
+    expect(screen.getByText('Enter both opening and closing times')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save opening hours' })).toBeDisabled();
+    expect(updateClinic).not.toHaveBeenCalled();
+  });
+
   it('keeps people without the clinic admin role out', () => {
     mockUseAuth.mockReturnValue({ currentUser: { ...admin, roles: ['PATIENT'] } } as any);
     renderPage();

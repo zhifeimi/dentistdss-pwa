@@ -47,26 +47,37 @@ test('clinic staff wait for their clinic admin after verifying their email', asy
   await expect(page.getByText('Your clinic admin reviews your account.')).toBeVisible();
 });
 
-test('a new clinic waits for the DentistDSS team after verifying its email', async ({ page }) => {
-  await mockSignupApi(page);
-  await page.goto('/signup/clinic-admin');
+for (const optedIn of [false, true]) {
+  test(`a new clinic sends public-listing consent=${optedIn} and waits for review`, async ({ page }) => {
+    let submittedConsent: boolean | undefined;
+    await mockSignupApi(page);
+    await page.route('**/api/auth/signup/clinic/admin', (route) => {
+      submittedConsent = route.request().postDataJSON().listedPublicly;
+      return route.fulfill(ok);
+    });
+    await page.goto('/signup/clinic-admin');
 
-  await fillAccount(page);
-  for (const [name, value] of [
-    ['clinicName', 'Harbour Dental'],
-    ['address', '1 Quay St'],
-    ['city', 'Sydney'],
-    ['state', 'NSW'],
-    ['zipCode', '2000'],
-    ['businessEmail', 'hello@harbour.dental'],
-    ['phoneNumber', '0291234567'],
-  ]) {
-    await page.locator(`input[name="${name}"]`).fill(value);
-  }
-  await page.getByRole('combobox', { name: 'Country' }).click();
-  await page.getByRole('option', { name: 'Australia' }).click();
-  await page.getByRole('button', { name: 'Register clinic' }).click();
+    await fillAccount(page);
+    for (const [name, value] of [
+      ['clinicName', 'Harbour Dental'],
+      ['address', '1 Quay St'],
+      ['city', 'Sydney'],
+      ['state', 'NSW'],
+      ['zipCode', '2000'],
+      ['businessEmail', 'hello@harbour.dental'],
+      ['phoneNumber', '0291234567'],
+    ]) {
+      await page.locator(`input[name="${name}"]`).fill(value);
+    }
+    await page.getByRole('combobox', { name: 'Country' }).click();
+    await page.getByRole('option', { name: 'Australia' }).click();
+    const publicListing = page.getByRole('checkbox', { name: 'List my clinic in the public DentistDSS directory' });
+    await expect(publicListing).not.toBeChecked();
+    if (optedIn) await publicListing.check();
+    await page.getByRole('button', { name: 'Register clinic' }).click();
 
-  await verifyEmail(page);
-  await expect(page.getByText('The DentistDSS team reviews your clinic.')).toBeVisible();
-});
+    await expect.poll(() => submittedConsent).toBe(optedIn);
+    await verifyEmail(page);
+    await expect(page.getByText('The DentistDSS team reviews your clinic.')).toBeVisible();
+  });
+}

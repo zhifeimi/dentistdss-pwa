@@ -1,4 +1,4 @@
-import { STATE_NAMES } from './paths.ts';
+import { slugify, STATE_NAMES } from './paths.ts';
 import type { PublicClinic, PublicDirectory, PublicOperatingHours } from './types.ts';
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -28,7 +28,19 @@ function hours(raw: unknown): PublicOperatingHours[] {
 
 const website = (value: unknown) => {
   const url = text(value);
-  return url && /^https?:\/\/[^\s/]+/i.test(url) ? url : null;
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? url : null;
+  } catch {
+    return null;
+  }
+};
+
+const timestamp = (value: unknown) => {
+  const textValue = text(value);
+  const time = Date.parse(textValue ?? '');
+  return textValue && Number.isFinite(time) ? new Date(time).toISOString() : null;
 };
 
 /** One clinic, or why it can't be listed. */
@@ -41,7 +53,8 @@ function clinic(raw: unknown): PublicClinic | string {
   const suburb = text(address.suburb);
   const state = text(address.state);
   if (!suburb) return `${raw.slug}: no suburb`;
-  if (!state || !(state in STATE_NAMES)) return `${raw.slug}: state ${JSON.stringify(address.state)} is not an Australian state code`;
+  if (!slugify(suburb)) return `${raw.slug}: suburb has no URL-safe characters`;
+  if (!state || !Object.hasOwn(STATE_NAMES, state)) return `${raw.slug}: state ${JSON.stringify(address.state)} is not an Australian state code`;
   const location = isObject(raw.location) && Number.isFinite(raw.location.latitude) && Number.isFinite(raw.location.longitude)
     ? { latitude: raw.location.latitude as number, longitude: raw.location.longitude as number }
     : null;
@@ -59,14 +72,14 @@ function clinic(raw: unknown): PublicClinic | string {
     operatingHours: hours(raw.operatingHours),
     services,
     acceptsOnlineBooking: raw.acceptsOnlineBooking === true,
-    updatedAt: text(raw.updatedAt),
+    updatedAt: timestamp(raw.updatedAt),
   };
 }
 
 /**
  * Checks a GET /api/public/clinics body. A malformed envelope throws; a
- * clinic that can't be shown is dropped and reported, so one bad record never
- * takes the other clinic pages down.
+ * clinic rejected by these checks is dropped and reported without taking
+ * the other clinic pages down.
  */
 export function validateDirectory(raw: unknown): { directory: PublicDirectory; dropped: string[] } {
   if (!isObject(raw) || !Array.isArray(raw.clinics)) {

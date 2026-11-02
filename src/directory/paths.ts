@@ -52,7 +52,8 @@ export const suburbPath = (stateCode: string, suburb: string) =>
 export const clinicPath = (clinic: { slug: string; address: { state: string; suburb: string } }) =>
   `${suburbPath(clinic.address.state, clinic.address.suburb)}/${clinic.slug}`;
 
-export const stateName = (stateCode: string) => STATE_NAMES[stateCode] ?? stateCode;
+export const stateName = (stateCode: string) =>
+  Object.hasOwn(STATE_NAMES, stateCode) ? STATE_NAMES[stateCode] : stateCode;
 
 const STATE_ALIASES: Readonly<Record<string, string>> = {
   'new south wales': 'NSW', victoria: 'VIC', queensland: 'QLD', 'western australia': 'WA',
@@ -63,5 +64,7 @@ const STATE_ALIASES: Readonly<Record<string, string>> = {
 export function stateCodeOf(state: string | null | undefined): string | null {
   const key = (state ?? '').replaceAll('.', '').trim().replace(/\s+/g, ' ').toLowerCase();
   if (!key) return null;
-  return STATE_ALIASES[key] ?? (key.toUpperCase() in STATE_NAMES ? key.toUpperCase() : null);
+  const code = key.toUpperCase();
+  if (Object.hasOwn(STATE_ALIASES, key)) return STATE_ALIASES[key];
+  return Object.hasOwn(STATE_NAMES, code) ? code : null;
 }

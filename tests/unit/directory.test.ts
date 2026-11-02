@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { embedDirectoryPage } from '../../src/directory/embed';
 import { loadDirectory } from '../../src/directory/load';
 import { buildDirectory, isIndexableClinic, SUBURB_INDEX_MIN_CLINICS } from '../../src/directory/model';
+import { loadDirectoryIndex } from '../../src/directory/useDirectoryPage';
 import { clinicPath, slugify, stateCodeOf } from '../../src/directory/paths';
 import { dentistJsonLd } from '../../src/directory/seo';
 import { validateDirectory } from '../../src/directory/validate';
@@ -70,6 +72,43 @@ describe('validating the API response', () => {
     ]);
     expect(clinic.website).toBeNull();
     expect(clinic.services).toEqual([]);
+  });
+
+  it('discards malformed website URLs and timestamps before rendering', () => {
+    const { directory: parsed } = validateDirectory({
+      clinics: [{
+        ...directory.clinics[0],
+        website: 'https://?',
+        updatedAt: 'not-a-date',
+      }],
+    });
+
+    expect(parsed.clinics[0].website).toBeNull();
+    expect(parsed.clinics[0].updatedAt).toBeNull();
+  });
+
+  it('drops a clinic whose suburb cannot form a URL segment', () => {
+    const { directory: parsed, dropped: reasons } = validateDirectory({
+      clinics: [{
+        ...directory.clinics[0],
+        address: { ...directory.clinics[0].address, suburb: '---' },
+      }],
+    });
+
+    expect(parsed.clinics).toEqual([]);
+    expect(reasons).toHaveLength(1);
+  });
+
+  it('does not accept inherited object properties as states', () => {
+    const { directory: parsed } = validateDirectory({
+      clinics: [{
+        ...directory.clinics[0],
+        address: { ...directory.clinics[0].address, state: 'constructor' },
+      }],
+    });
+
+    expect(stateCodeOf('constructor')).toBeNull();
+    expect(parsed.clinics).toEqual([]);
   });
 });
 
@@ -141,6 +180,35 @@ describe('directory pages', () => {
     const titles = twins.pages.filter(({ kind }) => kind === 'clinic').map(({ seo }) => seo.title);
     expect(new Set(titles).size).toBe(titles.length);
   });
+
+  it('uses the slug when same-named clinics also share a street', () => {
+    const twin = {
+      ...directory.clinics[0],
+      slug: 'harbourside-dental-north-sydney-2',
+      previousSlugs: [],
+      address: { ...directory.clinics[0].address },
+    };
+    const twins = buildDirectory({ ...directory, clinics: [...directory.clinics, twin] });
+    const titles = twins.pages.filter(({ kind }) => kind === 'clinic').map(({ seo }) => seo.title);
+
+    expect(new Set(titles).size).toBe(titles.length);
+  });
+});
+
+describe('embedded directory data', () => {
+  it('cannot close its script element and preserves the original clinic name', () => {
+    const name = 'Dental </script><script>alert(1)</script>';
+    const malicious = { ...directory.clinics[0], name };
+    const maliciousIndex = buildDirectory({ ...directory, clinics: [malicious] });
+    const clinicPage = maliciousIndex.pages.find((page) => page.kind === 'clinic');
+    if (!clinicPage) throw new Error('Expected a clinic page');
+
+    const html = embedDirectoryPage(clinicPage);
+    const json = html.slice(html.indexOf('>') + 1, html.lastIndexOf('</script>'));
+
+    expect(json).not.toContain('</script>');
+    expect(JSON.parse(json).clinic.name).toBe(name);
+  });
 });
 
 describe('Dentist structured data', () => {
@@ -182,13 +250,28 @@ describe('loading the directory at build time', () => {
     expect(loaded.directory.clinics).toHaveLength(4);
   });
 
-  it('builds without clinic pages when no https API host is configured', async () => {
+  it('builds without clinic pages only when no API host is configured', async () => {
     const fetchImpl = vi.fn();
-    for (const apiHost of [undefined, '', 'http://localhost']) {
+    for (const apiHost of [undefined, '', '   ']) {
       const loaded = await loadDirectory({ apiHost, fetchImpl });
       expect(loaded).toMatchObject({ source: 'none', directory: { clinics: [] } });
     }
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('fails the build for a nonempty invalid API host', async () => {
+    const fetchImpl = vi.fn();
+    for (const apiHost of ['http://localhost', 'https://api.example/path']) {
+      await expect(loadDirectory({ apiHost, fetchImpl })).rejects.toThrow(/VITE_API_HOST/);
+    }
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('fails the build when every API clinic is invalid', async () => {
+    const fetchImpl = vi.fn(async () => ok({ generatedAt: 'x', clinics: [{ slug: 'INVALID SLUG' }] }));
+
+    await expect(loadDirectory({ apiHost: 'https://api.example', fetchImpl, retries: 0 }))
+      .rejects.toThrow(/no valid clinics/);
   });
 
   it('fetches the public endpoint from the API host', async () => {
@@ -213,5 +296,26 @@ describe('loading the directory at build time', () => {
       .mockResolvedValueOnce(ok({ generatedAt: 'x', clinics: [] }));
     const loaded = await loadDirectory({ apiHost: 'https://api.example', fetchImpl, retryDelayMs: 0 });
     expect(loaded.source).toBe('api');
+  });
+});
+
+describe('loading the directory in the browser', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('times out a stalled request instead of leaving pages loading forever', async () => {
+    const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+      }));
+    vi.stubGlobal('fetch', fetchImpl);
+    let settled = false;
+    const request = loadDirectoryIndex(10);
+    request.catch(() => {
+      settled = true;
+    });
+
+    await vi.waitFor(() => expect(settled).toBe(true), { timeout: 100, interval: 5 });
+
+    await expect(request).rejects.toThrow();
   });
 });
