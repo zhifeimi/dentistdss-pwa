@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Button, Skeleton, Typography } from '@mui/material';
 import ClinicCard from './ClinicCard';
+import { useClinicPagePaths } from '../../directory/useClinicPagePaths';
 import type { ClinicSearchResult } from '../../types/api';
 
 interface ClinicListProps {
@@ -14,6 +15,7 @@ interface ClinicListProps {
   isMobile: boolean;
   onClinicSelect: (clinic: ClinicSearchResult) => void;
 }
+
 
 const Message: React.FC<{ title: string; text: string; action?: React.ReactNode }> = ({ title, text, action }) => (
   <Box
@@ -42,7 +44,10 @@ const ClinicList = React.memo<ClinicListProps>(({
   onRetry,
   hasQuery,
   onClinicSelect,
-}) => (
+}) => {
+  // Results that have a public page (/dentists/...) link to it.
+  const pagePaths = useClinicPagePaths(clinics);
+  return (
   <Box component="section" aria-labelledby="clinic-results-heading" aria-busy={loading}>
     <Typography
       id="clinic-results-heading"
@@ -88,12 +93,14 @@ const ClinicList = React.memo<ClinicListProps>(({
             clinic={clinic}
             isSelected={selectedClinic?.id === clinic.id}
             onClick={() => onClinicSelect(clinic)}
+            pagePath={clinic.slug ? pagePaths.get(clinic.slug) : undefined}
           />
         ))}
       </Box>
     )}
   </Box>
-));
+  );
+});
 
 ClinicList.displayName = 'ClinicList';
 

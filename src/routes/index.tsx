@@ -15,6 +15,7 @@ const Learn = React.lazy(() => import('../pages/Home/Learn/index.tsx'));
 const LearnArticle = React.lazy(() => import('../pages/Home/LearnArticle/index.tsx'));
 const ForClinics = React.lazy(() => import('../pages/ForClinics/index.tsx'));
 const ClinicFeature = React.lazy(() => import('../pages/ForClinics/Feature.tsx'));
+const Dentists = React.lazy(() => import('../pages/Dentists/index.tsx'));
 const ClinicStaffSignup = React.lazy(() => import('../pages/Home/Signup/ClinicStaff/index.tsx'));
 const VerifyEmailPendingPage = React.lazy(() => import('../pages/VerifyEmail/Code/index.tsx'));
 const VerifyEmailPage = React.lazy(() => import('../pages/VerifyEmail/Token/index.tsx'));
@@ -76,6 +77,11 @@ const AppRoutes: React.FC = () => {
                 <Route
                     path="/for-clinics/:feature"
                     element={<ClinicFeature />}
+                />
+                {/* Public clinic directory; "/*" also matches /dentists itself. */}
+                <Route
+                    path="/dentists/*"
+                    element={<Dentists />}
                 />
                 <Route
                     path="/quiz"

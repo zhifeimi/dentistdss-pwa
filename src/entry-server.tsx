@@ -14,6 +14,8 @@ import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
 import { AppContent } from './App';
 import { AuthProvider } from './context/auth';
+import type { DirectoryPage } from './directory/model';
+import { DirectoryPageContext } from './directory/useDirectoryPage';
 import { type SeoCollector, SeoCollectorContext } from './seo/Seo';
 import type { SeoProps } from './seo/tags';
 
@@ -28,7 +30,12 @@ export interface RenderResult {
 
 const noop = () => undefined;
 
-export async function render(url: string): Promise<RenderResult> {
+export interface RenderContext {
+  /** Data for a /dentists page (see src/directory). */
+  directoryPage?: DirectoryPage | null;
+}
+
+export async function render(url: string, context: RenderContext = {}): Promise<RenderResult> {
   // Compat mode collects rules in cache.inserted instead of rendering inline
   // <style> tags next to each component.
   const cache = createCache({ key: 'css' });
@@ -39,11 +46,13 @@ export async function render(url: string): Promise<RenderResult> {
   const { prelude } = await prerender(
     <CacheProvider value={cache}>
       <SeoCollectorContext.Provider value={collector}>
-        <AuthProvider>
-          <StaticRouter location={url}>
-            <AppContent darkMode={false} toggleDarkMode={noop} logout={noop} />
-          </StaticRouter>
-        </AuthProvider>
+        <DirectoryPageContext.Provider value={context.directoryPage ?? null}>
+          <AuthProvider>
+            <StaticRouter location={url}>
+              <AppContent darkMode={false} toggleDarkMode={noop} logout={noop} />
+            </StaticRouter>
+          </AuthProvider>
+        </DirectoryPageContext.Provider>
       </SeoCollectorContext.Provider>
     </CacheProvider>,
     // React outlines large sections into a hidden <div> plus an inline script

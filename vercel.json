@@ -51,6 +51,22 @@
       "destination": "/for-clinics/:feature/index.html"
     },
     {
+      "source": "/dentists",
+      "destination": "/dentists/index.html"
+    },
+    {
+      "source": "/dentists/:state",
+      "destination": "/dentists/:state/index.html"
+    },
+    {
+      "source": "/dentists/:state/:suburb",
+      "destination": "/dentists/:state/:suburb/index.html"
+    },
+    {
+      "source": "/dentists/:state/:suburb/:slug",
+      "destination": "/dentists/:state/:suburb/:slug/index.html"
+    },
+    {
       "source": "/quiz",
       "destination": "/quiz/index.html"
     },

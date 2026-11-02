@@ -23,6 +23,10 @@ export interface Clinic extends BaseEntity {
   phoneNumber?: string; // Alternative field name for compatibility
   operatingHours?: OperatingHours[];
   services?: ClinicService[];
+  /** Public URL slug, assigned once the clinic is approved. */
+  slug?: string | null;
+  /** Whether the clinic opted in to the public directory (/dentists). */
+  listedPublicly?: boolean | null;
 }
 
 export interface OperatingHours {
@@ -71,45 +75,6 @@ export interface CreateHolidayRequest {
   specialClosingTime?: string; // HH:mm format
   isRecurring: boolean;
   emergencyContact?: string;
-}
-
-// Working Hours types
-export type DayOfWeek =
-  | 'MONDAY'
-  | 'TUESDAY'
-  | 'WEDNESDAY'
-  | 'THURSDAY'
-  | 'FRIDAY'
-  | 'SATURDAY'
-  | 'SUNDAY';
-
-export interface WorkingHours extends BaseEntity {
-  clinicId: number;
-  clinicName: string;
-  dayOfWeek: DayOfWeek;
-  specificDate?: string; // YYYY-MM-DD format for specific date overrides
-  openingTime: string; // HH:mm format
-  closingTime: string; // HH:mm format
-  breakStartTime?: string; // HH:mm format
-  breakEndTime?: string; // HH:mm format
-  isClosed: boolean;
-  isEmergencyHours: boolean;
-  notes?: string;
-  scheduleType: string;
-  displaySchedule: string;
-  hasBreakTime: boolean;
-}
-
-export interface CreateWorkingHoursRequest {
-  dayOfWeek: DayOfWeek;
-  specificDate?: string; // YYYY-MM-DD format
-  openingTime: string; // HH:mm format
-  closingTime: string; // HH:mm format
-  breakStartTime?: string; // HH:mm format
-  breakEndTime?: string; // HH:mm format
-  isClosed: boolean;
-  isEmergencyHours: boolean;
-  notes?: string;
 }
 
 export interface ClinicService extends BaseEntity {
@@ -254,6 +219,9 @@ export interface UpdateClinicRequest {
   website?: string;
   description?: string;
   operatingHours?: OperatingHours[];
+  listedPublicly?: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 // Dentist availability

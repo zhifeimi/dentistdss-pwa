@@ -27,7 +27,7 @@ async function mockLoggedOutApi(page: Page): Promise<void> {
   await page.route('**/api/auth/logout', (route) => route.fulfill(json({ success: true, message: 'Logged out' })));
   await page.route('**/api/appointment/patient/1', (route) => route.fulfill(json({ success: true, message: 'ok', dataObject: [] })));
   await page.route('**/api/clinic/list/all', (route) =>
-    route.fulfill(json({ success: true, message: 'ok', dataObject: [{ id: 7, name: 'Harbour Dental', address: '1 Quay St', city: 'Sydney' }] })));
+    route.fulfill(json({ success: true, message: 'ok', dataObject: [{ id: 7, slug: 'harbour-dental', name: 'Harbour Dental', address: '1 Quay St', city: 'Sydney' }] })));
 }
 
 async function logIn(page: Page): Promise<void> {
@@ -36,16 +36,17 @@ async function logIn(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Log in', exact: true }).click();
 }
 
-test('a logged-out visitor who books a clinic gets that booking back after logging in', async ({ page }) => {
+test('a logged-out visitor who books by clinic slug gets that booking back after logging in', async ({ page }) => {
   await mockLoggedOutApi(page);
 
-  await page.goto('/appointments?book=7');
+  await page.goto('/appointments?book=harbour-dental');
   await expect(page).toHaveURL(/\/login$/);
 
   await logIn(page);
 
   await expect(page).toHaveURL(/\/appointments/);
   await expect(page.getByRole('dialog').getByText('Harbour Dental').first()).toBeVisible();
+  await expect(page.getByRole('radio', { name: /Harbour Dental/ })).toBeChecked();
 });
 
 test('logging out and back in starts from the overview, not the last page', async ({ page }) => {
@@ -118,7 +119,7 @@ test('after logging out, going Back does not hand the last page to the next logi
 
 test('after logging out, booking a clinic still comes back after logging in', async ({ page }) => {
   await mockLoggedOutApi(page);
-  await page.route('**/api/clinic-admin/clinics/search', (route) =>
+  await page.route('**/api/clinic/search', (route) =>
     route.fulfill(json({ success: true, message: 'ok', dataObject: [{ id: 7, name: 'Harbour Dental', address: '1 Quay St', city: 'Sydney' }] })));
 
   await page.goto('/login');

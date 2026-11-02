@@ -245,6 +245,15 @@ describe('crawl rules', () => {
     }
   });
 
+  it('serves clinic directory pages from their prerendered files', () => {
+    expect(rewriteFor('/dentists')).toBe('/dentists/index.html');
+    expect(rewriteFor('/dentists/nsw')).toBe('/dentists/nsw/index.html');
+    expect(rewriteFor('/dentists/nsw/north-sydney')).toBe('/dentists/nsw/north-sydney/index.html');
+    expect(rewriteFor('/dentists/nsw/north-sydney/harbourside')).toBe('/dentists/nsw/north-sydney/harbourside/index.html');
+    // Deeper paths are never pages, so they fall through to the 404.
+    expect(isRewritten('/dentists/nsw/north-sydney/harbourside/extra')).toBe(false);
+  });
+
   it('serves signed-in app paths from the app shell, and nothing else', () => {
     for (const path of dictionary.locations.app) expect(rewriteFor(path), path).toBe('/app-shell.html');
     expect(rewriteFor('/appointments/123')).toBe('/app-shell.html');

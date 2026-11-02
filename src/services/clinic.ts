@@ -4,13 +4,11 @@ import {
   ClinicSearchResult,
   ClinicService,
   CreateHolidayRequest,
-  CreateWorkingHoursRequest,
   Dentist,
   DentistAvailability,
   Holiday,
   TimeSlot,
   UpdateClinicRequest,
-  WorkingHours,
 } from '../types';
 
 const clinicAPI = {
@@ -20,7 +18,8 @@ const clinicAPI = {
 
   async searchClinics(keywords: string): Promise<ClinicSearchResult[]> {
     try {
-      const response = await api.post('/api/clinic-admin/clinics/search', {
+      // Public: anonymous visitors search from Find a clinic.
+      const response = await api.post('/api/clinic/search', {
         keywords,
       }) as ClinicSearchResult[];
       return response;
@@ -224,27 +223,6 @@ const clinicAPI = {
 
   // Working Hours Management API Methods
 
-  /**
-   * Get all working hours for a clinic
-   * @param clinicId - The clinic ID
-   * @returns Array of working hours objects
-   */
-  async getClinicWorkingHours(clinicId: number): Promise<WorkingHours[]> {
-    return api.get(`/api/clinic-admin/clinics/${clinicId}/working-hours`);
-  },
-
-  /**
-   * Create new working hours for a clinic
-   * @param clinicId - The clinic ID
-   * @param workingHoursData - Working hours data object
-   * @returns Created working hours object
-   */
-  async createWorkingHours(
-    clinicId: number,
-    workingHoursData: CreateWorkingHoursRequest,
-  ): Promise<WorkingHours> {
-    return api.post(`/api/clinic-admin/clinics/${clinicId}/working-hours`, workingHoursData);
-  },
 };
 
 export default clinicAPI;

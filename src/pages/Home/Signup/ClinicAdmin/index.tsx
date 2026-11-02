@@ -16,6 +16,8 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router';
 import Visibility from '@mui/icons-material/Visibility';
@@ -80,6 +82,8 @@ const ClinicAdmin: React.FC = () => {
 
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  // Opt-in, so the clinic decides before anything about it is published.
+  const [listedPublicly, setListedPublicly] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
@@ -173,6 +177,7 @@ const ClinicAdmin: React.FC = () => {
         phoneNumber: formData.phoneNumber,
         businessEmail: formData.businessEmail,
         website: formData.website,
+        listedPublicly,
         role: 'CLINIC_ADMIN' as const,
       };
 
@@ -429,6 +434,23 @@ const ClinicAdmin: React.FC = () => {
                     error={hasFieldError('website')}
                     helperText={getFieldError('website')}
                 />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <FormControlLabel
+                    control={
+                      <Checkbox
+                          name="listedPublicly"
+                          checked={listedPublicly}
+                          onChange={(event) => setListedPublicly(event.target.checked)}
+                      />
+                    }
+                    label="List my clinic in the public DentistDSS directory"
+                />
+                <Typography variant="body2" sx={{ color: 'text.secondary', ml: 4 }}>
+                  Once approved, your clinic gets its own page under dentists by area, with your address,
+                  phone and opening hours, so patients can find you and book. You can change this in
+                  Settings.
+                </Typography>
               </Grid>
             </Grid>
 

@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { loadEnv, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { loadDirectory } from './src/directory/load.ts';
+import { buildDirectory } from './src/directory/model.ts';
 import { shellSeoHtml } from './src/seo/build.ts';
 import { PUBLIC_PAGES } from './src/seo/pages.ts';
 import { prerenderSite } from './src/seo/prerender.ts';
@@ -64,7 +66,8 @@ function previewPrerenderedPagesPlugin(): Plugin {
 const SSR_OUT_DIR = '.ssr';
 
 export default defineConfig(({ mode }) => {
-  const siteUrl = normalizeSiteUrl(loadEnv(mode, process.cwd(), '').VITE_SITE_URL);
+  const env = loadEnv(mode, process.cwd(), '');
+  const siteUrl = normalizeSiteUrl(env.VITE_SITE_URL);
 
   return {
     plugins: [
@@ -82,6 +85,24 @@ export default defineConfig(({ mode }) => {
         const { client, ssr } = builder.environments;
         const root = builder.config.root;
         const ssrOutDir = resolve(root, ssr.config.build.outDir);
+        const logger = builder.config.logger;
+        // The public clinic directory (clinic and suburb pages). With an https
+        // VITE_API_HOST a failed fetch fails the build, so Vercel keeps the
+        // last good deployment instead of dropping every clinic page.
+        const loaded = await loadDirectory({
+          apiHost: env.VITE_API_HOST,
+          fixturePath: env.PUBLIC_CLINICS_FIXTURE
+            ? resolve(root, env.PUBLIC_CLINICS_FIXTURE)
+            : undefined,
+          log: (message) => logger.warn(message),
+        });
+        for (const reason of loaded.dropped) {
+          logger.warn(`Clinic left out of the directory: ${reason}`);
+        }
+        logger.info(
+          `Clinic directory: ${loaded.directory.clinics.length} clinics (${loaded.source})`,
+        );
+
         await builder.build(client);
         await builder.build(ssr);
         try {
@@ -90,8 +111,9 @@ export default defineConfig(({ mode }) => {
             ssrEntry: resolve(ssrOutDir, 'entry-server.js'),
             siteUrl,
             pages: PUBLIC_PAGES,
+            directory: { data: loaded.directory, index: buildDirectory(loaded.directory) },
           });
-          builder.config.logger.info(`Prerendered ${pages.length} pages, 404.html and sitemap.xml`);
+          logger.info(`Prerendered ${pages.length} pages, 404.html and sitemap.xml`);
         } finally {
           await rm(ssrOutDir, { recursive: true, force: true });
         }

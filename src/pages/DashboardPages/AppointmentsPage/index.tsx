@@ -85,10 +85,11 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
     setShowBookingWizard(false);
   });
 
-  // "Book a visit" links here with ?book=<clinicId>: open the wizard straight
-  // away (it shows the clinic list loading, or failing with a retry) and choose
-  // that clinic once it's in the list. An unknown id, such as the overview's
-  // ?book=new, leaves the choice to the visitor.
+  // "Book a visit" links here with ?book=<clinicId>, and public clinic pages
+  // with ?book=<clinic slug>: open the wizard straight away (it shows the
+  // clinic list loading, or failing with a retry) and choose that clinic once
+  // it's in the list. An unknown value, such as the overview's ?book=new,
+  // leaves the choice to the visitor.
   const [searchParams, setSearchParams] = useSearchParams();
   const bookClinicId = canBookAppointment ? searchParams.get('book') : null;
   const [pendingClinicId, setPendingClinicId] = useState<string | null>(null);
@@ -103,7 +104,8 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ userRole = 'PATIENT
 
   const bookingClinics = bookingWizard.clinics;
   useEffect(() => {
-    const clinic = pendingClinicId && bookingClinics.find((item) => String(item.id) === pendingClinicId);
+    const clinic = pendingClinicId &&
+      bookingClinics.find((item) => String(item.id) === pendingClinicId || item.slug === pendingClinicId);
     if (!clinic) return;
     bookingWizard.updateBookingData('clinicId', clinic.id);
     setPendingClinicId(null);
