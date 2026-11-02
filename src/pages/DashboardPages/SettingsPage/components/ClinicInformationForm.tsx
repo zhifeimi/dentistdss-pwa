@@ -14,7 +14,12 @@ import {
   Select,
   FormHelperText,
   SelectChangeEvent,
+  FormControlLabel,
+  Link,
+  Switch,
+  Typography,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router';
 import {
   Save as SaveIcon,
   Refresh as RefreshIcon,
@@ -24,6 +29,16 @@ import api from '../../../../services';
 import useFormValidation from '../../../../hooks/useFormValidation';
 import { COUNTRIES } from '../../../../utils/dictionary';
 import type { ClinicFormData, ClinicInformationFormProps } from '../../../../types/components';
+import { DIRECTORY_PATH, slugify, stateCodeOf } from '../../../../directory/paths';
+
+const DESCRIPTION_LIMIT = 2000;
+
+/** Empty, or an absolute http(s) address (what the backend accepts). */
+const websiteError = (value: string) =>
+  !value.trim() || /^https?:\/\/\S+$/i.test(value.trim()) ? '' : 'Enter the full address, starting with https://';
+
+const descriptionError = (value: string) =>
+  value.length > DESCRIPTION_LIMIT ? `Keep the description under ${DESCRIPTION_LIMIT.toLocaleString('en-AU')} characters` : '';
 
 /**
  * ClinicInformationForm - Comprehensive clinic information management form
@@ -49,7 +64,11 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
     country: '',
     phoneNumber: '',
     email: '',
+    description: '',
+    website: '',
   });
+  // Public directory listing (/dentists), saved with the rest of the form.
+  const [listedPublicly, setListedPublicly] = useState<boolean>(false);
 
   // UI state
   const [loading] = useState<boolean>(false);
@@ -76,6 +95,8 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
       country: 'Country',
       phoneNumber: 'Phone',
       email: 'Email',
+      description: 'Description',
+      website: 'Website',
     };
     return labels[field] || field;
   };
@@ -92,8 +113,11 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
         country: clinicData.country || '',
         phoneNumber: clinicData.phoneNumber || clinicData.phone || '',
         email: clinicData.email || '',
+        description: clinicData.description || '',
+        website: clinicData.website || '',
       };
       setFormData(initialData);
+      setListedPublicly(Boolean(clinicData.listedPublicly));
       setHasChanges(false);
       setError('');
     }
@@ -119,6 +143,10 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
     let error = '';
     if (field === 'email') {
       error = validateEmail(value);
+    } else if (field === 'website') {
+      error = websiteError(value);
+    } else if (field === 'description') {
+      error = descriptionError(value);
     } else if (requiredFields.includes(field) && !value.trim()) {
       error = `${getFieldLabel(field)} is required`;
     }
@@ -195,6 +223,13 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
       }
     }
     
+    for (const [field, message] of [['website', websiteError(formData.website)], ['description', descriptionError(formData.description)]]) {
+      if (message) {
+        errors[field] = message;
+        isValid = false;
+      }
+    }
+
     setFieldErrors(errors);
     return isValid;
   };
@@ -228,6 +263,9 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
         country: formData.country.trim(),
         phoneNumber: formData.phoneNumber.trim(),
         email: formData.email.trim(),
+        description: formData.description.trim(),
+        website: formData.website.trim(),
+        listedPublicly,
       };
       
       // Call API to update clinic
@@ -277,14 +315,23 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
         country: clinicData.country || '',
         phoneNumber: clinicData.phoneNumber || clinicData.phone || '',
         email: clinicData.email || '',
+        description: clinicData.description || '',
+        website: clinicData.website || '',
       };
       setFormData(resetData);
+      setListedPublicly(Boolean(clinicData.listedPublicly));
       setFieldErrors({});
       setTouchedFields({});
       setHasChanges(false);
       setError('');
     }
   };
+
+  // The page exists once the clinic is approved (it then has a slug) and listed.
+  const stateCode = stateCodeOf(clinicData?.state);
+  const publicPagePath = clinicData?.slug && clinicData.listedPublicly && stateCode && clinicData.city
+    ? `${DIRECTORY_PATH}/${stateCode.toLowerCase()}/${slugify(clinicData.city)}/${clinicData.slug}`
+    : null;
 
   if (loading) {
     return (
@@ -459,6 +506,71 @@ const ClinicInformationForm: React.FC<ClinicInformationFormProps> = ({ clinicDat
                   <FormHelperText>{fieldErrors.country}</FormHelperText>
                 )}
               </FormControl>
+            </Grid>
+
+            {/* Public listing */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="h6" component="h2" sx={{ mt: 1 }}>Public listing</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5, maxWidth: '70ch' }}>
+                Listed clinics get their own page under{' '}
+                <Link component={RouterLink} to={DIRECTORY_PATH}>dentists by area</Link>, with the details below,
+                your <Link component={RouterLink} to="/working-hours">opening hours</Link> and your services, so
+                patients can find you in search and book. Search engines show the page once it has a description,
+                opening hours and at least one service.
+              </Typography>
+              <FormControlLabel
+                sx={{ mt: 1 }}
+                control={
+                  <Switch
+                    checked={listedPublicly}
+                    onChange={(event) => {
+                      setListedPublicly(event.target.checked);
+                      setHasChanges(true);
+                    }}
+                    disabled={saving}
+                  />
+                }
+                label="List my clinic in the public directory"
+              />
+              {publicPagePath && (
+                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                  <Link href={publicPagePath} target="_blank" rel="noopener">View your public page</Link>
+                  {' '}· changes appear there within about an hour.
+                </Typography>
+              )}
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                multiline
+                minRows={3}
+                label="Description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange('description')}
+                onBlur={handleFieldBlur('description')}
+                error={!!fieldErrors.description}
+                helperText={fieldErrors.description ||
+                  `What patients should know: who you see, what you specialise in, parking or access. ${formData.description.length.toLocaleString('en-AU')}/${DESCRIPTION_LIMIT.toLocaleString('en-AU')}`}
+                variant="outlined"
+                disabled={saving}
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                type="url"
+                label="Website"
+                name="website"
+                placeholder="https://www.example.com"
+                value={formData.website}
+                onChange={handleInputChange('website')}
+                onBlur={handleFieldBlur('website')}
+                error={!!fieldErrors.website}
+                helperText={fieldErrors.website}
+                variant="outlined"
+                disabled={saving}
+              />
             </Grid>
           </Grid>
 

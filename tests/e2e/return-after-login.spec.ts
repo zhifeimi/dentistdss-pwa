@@ -118,7 +118,7 @@ test('after logging out, going Back does not hand the last page to the next logi
 
 test('after logging out, booking a clinic still comes back after logging in', async ({ page }) => {
   await mockLoggedOutApi(page);
-  await page.route('**/api/clinic-admin/clinics/search', (route) =>
+  await page.route('**/api/clinic/search', (route) =>
     route.fulfill(json({ success: true, message: 'ok', dataObject: [{ id: 7, name: 'Harbour Dental', address: '1 Quay St', city: 'Sydney' }] })));
 
   await page.goto('/login');

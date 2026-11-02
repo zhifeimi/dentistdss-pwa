@@ -1,6 +1,6 @@
 # Public clinics API (for clinic and suburb pages)
 
-**Status:** proposal for the backend (`dentistdss-microservices`). The frontend clinic pages (Phase 4 of the SEO plan) are built against this contract.
+**Status:** built. The backend is `dentistdss-microservices` (clinic-service `PublicClinicController`, live at `https://api.mizhifei.press`). The frontend is `src/directory/` and `src/pages/Dentists/` in this repo.
 
 ## Why
 
@@ -74,11 +74,35 @@ Returns one clinic in the same shape. For an old slug, it returns `301` with `Lo
 - **Rebuild trigger:** when a clinic is approved, updated, delisted or deleted, call the Vercel Deploy Hook for the `dentistdss` project. Debounce to at most one call per hour, so the static pages refresh without a deploy on every edit. Store the hook URL as a backend secret.
 - **Opt-in:** add a "Show my clinic in public search" setting (`listedPublicly`) to clinic settings, on by default for new clinics only if the clinic agrees in the registration terms.
 
-## Frontend behaviour (for reference)
+## Frontend behaviour (as built)
 
-- The prerender (`src/seo/prerender.ts`) fetches `GET /api/public/clinics` from `VITE_API_HOST` at build time. If the request fails, the production build fails, so Vercel keeps serving the previous deployment instead of dropping every clinic page.
-- **Clinic pages:**
-  - `Dentist` JSON-LD (a LocalBusiness subtype): `address`, `geo`, `telephone`, `url`, `openingHoursSpecification`, and `potentialAction: ReserveAction`, which links to booking.
-  - `BreadcrumbList` JSON-LD.
-- **Links:** results on `/find-a-clinic` link to the clinic pages with plain `<a href>` links, so crawlers can follow them.
+- **Build:** `vite build` (see `src/directory/load.ts`) loads the directory:
+  - It uses `PUBLIC_CLINICS_FIXTURE` when that is set.
+  - Otherwise, when `VITE_API_HOST` is an https origin, it fetches `GET ${VITE_API_HOST}/api/public/clinics` (15 s timeout, 2 retries).
+  - With neither, it builds without clinic pages.
+- **Failures:** if an API host is configured and the fetch fails, the build fails, so Vercel keeps serving the last good deployment instead of dropping every clinic page.
+- **Validation:** records are checked (`src/directory/validate.ts`). A clinic with an invalid slug, no suburb or a non-Australian state is left out with a build warning. An open day without a valid time range is treated as closed. A website that isn't http(s) is dropped.
+- **Pages** (`src/directory/model.ts`): `/dentists`, `/dentists/{state}`, `/dentists/{state}/{suburb}` and `/dentists/{state}/{suburb}/{slug}`.
+  - The state segment is the lowercase state code.
+  - The suburb segment uses the same slug rule as `ClinicSlugs.slugify`.
+  - Suburbs are grouped by that slug and shown with the most common spelling.
+- **Indexing rules:**
+  - a clinic page is indexed with a description, at least one open day and at least one service
+  - a suburb page is indexed with 3 or more clinics
+  - a state page is indexed when it has an indexable suburb
+  - `/dentists` is indexed when it has an indexable state
+  - Everything else is served with `noindex, follow` and left out of the sitemap.
+- **Structured data:** clinic pages carry `Dentist` JSON-LD with:
+  - address
+  - geo (when known)
+  - telephone
+  - opening hours
+  - `sameAs` (website)
+  - `ReserveAction` → `/appointments?book={slug}` when `acceptsOnlineBooking`
+  - `BreadcrumbList` on every page.
+- **Retired slugs:** each entry in `previousSlugs` gets a redirect page at the clinic's *current* state and suburb (instant meta refresh plus a canonical). If a clinic moves suburb, its old URL can't be traced back and returns 404.
+- **Search:** Find a clinic searches with `POST /api/clinic/search`. Results that have a page in this build (looked up in `/data/directory.json`) link to it.
+- **Clinic admins:**
+  - Opt in at sign-up (`listedPublicly`), or later under Settings → Public listing (description, website, listing switch).
+  - They set opening hours on the Opening hours page (`PUT /api/clinic/{id}` `operatingHours`).
 - **Reviews:** before adding patient reviews or testimonials to clinic pages, check the Australian health practitioner (AHPRA) advertising rules. Only genuine, independently collected reviews may be marked up.

@@ -93,4 +93,6 @@ export interface ClinicAdminSignupData extends SignupData {
   phoneNumber: string;
   businessEmail: string;
   website?: string;
+  /** Show the clinic in the public directory (/dentists) once approved. */
+  listedPublicly?: boolean;
 }

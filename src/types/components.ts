@@ -79,6 +79,9 @@ export interface ClinicFormData {
   country: string;
   phoneNumber: string;
   email: string;
+  /** Shown on the clinic's public page. */
+  description: string;
+  website: string;
 }
 
 export interface ClinicInformationFormProps {

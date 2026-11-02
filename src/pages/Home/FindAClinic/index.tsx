@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { Box, Container, Typography, useTheme, useMediaQuery } from '@mui/material';
-import { useSearchParams } from 'react-router';
+import { Box, Container, Link, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { Link as RouterLink, useSearchParams } from 'react-router';
 
 import SearchSection from '../../../components/FindAClinic/SearchSection';
 import MapSection from '../../../components/FindAClinic/MapSection';
@@ -66,7 +66,7 @@ const FindAClinic: React.FC = React.memo(() => {
       </Typography>
       <Typography sx={{ mt: 1, mb: 3, color: 'text.secondary', maxWidth: '60ch' }}>
         Search by suburb, clinic name or treatment. Choose a clinic to see it on the map and book a
-        visit.
+        visit. Or <Link component={RouterLink} to="/dentists">browse dentists by state and suburb</Link>.
       </Typography>
 
       <SearchSection

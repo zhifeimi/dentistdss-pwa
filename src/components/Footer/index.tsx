@@ -9,6 +9,7 @@ const GROUPS: { title: string; links: { label: string; to: string }[] }[] = [
     title: 'Patients',
     links: [
       { label: 'Find a clinic', to: '/find-a-clinic' },
+      { label: 'Dentists by area', to: '/dentists' },
       { label: 'Learn', to: '/learn' },
       { label: 'Quiz', to: '/quiz' },
       { label: 'Reading list', to: '/book' },

@@ -1,19 +1,18 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import WorkingHoursPage from '../index';
+import api from '../../../../services';
 import { useAuth } from '../../../../context/auth';
 
-// Mock the API
+vi.unmock('react-router');
+
 vi.mock('../../../../services', () => ({
   default: {
     clinic: {
-      getClinicWorkingHours: vi.fn().mockResolvedValue([]),
-      createWorkingHours: vi.fn().mockResolvedValue({}),
+      getClinicById: vi.fn(),
+      updateClinic: vi.fn(),
     },
   },
 }));
@@ -22,103 +21,68 @@ vi.mock('../../../../context/auth', () => ({
   useAuth: vi.fn(),
 }));
 
-const mockCurrentUser = {
-  id: 1,
-  email: 'admin@clinic.com',
-  firstName: 'Admin',
-  lastName: 'User',
-  roles: ['CLINIC_ADMIN'],
-  clinicId: 1,
-};
-
+const admin = { id: 1, roles: ['CLINIC_ADMIN'], clinicId: 7 };
 const mockUseAuth = vi.mocked(useAuth);
+const getClinicById = vi.mocked(api.clinic.getClinicById);
+const updateClinic = vi.mocked(api.clinic.updateClinic);
 
-const createAuthValue = (currentUser = mockCurrentUser) => (
-  {
-    currentUser,
-    isAuthenticated: true,
-    loading: false,
-    login: vi.fn(),
-    signup: vi.fn(),
-    logout: vi.fn(),
-    googleIdLogin: vi.fn(),
-    processAuthToken: vi.fn(),
-  } as any
-);
-
-const theme = createTheme();
-
-const renderWithProviders = (component: React.ReactElement) => {
-  return render(
-    <BrowserRouter>
-      <ThemeProvider theme={theme}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          {component}
-        </LocalizationProvider>
-      </ThemeProvider>
-    </BrowserRouter>
-  );
-};
+const renderPage = () => render(<MemoryRouter><WorkingHoursPage /></MemoryRouter>);
 
 describe('WorkingHoursPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseAuth.mockReturnValue(createAuthValue());
+    mockUseAuth.mockReturnValue({ currentUser: admin } as any);
+    getClinicById.mockResolvedValue({
+      id: 7,
+      operatingHours: [
+        { dayOfWeek: 1, openTime: '08:30', closeTime: '17:00', isOpen: true },
+        { dayOfWeek: 6, openTime: '09:00', closeTime: '12:00', isOpen: false },
+      ],
+    } as any);
+    updateClinic.mockImplementation(async (_id, updates) => ({ id: 7, ...updates }) as any);
   });
 
-  it('renders working hours page for clinic admin', async () => {
-    renderWithProviders(<WorkingHoursPage />);
+  it("loads the clinic's hours and lists every day, Monday first", async () => {
+    renderPage();
 
-    // Check if the main heading is present
-    expect(await screen.findByText('Opening hours')).toBeInTheDocument();
-
-    // Check if the schedule overview is present
-    await waitFor(() => {
-      expect(screen.getByText('Summary')).toBeInTheDocument();
-    });
+    expect(await screen.findByLabelText('Monday opens')).toHaveValue('08:30');
+    expect(screen.getByLabelText('Monday closes')).toHaveValue('17:00');
+    expect(screen.getByLabelText('Open on Monday')).toBeChecked();
+    expect(screen.getByLabelText('Open on Saturday')).not.toBeChecked();
+    expect(screen.getByLabelText('Open on Sunday')).not.toBeChecked();
+    expect(getClinicById).toHaveBeenCalledWith(7);
+    const days = screen.getAllByRole('listitem').map((item) => item.textContent?.split(/Open|Closed/)[0]);
+    expect(days).toEqual(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
   });
 
-  it('shows access denied for non-admin users', () => {
-    const nonAdminUser = {
-      ...mockCurrentUser,
-      roles: ['PATIENT'],
-    };
+  it('saves all seven days on the clinic', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByLabelText('Open on Tuesday'));
+    fireEvent.change(screen.getByLabelText('Tuesday closes'), { target: { value: '18:30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save opening hours' }));
 
-    mockUseAuth.mockReturnValue(createAuthValue(nonAdminUser));
-
-    render(
-      <BrowserRouter>
-        <ThemeProvider theme={theme}>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <WorkingHoursPage />
-          </LocalizationProvider>
-        </ThemeProvider>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText(/Access denied/)).toBeInTheDocument();
-    expect(screen.getByText(/Only clinic administrators can manage working hours/)).toBeInTheDocument();
+    await waitFor(() => expect(updateClinic).toHaveBeenCalledTimes(1));
+    const [clinicId, { operatingHours }] = updateClinic.mock.calls[0] as [number, { operatingHours: unknown[] }];
+    expect(clinicId).toBe(7);
+    expect(operatingHours).toHaveLength(7);
+    expect(operatingHours).toContainEqual({ dayOfWeek: 2, openTime: '09:00', closeTime: '18:30', isOpen: true });
+    expect(operatingHours).toContainEqual({ dayOfWeek: 1, openTime: '08:30', closeTime: '17:00', isOpen: true });
+    expect(operatingHours).toContainEqual({ dayOfWeek: 0, openTime: '09:00', closeTime: '17:00', isOpen: false });
   });
 
-  it('displays loading state initially', () => {
-    renderWithProviders(<WorkingHoursPage />);
+  it('blocks saving when a day closes before it opens', async () => {
+    renderPage();
+    fireEvent.change(await screen.findByLabelText('Monday closes'), { target: { value: '07:00' } });
 
-    // Should show loading spinner initially
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByText('Closing time must be after opening time')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save opening hours' })).toBeDisabled();
   });
 
-  it('displays weekly schedule view after loading', async () => {
-    renderWithProviders(<WorkingHoursPage />);
+  it('keeps people without the clinic admin role out', () => {
+    mockUseAuth.mockReturnValue({ currentUser: { ...admin, roles: ['PATIENT'] } } as any);
+    renderPage();
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(screen.getByText('Weekly schedule')).toBeInTheDocument();
-    });
-
-    // Check if all days of the week are displayed
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    days.forEach(day => {
-      expect(screen.getByText(day)).toBeInTheDocument();
-    });
+    expect(screen.getByText(/Only clinic administrators can manage opening hours/)).toBeInTheDocument();
+    expect(getClinicById).not.toHaveBeenCalled();
   });
 });

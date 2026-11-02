@@ -12,6 +12,8 @@ interface ClinicCardProps {
   clinic: Clinic;
   isSelected: boolean;
   onClick: () => void;
+  /** The clinic's public page (/dentists/...), when it has one. */
+  pagePath?: string;
 }
 
 const stop = (event: MouseEvent) => event.stopPropagation();
@@ -20,7 +22,7 @@ const stop = (event: MouseEvent) => event.stopPropagation();
  * ClinicCard — one search result. Clicking the card (or "Show on map")
  * selects it on the map; the actions book a visit or open directions.
  */
-const ClinicCard = React.memo<ClinicCardProps>(({ clinic, isSelected, onClick }) => {
+const ClinicCard = React.memo<ClinicCardProps>(({ clinic, isSelected, onClick, pagePath }) => {
   const address = [clinic.address, clinic.city, [clinic.state, clinic.zipCode].filter(Boolean).join(' ')]
     .filter(Boolean)
     .join(', ');
@@ -90,6 +92,11 @@ const ClinicCard = React.memo<ClinicCardProps>(({ clinic, isSelected, onClick })
         >
           Book a visit
         </Button>
+        {pagePath && (
+          <Button component={RouterLink} to={pagePath} size="small" variant="outlined" onClick={stop}>
+            Clinic page
+          </Button>
+        )}
         <Button
           size="small"
           variant="outlined"

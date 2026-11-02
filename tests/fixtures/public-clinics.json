@@ -1,0 +1,88 @@
+{
+  "generatedAt": "2026-11-02T09:00:00Z",
+  "clinics": [
+    {
+      "slug": "harbourside-dental-north-sydney",
+      "previousSlugs": ["harbourside-dental"],
+      "name": "Harbourside Dental",
+      "description": "Family dental clinic two minutes from North Sydney station, with early starts for school and work.",
+      "address": { "street": "12 Miller Street", "suburb": "North Sydney", "state": "NSW", "postcode": "2060", "country": "AU" },
+      "location": { "latitude": -33.8393, "longitude": 151.2073 },
+      "phone": "+61 2 9000 0001",
+      "website": "https://harbourside.example",
+      "operatingHours": [
+        { "dayOfWeek": 1, "openTime": "08:00", "closeTime": "17:30", "isOpen": true },
+        { "dayOfWeek": 2, "openTime": "08:00", "closeTime": "17:30", "isOpen": true },
+        { "dayOfWeek": 3, "openTime": "08:00", "closeTime": "19:00", "isOpen": true },
+        { "dayOfWeek": 4, "openTime": "08:00", "closeTime": "17:30", "isOpen": true },
+        { "dayOfWeek": 5, "openTime": "08:00", "closeTime": "16:00", "isOpen": true },
+        { "dayOfWeek": 6, "openTime": "09:00", "closeTime": "13:00", "isOpen": true },
+        { "dayOfWeek": 0, "openTime": "09:00", "closeTime": "13:00", "isOpen": false }
+      ],
+      "services": ["Check-up and clean", "Children's dentistry", "Fillings", "Teeth whitening"],
+      "acceptsOnlineBooking": true,
+      "updatedAt": "2026-10-30T04:12:00Z"
+    },
+    {
+      "slug": "miller-street-smiles-north-sydney",
+      "previousSlugs": [],
+      "name": "Miller Street Smiles",
+      "description": "General and cosmetic dentistry in the heart of North Sydney.",
+      "address": { "street": "88 Miller Street", "suburb": "North Sydney", "state": "NSW", "postcode": "2060", "country": "AU" },
+      "location": null,
+      "phone": "+61 2 9000 0002",
+      "website": null,
+      "operatingHours": [
+        { "dayOfWeek": 1, "openTime": "09:00", "closeTime": "17:00", "isOpen": true },
+        { "dayOfWeek": 3, "openTime": "09:00", "closeTime": "17:00", "isOpen": true }
+      ],
+      "services": ["Crowns", "Check-up and clean"],
+      "acceptsOnlineBooking": true,
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "slug": "berry-street-dental-north-sydney",
+      "previousSlugs": [],
+      "name": "Berry Street Dental",
+      "description": "Emergency and general dental care for North Sydney workers.",
+      "address": { "street": "40 Berry Street", "suburb": "north sydney", "state": "NSW", "postcode": "2060", "country": "AU" },
+      "location": null,
+      "phone": null,
+      "website": "https://berry.example",
+      "operatingHours": [
+        { "dayOfWeek": 2, "openTime": "07:30", "closeTime": "15:30", "isOpen": true }
+      ],
+      "services": ["Emergency dental"],
+      "acceptsOnlineBooking": true,
+      "updatedAt": null
+    },
+    {
+      "slug": "fitzroy-dental-fitzroy",
+      "previousSlugs": [],
+      "name": "Fitzroy Dental",
+      "description": null,
+      "address": { "street": null, "suburb": "Fitzroy", "state": "VIC", "postcode": "3065", "country": "AU" },
+      "location": null,
+      "phone": "+61 3 9000 0003",
+      "website": null,
+      "operatingHours": [],
+      "services": [],
+      "acceptsOnlineBooking": false,
+      "updatedAt": "2026-09-01T00:00:00Z"
+    },
+    {
+      "slug": "not-in-australia",
+      "previousSlugs": [],
+      "name": "Elsewhere Dental",
+      "description": null,
+      "address": { "street": null, "suburb": "Auckland", "state": "AKL", "postcode": null, "country": "NZ" },
+      "location": null,
+      "phone": null,
+      "website": null,
+      "operatingHours": [],
+      "services": [],
+      "acceptsOnlineBooking": false,
+      "updatedAt": null
+    }
+  ]
+}

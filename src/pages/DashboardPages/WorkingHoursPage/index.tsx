@@ -1,143 +1,98 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Box,
-  Typography,
   Button,
   Card,
   CardContent,
-  Grid,
-  Alert,
   CircularProgress,
-  Fab,
-  useTheme,
-  useMediaQuery,
-  IconButton,
-  Tooltip,
+  FormControlLabel,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Refresh as RefreshIcon,
-  Business as BusinessIcon,
-} from '@mui/icons-material';
+import { Save as SaveIcon } from '@mui/icons-material';
 import { useAuth } from '../../../context/auth';
 import PageHeader from '../../../components/Dashboard/shared/PageHeader';
 import api from '../../../services';
-import { WorkingHours } from '../../../types';
-import WorkingHoursForm from './components/WorkingHoursForm';
-import WeeklyScheduleView from './components/WeeklyScheduleView';
-import {
-  getResponsivePadding,
-  getResponsiveMargin
-} from '../../../utils/mobileOptimization';
+import type { OperatingHours } from '../../../types';
 
 interface WorkingHoursPageProps {
   clinicId?: number;
 }
 
+// Monday first, as Australian clinics list their hours.
+const WEEK = [1, 2, 3, 4, 5, 6, 0];
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DEFAULT_OPEN = '09:00';
+const DEFAULT_CLOSE = '17:00';
+
+type Week = Record<number, OperatingHours>;
+
+/** One entry per day: what the clinic saved, or closed with default times. */
+function toWeek(saved: OperatingHours[] | undefined): Week {
+  const week: Week = {};
+  for (const day of WEEK) week[day] = { dayOfWeek: day, openTime: DEFAULT_OPEN, closeTime: DEFAULT_CLOSE, isOpen: false };
+  for (const entry of saved ?? []) {
+    if (entry.dayOfWeek >= 0 && entry.dayOfWeek <= 6) {
+      week[entry.dayOfWeek] = {
+        dayOfWeek: entry.dayOfWeek,
+        openTime: entry.openTime || DEFAULT_OPEN,
+        closeTime: entry.closeTime || DEFAULT_CLOSE,
+        isOpen: Boolean(entry.isOpen),
+      };
+    }
+  }
+  return week;
+}
+
+const dayError = (day: OperatingHours) =>
+  day.isOpen && !(day.openTime < day.closeTime) ? 'Closing time must be after opening time' : '';
+
 /**
- * WorkingHoursPage - Working hours management interface for clinic administrators
- *
- * Features:
- * - View clinic working hours in weekly schedule format
- * - Add new working hours for specific days
- * - Edit existing working hours
- * - Configure break times and emergency hours
- * - Role-based access control for CLINIC_ADMIN
- * - Responsive design with mobile optimization
- * - Dark mode support
+ * WorkingHoursPage — the clinic's opening hours, day by day. They are saved
+ * on the clinic (PUT /api/clinic/{id}), shown on its public page and marked up
+ * for search engines.
  */
 const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
   const { currentUser } = useAuth();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  // State management
-  const [workingHours, setWorkingHours] = useState<WorkingHours[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
-  const [openForm, setOpenForm] = useState<boolean>(false);
-  const [selectedWorkingHours, setSelectedWorkingHours] = useState<WorkingHours | null>(null);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-
-  // Get clinic ID from props or current user
   const effectiveClinicId = clinicId || currentUser?.clinicId;
-
-  // Check if user has CLINIC_ADMIN role
   const hasAdminAccess = currentUser?.roles?.includes('CLINIC_ADMIN');
 
-  // Load working hours data
-  const loadWorkingHours = async (showRefreshing = false) => {
+  const [saved, setSaved] = useState<Week | null>(null);
+  const [week, setWeek] = useState<Week | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
     if (!effectiveClinicId) {
-      setError('No clinic ID available');
+      setError('No clinic is linked to your account.');
       setLoading(false);
       return;
     }
-
-    if (showRefreshing) setRefreshing(true);
-    else setLoading(true);
-
+    setLoading(true);
+    setError('');
     try {
-      const workingHoursData = await api.clinic.getClinicWorkingHours(effectiveClinicId);
-      setWorkingHours(workingHoursData);
-      setError('');
-    } catch (err: any) {
-      console.error('Error loading working hours:', err);
-      setError(err.message || 'Failed to load working hours');
+      const clinic = await api.clinic.getClinicById(effectiveClinicId);
+      const loaded = toWeek(clinic?.operatingHours);
+      setSaved(loaded);
+      setWeek(loaded);
+    } catch {
+      setError("Opening hours didn't load. Refresh the page to try again.");
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  };
-
-  // Load data on component mount
-  useEffect(() => {
-    loadWorkingHours();
   }, [effectiveClinicId]);
 
-  // Handle working hours creation/update
-  const handleWorkingHoursSaved = async () => {
-    setOpenForm(false);
-    setSelectedWorkingHours(null);
-    await loadWorkingHours(true);
-  };
+  useEffect(() => {
+    if (hasAdminAccess) load();
+  }, [hasAdminAccess, load]);
 
-  // Handle add new working hours
-  const handleAddWorkingHours = () => {
-    setSelectedWorkingHours(null);
-    setOpenForm(true);
-  };
-
-  // Handle edit working hours
-  const handleEditWorkingHours = (workingHour: WorkingHours) => {
-    setSelectedWorkingHours(workingHour);
-    setOpenForm(true);
-  };
-
-  // Handle refresh
-  const handleRefresh = () => {
-    loadWorkingHours(true);
-  };
-
-  // Get summary statistics
-  const getSummaryStats = () => {
-    const totalDays = workingHours.length;
-    const openDays = workingHours.filter(wh => !wh.isClosed).length;
-    const emergencyHours = workingHours.filter(wh => wh.isEmergencyHours).length;
-    const withBreaks = workingHours.filter(wh => wh.hasBreakTime).length;
-
-    return { totalDays, openDays, emergencyHours, withBreaks };
-  };
-
-  const stats = getSummaryStats();
-
-  // Access control check
   if (!hasAdminAccess) {
     return (
-      <Box sx={{ p: getResponsivePadding(isSmallMobile ? 'small' : 'medium') }}>
-        <Alert severity="error">
-          Access denied. Only clinic administrators can manage working hours.
-        </Alert>
+      <Box sx={{ p: 2 }}>
+        <Alert severity="error">Access denied. Only clinic administrators can manage opening hours.</Alert>
       </Box>
     );
   }
@@ -145,155 +100,126 @@ const WorkingHoursPage: React.FC<WorkingHoursPageProps> = ({ clinicId }) => {
   const header = (
     <PageHeader
       title="Opening hours"
-      description="The hours patients can book at your clinic, day by day."
-      actions={
-        <>
-          <Tooltip title="Refresh working hours">
-            <IconButton
-              onClick={handleRefresh}
-              disabled={refreshing}
-              color="primary"
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-
-          {!isMobile && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleAddWorkingHours}
-              sx={{ minWidth: 160 }}
-            >
-              Add hours
-            </Button>
-          )}
-        </>
-      }
+      description="The hours your clinic is open, day by day. They appear on your public clinic page."
     />
   );
 
-  // Loading state
-  if (loading) {
+  if (loading || !week) {
     return (
       <Box>
         {header}
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress aria-label="Loading opening hours" />
-        </Box>
+        {error
+          ? <Alert severity="error">{error}</Alert>
+          : (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress aria-label="Loading opening hours" />
+            </Box>
+          )}
       </Box>
     );
   }
 
+  const update = (dayOfWeek: number, change: Partial<OperatingHours>) =>
+    setWeek((current) => current && { ...current, [dayOfWeek]: { ...current[dayOfWeek], ...change } });
+
+  const errors = WEEK.map((day) => dayError(week[day]));
+  const hasChanges = JSON.stringify(week) !== JSON.stringify(saved);
+
+  const handleSave = async () => {
+    if (!effectiveClinicId || errors.some(Boolean)) return;
+    setSaving(true);
+    setError('');
+    try {
+      const operatingHours = WEEK.map((day) => week[day]);
+      const updated = await api.clinic.updateClinic(effectiveClinicId, { operatingHours });
+      const next = toWeek(updated?.operatingHours ?? operatingHours);
+      setSaved(next);
+      setWeek(next);
+      window.dispatchEvent(new CustomEvent('show-snackbar', {
+        detail: { message: 'Opening hours saved', severity: 'success' },
+      }));
+    } catch (err) {
+      setError((err as Error).message || "Opening hours weren't saved. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Box>
       {header}
-
-      {/* Error Alert */}
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium') }}
-          onClose={() => setError('')}
-        >
-          {error}
-        </Alert>
-      )}
-
-      {/* Summary Statistics */}
-      <Card
-        sx={{
-          mb: getResponsiveMargin(isSmallMobile ? 'small' : 'medium'),
-        }}
-      >
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <BusinessIcon />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Summary
-            </Typography>
+      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+      <Card>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box component="ul" aria-label="Weekly opening hours" sx={{ listStyle: 'none', p: 0, m: 0 }}>
+            {WEEK.map((day, index) => {
+              const entry = week[day];
+              const name = DAY_NAMES[day];
+              return (
+                <Box
+                  component="li"
+                  key={day}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr 1fr', sm: '140px 140px 1fr 1fr' },
+                    gap: 2,
+                    alignItems: 'center',
+                    py: 1.5,
+                    borderTop: index ? 1 : 0,
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 600 }}>{name}</Typography>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={entry.isOpen}
+                        onChange={(event) => update(day, { isOpen: event.target.checked })}
+                        disabled={saving}
+                        slotProps={{ input: { 'aria-label': `Open on ${name}` } }}
+                      />
+                    }
+                    label={entry.isOpen ? 'Open' : 'Closed'}
+                  />
+                  <TextField
+                    type="time"
+                    size="small"
+                    label="Opens"
+                    value={entry.openTime}
+                    onChange={(event) => update(day, { openTime: event.target.value })}
+                    disabled={!entry.isOpen || saving}
+                    slotProps={{ inputLabel: { shrink: true }, htmlInput: { 'aria-label': `${name} opens`, step: 300 } }}
+                  />
+                  <TextField
+                    type="time"
+                    size="small"
+                    label="Closes"
+                    value={entry.closeTime}
+                    onChange={(event) => update(day, { closeTime: event.target.value })}
+                    disabled={!entry.isOpen || saving}
+                    error={Boolean(errors[index])}
+                    helperText={errors[index]}
+                    slotProps={{ inputLabel: { shrink: true }, htmlInput: { 'aria-label': `${name} closes`, step: 300 } }}
+                  />
+                </Box>
+              );
+            })}
           </Box>
-
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.totalDays}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Schedules
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.openDays}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Open days
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.emergencyHours}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Emergency hours
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.withBreaks}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  With breaks
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+            <Button variant="outlined" onClick={() => setWeek(saved)} disabled={saving || !hasChanges}>
+              Discard changes
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={saving || !hasChanges || errors.some(Boolean)}
+              startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+            >
+              {saving ? 'Saving…' : 'Save opening hours'}
+            </Button>
+          </Box>
         </CardContent>
       </Card>
-
-      {/* Weekly Schedule View */}
-      <WeeklyScheduleView
-        workingHours={workingHours}
-        onEditWorkingHours={handleEditWorkingHours}
-        loading={refreshing}
-      />
-
-      {/* Mobile FAB for Add Working Hours */}
-      {isMobile && (
-        <Fab
-          color="primary"
-          aria-label="add working hours"
-          onClick={handleAddWorkingHours}
-          sx={{
-            position: 'fixed',
-            bottom: 16,
-            right: 16,
-            zIndex: 1000
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      )}
-
-      {/* Working Hours Form Dialog */}
-      <WorkingHoursForm
-        open={openForm}
-        workingHours={selectedWorkingHours}
-        clinicId={effectiveClinicId!}
-        onClose={() => {
-          setOpenForm(false);
-          setSelectedWorkingHours(null);
-        }}
-        onSaved={handleWorkingHoursSaved}
-      />
     </Box>
   );
 };

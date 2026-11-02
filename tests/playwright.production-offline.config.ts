@@ -31,6 +31,8 @@ export default defineConfig({
       VITE_API_HOST: '',
       VITE_GOOGLE_CLIENT_ID: '',
       VITE_GOOGLE_MAPS_API_KEY: '',
+      // Clinic directory pages are built from a fixture instead of the API.
+      PUBLIC_CLINICS_FIXTURE: 'tests/fixtures/public-clinics.json',
     },
   },
 });

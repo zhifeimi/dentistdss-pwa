@@ -108,3 +108,83 @@ test('unknown paths render a noindex Not Found page', async ({ page }) => {
   await expect(page).toHaveTitle('Page Not Found | DentistDSS');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, follow');
 });
+
+test.describe('clinic directory (built from tests/fixtures/public-clinics.json)', () => {
+  const CLINIC = '/dentists/nsw/north-sydney/harbourside-dental-north-sydney';
+  const jsonLd = (html: string) =>
+    [...html.matchAll(/<script data-seo type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      .map(([, json]) => JSON.parse(json));
+
+  test('a clinic page ships its details and Dentist markup in the HTML', async ({ request }) => {
+    const html = await (await request.get(CLINIC)).text();
+    expect(html).toContain('>Harbourside Dental</h1>');
+    expect(html).toContain('Family dental clinic two minutes from North Sydney station');
+    expect(html).toContain(`<link data-seo rel="canonical" href="${SITE}${CLINIC}" />`);
+    expect(jsonLd(html).find((node) => node['@type'] === 'Dentist')).toMatchObject({
+      name: 'Harbourside Dental',
+      address: { addressLocality: 'North Sydney', addressRegion: 'NSW', postalCode: '2060' },
+    });
+    expect(html).toContain('id="dentistdss-directory-page"');
+  });
+
+  test('the suburb page is indexed and lists its clinics', async ({ request }) => {
+    // React separates interpolated text with <!-- --> markers.
+    const html = (await (await request.get('/dentists/nsw/north-sydney')).text()).replaceAll('<!-- -->', '');
+    expect(html).toContain('>Dentists in North Sydney, NSW</h1>');
+    expect(html).not.toContain('name="robots"');
+    for (const name of ['Berry Street Dental', 'Harbourside Dental', 'Miller Street Smiles']) expect(html).toContain(name);
+  });
+
+  test('a clinic without enough details stays out of search', async ({ request }) => {
+    const html = await (await request.get('/dentists/vic/fitzroy/fitzroy-dental-fitzroy')).text();
+    expect(html).toContain('<meta data-seo name="robots" content="noindex, follow" />');
+  });
+
+  test('a retired clinic URL redirects to the current page', async ({ page }) => {
+    await page.goto('/dentists/nsw/north-sydney/harbourside-dental');
+    await expect(page).toHaveURL(new RegExp(`${CLINIC}$`));
+    await expect(page.getByRole('heading', { level: 1, name: 'Harbourside Dental' })).toBeVisible();
+  });
+
+  test('the sitemap lists indexable directory pages only', async ({ request }) => {
+    const xml = await (await request.get('/sitemap.xml')).text();
+    expect(xml).toContain(`<loc>${SITE}${CLINIC}</loc>`);
+    expect(xml).toContain(`<loc>${SITE}/dentists/nsw/north-sydney</loc>`);
+    expect(xml).not.toContain('/dentists/vic');
+  });
+
+  test('moves between directory pages in the app', async ({ page }) => {
+    await page.goto('/dentists/nsw/north-sydney');
+    await page.getByRole('link', { name: /Miller Street Smiles/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Miller Street Smiles' })).toBeVisible();
+    await expect(page).toHaveTitle(/Miller Street Smiles – Dentist in North Sydney NSW/);
+    await expect(page.getByRole('link', { name: 'Book online' }))
+      .toHaveAttribute('href', '/appointments?book=miller-street-smiles-north-sydney');
+  });
+
+  test('Find a clinic links a search result to its clinic page', async ({ page }) => {
+    await page.route('**/api/clinic/search', (route) => route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        message: null,
+        dataObject: [{
+          id: 11,
+          name: 'Harbourside Dental',
+          address: '12 Miller Street',
+          city: 'North Sydney',
+          state: 'NSW',
+          zipCode: '2060',
+          country: 'Australia',
+          phoneNumber: '+61 2 9000 0001',
+          email: 'hello@harbourside.example',
+          isActive: true,
+          slug: 'harbourside-dental-north-sydney',
+          listedPublicly: true,
+        }],
+      }),
+    }));
+    await page.goto('/find-a-clinic?q=north%20sydney');
+    await expect(page.getByRole('link', { name: 'Clinic page' })).toHaveAttribute('href', CLINIC);
+  });
+});

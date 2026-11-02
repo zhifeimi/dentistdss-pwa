@@ -5,7 +5,7 @@ test('a failed clinic search says so and can be retried', async ({ page }) => {
   await page.route('**/api/auth/refresh', (route) =>
     route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ success: false, message: 'Authentication required' }) }));
   let searchUp = false;
-  await page.route('**/api/clinic-admin/clinics/search', (route) =>
+  await page.route('**/api/clinic/search', (route) =>
     searchUp
       ? route.fulfill({
         status: 200,
