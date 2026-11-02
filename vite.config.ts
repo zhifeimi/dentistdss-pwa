@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 import { loadEnv, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { shellSeoHtml } from './src/seo/build.ts';
-import { STATIC_PAGES } from './src/seo/pages.ts';
+import { PUBLIC_PAGES } from './src/seo/pages.ts';
 import { prerenderSite } from './src/seo/prerender.ts';
 import { normalizeSiteUrl } from './src/seo/site.ts';
 
@@ -89,7 +89,7 @@ export default defineConfig(({ mode }) => {
             outDir: resolve(root, client.config.build.outDir),
             ssrEntry: resolve(ssrOutDir, 'entry-server.js'),
             siteUrl,
-            pages: STATIC_PAGES,
+            pages: PUBLIC_PAGES,
           });
           builder.config.logger.info(`Prerendered ${pages.length} pages, 404.html and sitemap.xml`);
         } finally {

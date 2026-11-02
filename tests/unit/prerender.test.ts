@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { shellSeoHtml } from '../../src/seo/build';
-import { findStaticPage, NOT_FOUND_PAGE } from '../../src/seo/pages';
+import { findPage, NOT_FOUND_PAGE } from '../../src/seo/pages';
 import { buildPageHtml, findPrerenderProblems, type RenderResult } from '../../src/seo/prerender';
 import { DEFAULT_SITE_URL } from '../../src/seo/site';
 
@@ -16,8 +16,8 @@ const SHELL = `<!DOCTYPE html>
   </body>
 </html>`;
 
-const learn = findStaticPage('/learn')!;
-const login = findStaticPage('/login')!;
+const learn = findPage('/learn')!;
+const login = findPage('/login')!;
 const result = (h1: string): RenderResult => ({
   html: `<main><h1>${h1}</h1><p>Plain-language guides.</p></main>`,
   styles: '<style data-emotion="css abc">.css-abc{color:red}</style>',
@@ -49,7 +49,7 @@ describe('prerendered page HTML', () => {
 });
 
 describe('prerender SEO checks', () => {
-  const page = (path: string, h1: string, seo = findStaticPage(path)!) => ({
+  const page = (path: string, h1: string, seo = findPage(path)!) => ({
     path,
     index: seo.index,
     html: buildPageHtml(SHELL, result(h1), seo, DEFAULT_SITE_URL),

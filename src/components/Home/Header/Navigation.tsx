@@ -9,13 +9,15 @@ export const Navigation: React.FC = () => {
   return (
     <Box component="nav" aria-label="Main" sx={{ display: 'flex', gap: 0.5 }}>
       {NAVIGATION_ITEMS.map((item) => {
-        const active = item.path === pathname;
+        // A section stays highlighted on its sub-pages (/learn/<guide>, /for-clinics/<feature>).
+        const current = item.path === pathname;
+        const active = current || pathname.startsWith(`${item.path}/`);
         return (
           <Button
             key={item.path}
             component={RouterLink}
             to={item.path}
-            aria-current={active ? 'page' : undefined}
+            aria-current={current ? 'page' : active ? 'true' : undefined}
             sx={{
               color: active ? 'text.primary' : 'text.secondary',
               fontWeight: active ? 650 : 550,

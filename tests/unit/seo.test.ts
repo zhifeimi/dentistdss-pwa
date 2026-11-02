@@ -3,7 +3,16 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { replaceSeoTags, shellSeoHtml } from '../../src/seo/build';
 import { breadcrumbJsonLd, serializeJsonLd } from '../../src/seo/jsonld';
-import { findStaticPage, indexablePages, NOT_FOUND_PAGE, STATIC_PAGES } from '../../src/seo/pages';
+import { ARTICLES } from '../../src/content/articles';
+import { CLINIC_FEATURES } from '../../src/content/forClinics';
+import {
+  ARTICLE_PAGES,
+  findPage,
+  FOR_CLINICS_PAGES,
+  indexablePages,
+  NOT_FOUND_PAGE,
+  PUBLIC_PAGES,
+} from '../../src/seo/pages';
 import { DEFAULT_SITE_URL, normalizePath, normalizeSiteUrl, SITE_URL } from '../../src/seo/site';
 import { buildSitemapXml } from '../../src/seo/sitemap';
 import { buildSeoTags, renderSeoTagsToHtml } from '../../src/seo/tags';
@@ -13,9 +22,9 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8'
 const pathsIn = (source: string, pattern: RegExp) =>
   [...source.matchAll(pattern)].map((match) => match[1]);
 
-/** Top-level routes declared in src/routes/index.tsx. */
+/** Top-level routes declared in src/routes/index.tsx (without :params or wildcards). */
 const ROUTE_PATHS = pathsIn(read('src/routes/index.tsx'), /path="([^"]+)"/g)
-  .filter((path) => path !== '*' && !path.includes('*'));
+  .filter((path) => !path.includes('*') && !path.includes(':'));
 
 /** Signed-in routes: role routes plus DashboardLayout's standalone routes. */
 const APP_ROUTE_PATHS = [
@@ -28,21 +37,29 @@ const vercel = JSON.parse(read('vercel.json')) as {
   headers: { source: string; headers: { key: string; value: string }[] }[];
   redirects: { has?: { type: string; value: string }[]; destination: string }[];
 };
-// Our sources only use literal paths and plain regex groups, which read the
-// same as path-to-regexp patterns.
-const matches = (source: string, path: string) => new RegExp(`^${source}$`).test(path);
+// Our sources use literal paths, plain regex groups and single-segment
+// :params; this reads them the way path-to-regexp does.
+const sourcePattern = (source: string) =>
+  new RegExp(`^${source.replace(/:(\w+)/g, '(?<$1>[^/]+)')}$`);
+const matches = (source: string, path: string) => sourcePattern(source).test(path);
 const isRewritten = (path: string) => vercel.rewrites.some(({ source }) => matches(source, path));
+/** Where vercel.json sends a path, with :params filled in. */
+const rewriteFor = (path: string) => {
+  const rule = vercel.rewrites.find(({ source }) => matches(source, path));
+  const params = rule && sourcePattern(rule.source).exec(path)?.groups;
+  return rule?.destination.replace(/:(\w+)/g, (_, name: string) => params?.[name] ?? '');
+};
 
 describe('SEO registry', () => {
   it('has an entry for every public route', () => {
     expect(ROUTE_PATHS.length).toBeGreaterThan(10);
     for (const path of ROUTE_PATHS) {
-      expect(findStaticPage(path), `missing SEO entry for ${path}`).toBeDefined();
+      expect(findPage(path), `missing SEO entry for ${path}`).toBeDefined();
     }
   });
 
   it('keeps titles and descriptions unique and within search snippet lengths', () => {
-    const pages = [...STATIC_PAGES, NOT_FOUND_PAGE];
+    const pages = [...PUBLIC_PAGES, NOT_FOUND_PAGE];
     expect(new Set(pages.map((page) => page.title)).size).toBe(pages.length);
     expect(new Set(pages.map((page) => page.description)).size).toBe(pages.length);
     for (const page of pages) {
@@ -56,24 +73,74 @@ describe('SEO registry', () => {
 
   it('indexes content pages and keeps account screens out of search', () => {
     for (const path of ['/', '/find-a-clinic', '/learn', '/quiz', '/book', '/privacy', '/terms']) {
-      expect(findStaticPage(path)?.index, path).toBe(true);
+      expect(findPage(path)?.index, path).toBe(true);
     }
     for (const path of ['/login', '/signup', '/signup/clinic-admin', '/signup/verify', '/pending-approval']) {
-      expect(findStaticPage(path)?.index, path).toBe(false);
+      expect(findPage(path)?.index, path).toBe(false);
     }
     expect(NOT_FOUND_PAGE.index).toBe(false);
   });
 
   it('looks pages up without query strings or trailing slashes', () => {
     expect(normalizePath('/find-a-clinic/?q=parramatta#map')).toBe('/find-a-clinic');
-    expect(findStaticPage('/find-a-clinic?q=parramatta')?.path).toBe('/find-a-clinic');
-    expect(findStaticPage('/')?.path).toBe('/');
-    expect(findStaticPage('/no-such-page')).toBeUndefined();
+    expect(findPage('/find-a-clinic?q=parramatta')?.path).toBe('/find-a-clinic');
+    expect(findPage('/')?.path).toBe('/');
+    expect(findPage('/no-such-page')).toBeUndefined();
+  });
+});
+
+describe('content pages', () => {
+  it('gives every article and clinic feature a page', () => {
+    expect(ARTICLE_PAGES.map(({ path }) => path)).toEqual(ARTICLES.map(({ slug }) => `/learn/${slug}`));
+    expect(FOR_CLINICS_PAGES.map(({ path }) => path)).toEqual([
+      '/for-clinics',
+      ...CLINIC_FEATURES.map(({ slug }) => `/for-clinics/${slug}`),
+    ]);
+    for (const page of [...ARTICLE_PAGES, ...FOR_CLINICS_PAGES]) expect(page.index, page.path).toBe(true);
+  });
+
+  it('keeps article bodies next to their metadata and drafts unpublished', () => {
+    for (const { slug } of ARTICLES) {
+      expect(read(`src/content/articles/${slug}.md`).trim().length, slug).toBeGreaterThan(300);
+    }
+    const sitemap = buildSitemapXml(PUBLIC_PAGES, DEFAULT_SITE_URL);
+    expect(sitemap).not.toContain('/drafts');
+    expect(PUBLIC_PAGES.some(({ path }) => path.includes('draft'))).toBe(false);
+  });
+
+  it('marks articles up as Article with dates, an image and breadcrumbs', () => {
+    const tags = buildSeoTags(findPage('/learn/gum-disease')!);
+    const nodes = tags.flatMap((tag) => tag.tag === 'script' ? [JSON.parse(tag.text)] : []);
+    const article = nodes.find((node) => node['@type'] === 'Article');
+    expect(article).toMatchObject({
+      headline: 'Understanding Gum Disease: Early Signs and Prevention',
+      datePublished: '2025-06-04',
+      dateModified: '2025-06-04',
+      image: ['https://dentist.zhifei.org/images/learn/gum-disease.webp'],
+      mainEntityOfPage: 'https://dentist.zhifei.org/learn/gum-disease',
+    });
+    expect(nodes.find((node) => node['@type'] === 'BreadcrumbList').itemListElement).toHaveLength(3);
+    expect(tags).toContainEqual({ tag: 'meta', attrs: { property: 'og:type', content: 'article' } });
+  });
+
+  it('dates the sitemap entries of articles', () => {
+    expect(buildSitemapXml(PUBLIC_PAGES, DEFAULT_SITE_URL)).toContain(
+      '<loc>https://dentist.zhifei.org/learn/gum-disease</loc><lastmod>2025-06-04</lastmod>',
+    );
+  });
+
+  it('describes the clinic product as a SoftwareApplication without invented offers', () => {
+    const tags = buildSeoTags(findPage('/for-clinics')!);
+    const app = tags.flatMap((tag) => tag.tag === 'script' ? [JSON.parse(tag.text)] : [])
+      .find((node) => node['@type'] === 'SoftwareApplication');
+    expect(app).toMatchObject({ name: 'DentistDSS', applicationCategory: 'BusinessApplication' });
+    expect(app).not.toHaveProperty('offers');
+    expect(app).not.toHaveProperty('aggregateRating');
   });
 });
 
 describe('SEO tags', () => {
-  const tagsFor = (path: string) => buildSeoTags(findStaticPage(path)!);
+  const tagsFor = (path: string) => buildSeoTags(findPage(path)!);
   const canonicalOf = (path: string) =>
     tagsFor(path).find((tag) => tag.tag === 'link' && tag.attrs.rel === 'canonical');
 
@@ -124,7 +191,7 @@ describe('SEO tags', () => {
 
 describe('build output helpers', () => {
   it('lists only indexable pages in the sitemap', () => {
-    const xml = buildSitemapXml(STATIC_PAGES, DEFAULT_SITE_URL);
+    const xml = buildSitemapXml(PUBLIC_PAGES, DEFAULT_SITE_URL);
     const locs = pathsIn(xml, /<loc>([^<]+)<\/loc>/g);
     expect(locs).toEqual(indexablePages().map((page) => `${DEFAULT_SITE_URL}${page.path}`));
     expect(xml).not.toContain('/login');
@@ -173,21 +240,16 @@ describe('crawl rules', () => {
   it('serves each public page from its prerendered file', () => {
     // Explicit rewrites: they work whether or not the host resolves
     // /learn to learn/index.html by itself.
-    for (const page of STATIC_PAGES.filter(({ path }) => path !== '/')) {
-      expect(vercel.rewrites, page.path).toContainEqual({
-        source: page.path,
-        destination: `${page.path}/index.html`,
-      });
+    for (const page of PUBLIC_PAGES.filter(({ path }) => path !== '/')) {
+      expect(rewriteFor(page.path), page.path).toBe(`${page.path}/index.html`);
     }
   });
 
   it('serves signed-in app paths from the app shell, and nothing else', () => {
-    const rewriteFor = (path: string) =>
-      vercel.rewrites.find(({ source }) => matches(source, path))?.destination;
     for (const path of dictionary.locations.app) expect(rewriteFor(path), path).toBe('/app-shell.html');
     expect(rewriteFor('/appointments/123')).toBe('/app-shell.html');
     // Unknown paths fall through to build/404.html with an HTTP 404 status.
-    for (const path of ['/no-such-page', '/learnx', '/wp-admin', '/sitemap.xml']) {
+    for (const path of ['/no-such-page', '/learnx', '/wp-admin', '/sitemap.xml', '/learn/a/b']) {
       expect(isRewritten(path), path).toBe(false);
     }
   });

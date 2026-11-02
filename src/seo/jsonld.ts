@@ -63,3 +63,66 @@ export function breadcrumbJsonLd(items: BreadcrumbItem[]): JsonLd {
 export function serializeJsonLd(node: JsonLd): string {
   return JSON.stringify(node).replace(/</g, '\\u003c');
 }
+
+export interface ArticleJsonLdInput {
+  path: string;
+  headline: string;
+  description: string;
+  image: string;
+  datePublished: string;
+  dateModified: string;
+  reviewer?: { name: string; credentials: string; url?: string };
+}
+
+/**
+ * Article markup for a Learn guide. The organisation is the author until a
+ * named, qualified reviewer exists; then a WebPage node records the review.
+ */
+export function articleJsonLd(article: ArticleJsonLdInput): JsonLd[] {
+  const url = absoluteUrl(article.path);
+  const nodes: JsonLd[] = [{
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.headline,
+    description: article.description,
+    image: [absoluteUrl(article.image)],
+    datePublished: article.datePublished,
+    dateModified: article.dateModified,
+    inLanguage: SITE_LANGUAGE,
+    mainEntityOfPage: url,
+    author: { '@type': 'Organization', name: SITE_NAME, url: absoluteUrl('/') },
+    publisher: { '@id': organizationId() },
+  }];
+  if (article.reviewer) {
+    nodes.push({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': url,
+      url,
+      lastReviewed: article.dateModified,
+      reviewedBy: {
+        '@type': 'Person',
+        name: article.reviewer.name,
+        description: article.reviewer.credentials,
+        ...(article.reviewer.url ? { url: article.reviewer.url } : {}),
+      },
+    });
+  }
+  return nodes;
+}
+
+/** The product itself, for the clinic-facing landing page. No offers until pricing is public. */
+export function softwareApplicationJsonLd(path: string, description: string): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: SITE_NAME,
+    url: absoluteUrl(path),
+    description,
+    applicationCategory: 'BusinessApplication',
+    applicationSubCategory: 'Dental practice management',
+    operatingSystem: 'Web',
+    inLanguage: SITE_LANGUAGE,
+    publisher: { '@id': organizationId() },
+  };
+}

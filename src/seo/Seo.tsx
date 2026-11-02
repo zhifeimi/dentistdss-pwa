@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import { useLocation } from 'react-router';
-import { findStaticPage } from './pages.ts';
+import { findPage } from './pages.ts';
 import { buildSeoTags, type SeoProps } from './tags.ts';
 
 /**
@@ -49,12 +49,12 @@ export const Seo: React.FC<SeoProps> = (props) => {
 };
 
 /**
- * Metadata for static public routes, looked up from the registry by path.
- * Dynamic pages (and the 404 page) render their own <Seo> instead.
+ * Metadata for the current route, looked up from the registry by path. Paths
+ * with no entry (the Not Found page) render their own <Seo> instead.
  */
 export const RouteSeo: React.FC = () => {
   const { pathname } = useLocation();
-  const page = findStaticPage(pathname);
+  const page = findPage(pathname);
   return page ? <Seo {...page} /> : null;
 };
 

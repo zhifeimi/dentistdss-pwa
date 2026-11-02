@@ -15,8 +15,20 @@ const GROUPS: { title: string; links: { label: string; to: string }[] }[] = [
     ],
   },
   {
+    title: 'Guides',
+    links: [
+      { label: 'Gum disease', to: '/learn/gum-disease' },
+      { label: 'Tooth cavities', to: '/learn/cavities' },
+      { label: 'Wisdom teeth', to: '/learn/wisdom-teeth' },
+      { label: 'Sensitive teeth', to: '/learn/tooth-sensitivity' },
+    ],
+  },
+  {
     title: 'Clinics',
     links: [
+      { label: 'DentistDSS for clinics', to: '/for-clinics' },
+      { label: 'Online booking', to: '/for-clinics/online-booking' },
+      { label: 'AI receptionist', to: '/for-clinics/ai-receptionist' },
       { label: 'Register your clinic', to: '/signup/clinic-admin' },
       { label: "Join your clinic's team", to: '/signup/clinic-staff' },
       { label: 'Log in', to: '/login' },
@@ -41,7 +53,7 @@ const Footer: React.FC = () => {
     >
       <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
         <Grid container spacing={{ xs: 4, md: 6 }}>
-          <Grid size={{ xs: 12, md: 5 }}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Wordmark size={28} />
             <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary', maxWidth: '38ch' }}>
               Online booking, patient records and an AI assistant for dental clinics and the people

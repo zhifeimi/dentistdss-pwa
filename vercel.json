@@ -39,6 +39,18 @@
       "destination": "/learn/index.html"
     },
     {
+      "source": "/learn/:slug",
+      "destination": "/learn/:slug/index.html"
+    },
+    {
+      "source": "/for-clinics",
+      "destination": "/for-clinics/index.html"
+    },
+    {
+      "source": "/for-clinics/:feature",
+      "destination": "/for-clinics/:feature/index.html"
+    },
+    {
       "source": "/quiz",
       "destination": "/quiz/index.html"
     },

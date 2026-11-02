@@ -76,11 +76,11 @@ const ForClinics: React.FC = () => {
               </Button>
               <Button
                 component={RouterLink}
-                to="/signup/clinic-staff"
+                to="/for-clinics"
                 size="large"
                 sx={{ color: onBand, '&:hover': { bgcolor: 'rgba(236, 245, 242, 0.08)' } }}
               >
-                Join your clinic's team
+                See how it works
               </Button>
             </Box>
           </Grid>

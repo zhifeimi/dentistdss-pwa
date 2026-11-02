@@ -1,7 +1,7 @@
 /**
  * Build-time SEO helpers, imported by vite.config.ts (not by the app bundle).
  */
-import { findStaticPage } from './pages.ts';
+import { findPage } from './pages.ts';
 import { buildSeoTags, renderSeoTagsToHtml, type SeoTag } from './tags.ts';
 
 const isPageSpecific = (tag: SeoTag) =>
@@ -15,7 +15,7 @@ const isPageSpecific = (tag: SeoTag) =>
  * canonical here would point every shell-served path at "/".
  */
 export function shellSeoHtml(siteUrl: string): string {
-  const home = findStaticPage('/');
+  const home = findPage('/');
   if (!home) throw new Error('SEO registry has no entry for "/"');
   return renderSeoTagsToHtml(buildSeoTags(home, siteUrl).filter((tag) => !isPageSpecific(tag)));
 }

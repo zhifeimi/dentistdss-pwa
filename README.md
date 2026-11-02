@@ -110,6 +110,7 @@ src/
   hooks/             # data and UI hooks (appointments, schedule, chat, maps)
   services/          # Axios API clients, session, chatbot SSE transport
   seo/               # SEO registry, <Seo> tags, JSON-LD, sitemap and build helpers
+  content/           # Learn articles (metadata + Markdown, drafts) and For clinics copy
   utils/             # dictionary, dashboard role config, date helpers
 public/              # service worker, manifest, icons
 scripts/             # deno-tool.ts wrapper and Vercel Deno installer
@@ -121,7 +122,7 @@ tests/               # unit, integration, components, utils (Vitest); e2e (Playw
 Routing is split across several registries. Check every one that applies, or the page may render in the wrong shell, be missing from navigation, or return HTTP 404 on a fresh load:
 
 - `src/routes/index.tsx` — public and top-level routes.
-- `src/seo/pages.ts` — title, description, canonical, robots rule and structured data for each public route; indexable pages also go into the sitemap.
+- `src/seo/pages.ts` — title, description, canonical, robots rule and structured data for each public route; indexable pages also go into the sitemap. Learn articles and the For clinics pages are generated from `src/content/` (see [docs/seo/article-review.md](docs/seo/article-review.md) for adding or publishing an article).
 - `src/utils/dictionary.ts` — `locations.app` lists the signed-in paths that `AppShell` renders in the dashboard shell. Every other path renders in the public shell, and unknown paths get the Not Found page.
 - `src/utils/dashboard/roleConfig.tsx` — role-specific dashboard navigation, routes, and lazy-loaded components.
 - `vercel.json` — `rewrites` serve the app shell for SPA routes. Any other path gets `build/404.html` with HTTP 404, so new routes must be listed. Signed-in paths also get an `X-Robots-Tag: noindex` header.

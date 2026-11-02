@@ -102,7 +102,8 @@ for (const legalPage of legalPages) {
         await cache.delete('/privacy');
         await cache.delete('/terms');
       }));
-      return (await caches.match('/index.html')) !== undefined;
+      // Pages are cached per path; with those gone, offline falls back to the shell.
+      return (await caches.match('/app-shell.html')) !== undefined;
     });
     expect(hasAppShell).toBe(true);
 

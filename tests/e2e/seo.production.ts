@@ -9,6 +9,9 @@ const pages = [
   { path: '/', h1: 'Find a dentist and book a time that suits you', indexable: true },
   { path: '/find-a-clinic', h1: 'Find a clinic', indexable: true },
   { path: '/learn', h1: 'Learn about oral health', indexable: true },
+  { path: '/learn/gum-disease', h1: 'Understanding Gum Disease: Early Signs and Prevention', indexable: true },
+  { path: '/for-clinics', h1: 'Dental practice software for your whole front desk', indexable: true },
+  { path: '/for-clinics/online-booking', h1: 'Online booking for dental clinics', indexable: true },
   { path: '/privacy', h1: 'DentistDSS Privacy Policy', indexable: true },
   { path: '/login', h1: 'Log in', indexable: false },
 ] as const;
@@ -42,10 +45,40 @@ test('the home page describes the site and organisation in JSON-LD', async ({ re
   expect(types).toEqual(['Organization', 'WebSite']);
 });
 
+test('an article ships its full text and Article markup in the HTML', async ({ request }) => {
+  const html = await (await request.get('/learn/gum-disease')).text();
+  expect(html).toContain('Gum disease, or periodontal disease, is one of the most common oral health problems');
+  const nodes = [...html.matchAll(/<script data-seo type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+    .map(([, json]) => JSON.parse(json));
+  expect(nodes.find((node) => node['@type'] === 'Article')).toMatchObject({
+    headline: 'Understanding Gum Disease: Early Signs and Prevention',
+    datePublished: '2025-06-04',
+  });
+  expect(html).toContain('<meta data-seo property="og:type" content="article" />');
+});
+
+test('the Learn hub links each guide to its own page', async ({ page }) => {
+  await page.goto('/learn');
+  const card = page.getByRole('link', { name: /Understanding Gum Disease/ });
+  await expect(card).toHaveAttribute('href', '/learn/gum-disease');
+  await card.click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Understanding Gum Disease: Early Signs and Prevention' }))
+    .toBeVisible();
+  await expect(page).toHaveTitle('Gum Disease: Early Signs, Causes & Prevention | DentistDSS');
+});
+
+test('an unknown guide renders the Not Found page', async ({ page }) => {
+  await page.goto('/learn/no-such-guide');
+  await expect(page.getByRole('heading', { level: 1, name: "We can't find that page" })).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, follow');
+});
+
 test('the sitemap lists only indexable pages on the canonical domain', async ({ request }) => {
   const xml = await (await request.get('/sitemap.xml')).text();
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, loc]) => loc);
   expect(locs).toContain(`${SITE}/learn`);
+  expect(locs).toContain(`${SITE}/learn/gum-disease`);
+  expect(locs).toContain(`${SITE}/for-clinics/ai-receptionist`);
   expect(locs).not.toContain(`${SITE}/login`);
   expect(locs.every((loc) => loc.startsWith(`${SITE}/`))).toBe(true);
 });

@@ -1,11 +1,26 @@
-import { breadcrumbJsonLd, type JsonLd, organizationJsonLd, websiteJsonLd } from './jsonld.ts';
+import { ARTICLES, articlePath } from '../content/articles/index.ts';
+import {
+  CLINIC_FEATURES,
+  featurePath,
+  FOR_CLINICS_HUB,
+  FOR_CLINICS_PATH,
+} from '../content/forClinics.ts';
+import {
+  articleJsonLd,
+  breadcrumbJsonLd,
+  type JsonLd,
+  organizationJsonLd,
+  softwareApplicationJsonLd,
+  websiteJsonLd,
+} from './jsonld.ts';
 import { normalizePath } from './site.ts';
 
 /**
  * SEO metadata for one public URL. This registry is the single source of truth
  * for titles, descriptions, canonical URLs, robots rules, structured data and
  * the sitemap. Every public route in src/routes/index.tsx needs an entry here
- * (tests/unit/seo.test.ts enforces it).
+ * (tests/unit/seo.test.ts enforces it). Article and For clinics entries are
+ * generated from src/content.
  *
  * Copy rules: en-AU wording, titles ~30–60 characters with the brand last,
  * descriptions ~70–160 characters, every title and description unique.
@@ -26,6 +41,9 @@ export interface PageSeo {
 }
 
 const home = { name: 'Home', path: '/' };
+const learn = { name: 'Learn', path: '/learn' };
+const forClinics = { name: 'For clinics', path: FOR_CLINICS_PATH };
+const brand = (title: string) => `${title} | DentistDSS`;
 
 export const STATIC_PAGES: readonly PageSeo[] = [
   {
@@ -134,14 +152,65 @@ export const NOT_FOUND_PAGE: PageSeo = {
   index: false,
 };
 
-const pagesByPath = new Map(STATIC_PAGES.map((page) => [page.path, page]));
+/** /for-clinics and its feature pages. */
+export const FOR_CLINICS_PAGES: readonly PageSeo[] = [
+  {
+    path: FOR_CLINICS_PATH,
+    title: brand(FOR_CLINICS_HUB.seoTitle),
+    description: FOR_CLINICS_HUB.description,
+    index: true,
+    jsonLd: [
+      softwareApplicationJsonLd(FOR_CLINICS_PATH, FOR_CLINICS_HUB.description),
+      breadcrumbJsonLd([home, forClinics]),
+    ],
+  },
+  ...CLINIC_FEATURES.map((feature): PageSeo => ({
+    path: featurePath(feature),
+    title: brand(feature.seoTitle),
+    description: feature.description,
+    index: true,
+    jsonLd: [breadcrumbJsonLd([home, forClinics, { name: feature.name, path: featurePath(feature) }])],
+  })),
+];
 
-/** Registry entry for a static public path, ignoring query, hash and trailing slash. */
-export function findStaticPage(pathname: string): PageSeo | undefined {
+/** One page per published Learn article (drafts are not in ARTICLES). */
+export const ARTICLE_PAGES: readonly PageSeo[] = ARTICLES.map((article): PageSeo => {
+  const path = articlePath(article);
+  return {
+    path,
+    title: brand(article.seoTitle),
+    description: article.description,
+    index: true,
+    ogType: 'article',
+    ogImage: article.image.src,
+    ogImageAlt: article.image.alt,
+    lastModified: article.dateModified,
+    jsonLd: [
+      ...articleJsonLd({
+        path,
+        headline: article.title,
+        description: article.description,
+        image: article.image.src,
+        datePublished: article.datePublished,
+        dateModified: article.dateModified,
+        reviewer: article.reviewer,
+      }),
+      breadcrumbJsonLd([home, learn, { name: article.title, path }]),
+    ],
+  };
+});
+
+/** Every public page: what the prerender writes and the sitemap lists (if indexable). */
+export const PUBLIC_PAGES: readonly PageSeo[] = [...STATIC_PAGES, ...FOR_CLINICS_PAGES, ...ARTICLE_PAGES];
+
+const pagesByPath = new Map(PUBLIC_PAGES.map((page) => [page.path, page]));
+
+/** Registry entry for a public path, ignoring query, hash and trailing slash. */
+export function findPage(pathname: string): PageSeo | undefined {
   return pagesByPath.get(normalizePath(pathname));
 }
 
 /** Pages that belong in the sitemap. */
-export function indexablePages(pages: readonly PageSeo[] = STATIC_PAGES): PageSeo[] {
+export function indexablePages(pages: readonly PageSeo[] = PUBLIC_PAGES): PageSeo[] {
   return pages.filter((page) => page.index);
 }
