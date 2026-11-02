@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { notFoundSeoHtml, replaceSeoTags, shellSeoHtml } from '../../src/seo/build';
+import { replaceSeoTags, shellSeoHtml } from '../../src/seo/build';
 import { breadcrumbJsonLd, serializeJsonLd } from '../../src/seo/jsonld';
 import { findStaticPage, indexablePages, NOT_FOUND_PAGE, STATIC_PAGES } from '../../src/seo/pages';
 import { DEFAULT_SITE_URL, normalizePath, normalizeSiteUrl, SITE_URL } from '../../src/seo/site';
 import { buildSitemapXml } from '../../src/seo/sitemap';
-import { buildSeoTags } from '../../src/seo/tags';
+import { buildSeoTags, renderSeoTagsToHtml } from '../../src/seo/tags';
 import dictionary, { isAppPath } from '../../src/utils/dictionary';
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -142,7 +142,7 @@ describe('build output helpers', () => {
 
   it('swaps the shell tags for the 404 tags', () => {
     const shell = read('index.html').replace('<!--SEO_TAGS-->', shellSeoHtml(DEFAULT_SITE_URL));
-    const notFound = replaceSeoTags(shell, notFoundSeoHtml(DEFAULT_SITE_URL));
+    const notFound = replaceSeoTags(shell, renderSeoTagsToHtml(buildSeoTags(NOT_FOUND_PAGE)));
     expect(notFound.match(/<title/g)).toHaveLength(1);
     expect(notFound).toContain('<title data-seo>Page Not Found | DentistDSS</title>');
     expect(notFound).toContain('content="noindex, follow"');
@@ -170,10 +170,22 @@ describe('crawl rules', () => {
     expect(isAppPath('/settingsx')).toBe(false);
   });
 
-  it('rewrites every SPA route to the app shell, and nothing else', () => {
-    const shellRoutes = [...ROUTE_PATHS.filter((path) => path !== '/'), ...dictionary.locations.app];
-    for (const path of shellRoutes) expect(isRewritten(path), path).toBe(true);
-    expect(isRewritten('/appointments/123')).toBe(true);
+  it('serves each public page from its prerendered file', () => {
+    // Explicit rewrites: they work whether or not the host resolves
+    // /learn to learn/index.html by itself.
+    for (const page of STATIC_PAGES.filter(({ path }) => path !== '/')) {
+      expect(vercel.rewrites, page.path).toContainEqual({
+        source: page.path,
+        destination: `${page.path}/index.html`,
+      });
+    }
+  });
+
+  it('serves signed-in app paths from the app shell, and nothing else', () => {
+    const rewriteFor = (path: string) =>
+      vercel.rewrites.find(({ source }) => matches(source, path))?.destination;
+    for (const path of dictionary.locations.app) expect(rewriteFor(path), path).toBe('/app-shell.html');
+    expect(rewriteFor('/appointments/123')).toBe('/app-shell.html');
     // Unknown paths fall through to build/404.html with an HTTP 404 status.
     for (const path of ['/no-such-page', '/learnx', '/wp-admin', '/sitemap.xml']) {
       expect(isRewritten(path), path).toBe(false);

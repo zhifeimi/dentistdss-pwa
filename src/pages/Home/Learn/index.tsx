@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Typography,
@@ -10,7 +10,6 @@ import {
   Chip,
   useTheme,
   useMediaQuery,
-  Fade,
   Button,
   Dialog,
   DialogContent,
@@ -144,14 +143,12 @@ const allTags = ['Prevention', 'Treatment', 'Oral Care', 'Dental Procedures', 'H
  * - Comprehensive collection of dental health articles
  * - Topic-based filtering system
  * - Full-screen article reading experience
- * - Animated article loading
  * - Responsive design with dark mode support
  */
 const Learn: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-  const [visibleArticles, setVisibleArticles] = useState<number[]>([]);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
@@ -160,19 +157,6 @@ const Learn: React.FC = () => {
       article.tags.some(tag => activeFilters.includes(tag))
     )
     : articles;
-
-  useEffect(() => {
-    // Animate articles appearing one by one
-    const timer = setTimeout(() => {
-      articles.forEach((_, index) => {
-        setTimeout(() => {
-          setVisibleArticles(prev => [...prev, index]);
-        }, index * 200);
-      });
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleReadMore = (article: Article) => {
     setSelectedArticle(article);
@@ -339,51 +323,49 @@ const Learn: React.FC = () => {
         ) : (
           filteredArticles.map((article) => (
             <Grid size={{ xs: 12, md: 6, lg: 4 }} key={article.title}>
-              <Fade in={visibleArticles.includes(articles.indexOf(article))} timeout={500}>
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <CardMedia
-                    component="img"
-                    height="180"
-                    image={article.img}
-                    alt={article.title}
-                    loading="lazy"
-                    decoding="async"
-                    sx={{ objectFit: 'cover' }}
-                  />
-                  <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
-                    <Box sx={{ mb: 1.5 }}>
-                      {article.tags.map((tag) => (
-                        <Chip key={tag} label={tag} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }} />
-                      ))}
-                    </Box>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardMedia
+                  component="img"
+                  height="180"
+                  image={article.img}
+                  alt={article.title}
+                  loading="lazy"
+                  decoding="async"
+                  sx={{ objectFit: 'cover' }}
+                />
+                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
+                  <Box sx={{ mb: 1.5 }}>
+                    {article.tags.map((tag) => (
+                      <Chip key={tag} label={tag} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }} />
+                    ))}
+                  </Box>
 
-                    <Typography
-                      variant="h6"
-                      component="h2"
-                      gutterBottom
-                      sx={{ fontSize: '1.125rem', lineHeight: 1.3 }}
-                    >
-                      {article.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2, flexGrow: 1 }}
-                    >
-                      {article.content.split('.')[0] + '…'}
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleReadMore(article)}
-                      sx={{ alignSelf: 'flex-start' }}
-                      aria-label={`Read ${article.title}`}
-                    >
-                      Read article
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Fade>
+                  <Typography
+                    variant="h6"
+                    component="h2"
+                    gutterBottom
+                    sx={{ fontSize: '1.125rem', lineHeight: 1.3 }}
+                  >
+                    {article.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2, flexGrow: 1 }}
+                  >
+                    {article.content.split('.')[0] + '…'}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleReadMore(article)}
+                    sx={{ alignSelf: 'flex-start' }}
+                    aria-label={`Read ${article.title}`}
+                  >
+                    Read article
+                  </Button>
+                </CardContent>
+              </Card>
             </Grid>
           ))
         )}

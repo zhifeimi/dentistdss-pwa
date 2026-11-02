@@ -132,7 +132,9 @@ Routing is split across several registries. Check every one that applies, or the
 
 - **Canonical domain**: `https://dentist.zhifei.org`. `vercel.json` sends `dentist.mizhifei.press` and `dentistdss.vercel.app` there with a permanent redirect.
 - **Metadata**: `RouteSeo` (in the public layout) renders the registry entry for the current path, and React 19 hoists the tags into `<head>`. Dynamic pages render `<Seo>` themselves.
-- **Build output**: the Vite `dentistdss-seo` plugin writes default tags into `index.html` and generates `build/404.html` and `build/sitemap.xml` from the registry. `public/robots.txt` points crawlers at the sitemap.
+- **Prerendering**: `vite build` builds the browser bundle, then a server build of `src/entry-server.tsx`, then `src/seo/prerender.ts` renders every page in the registry to `build/<path>/index.html`, with its content, head tags and critical MUI CSS inline. Crawlers that don't run JavaScript, link previews and AI search tools read the real page. The browser still mounts with `createRoot`, replacing the static markup. The prerender also writes `build/app-shell.html` (the plain SPA shell for signed-in paths), `build/404.html` and `build/sitemap.xml`. The build fails if a page lacks a unique title, a canonical, exactly one `<h1>`, or valid JSON-LD.
+- **Build-time rendering rules**: code that runs during render (not in effects) must not need `window`, `document` or `localStorage`, and nothing imported at module scope may hold the process open. For example, the session `BroadcastChannel` is browser-only.
+- `public/robots.txt` points crawlers at the sitemap. `tests/e2e/seo.production.ts` checks the built HTML (`deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts playwright test --config tests/playwright.production-offline.config.ts`).
 
 ## How it talks to the backend
 
@@ -151,7 +153,7 @@ const response = await api.chatbot.send('help', prompt, {
 });
 ```
 
-- **Offline caching** — the service worker caches only same-origin navigations and static assets. API, auth, OAuth, and GenAI requests, and any request carrying an `Authorization` header, bypass the cache so authenticated or clinical data is never stored in the browser cache. Keep this behavior when changing `public/service-worker.js`.
+- **Offline caching** — the service worker caches only same-origin navigations (per path, falling back to `app-shell.html` offline) and static assets. API, auth, OAuth, and GenAI requests, and any request carrying an `Authorization` header, bypass the cache so authenticated or clinical data is never stored in the browser cache. Keep this behavior when changing `public/service-worker.js`.
 
 ## Dependency updates and security
 
@@ -172,7 +174,7 @@ Commit both the manifest change and the regenerated `deno.lock`. CI rejects stal
 
 ## Deployment
 
-Vercel creates Preview deployments for pull requests and feature branches; pushes to `main` deploy to production. `vercel.json` installs a pinned Deno 2.9.2 Linux binary after verifying its SHA-256 checksum, runs `deno task build`, serves `build/` with an SPA rewrite, and sets security headers.
+Vercel creates Preview deployments for pull requests and feature branches; pushes to `main` deploy to production. `vercel.json` installs a pinned Deno 2.9.2 Linux binary after verifying its SHA-256 checksum, runs `deno task build`, serves the prerendered pages from `build/` (signed-in paths get `app-shell.html`, unknown paths get `404.html` with HTTP 404), and sets security headers.
 
 Set `VITE_API_HOST=https://api.mizhifei.press` and `VITE_GOOGLE_CLIENT_ID` in the Vercel Production environment. Point Preview deployments at a separate staging API, or leave the host empty, so previews cannot reach production data. A new production origin must also be added to the backend CORS allowlist and to the Google OAuth client's Authorized JavaScript origins.
 

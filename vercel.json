@@ -31,64 +31,64 @@
   ],
   "rewrites": [
     {
-      "source": "/login",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/signup",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/signup/clinic-staff",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/signup/clinic-admin",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/verify-email-code",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/signup/verify",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/pending-approval",
-      "destination": "/index.html"
-    },
-    {
       "source": "/find-a-clinic",
-      "destination": "/index.html"
+      "destination": "/find-a-clinic/index.html"
     },
     {
       "source": "/learn",
-      "destination": "/index.html"
+      "destination": "/learn/index.html"
     },
     {
       "source": "/quiz",
-      "destination": "/index.html"
+      "destination": "/quiz/index.html"
     },
     {
       "source": "/book",
-      "destination": "/index.html"
+      "destination": "/book/index.html"
     },
     {
       "source": "/privacy",
-      "destination": "/index.html"
+      "destination": "/privacy/index.html"
     },
     {
       "source": "/terms",
-      "destination": "/index.html"
+      "destination": "/terms/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/login/index.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/signup/index.html"
+    },
+    {
+      "source": "/signup/clinic-staff",
+      "destination": "/signup/clinic-staff/index.html"
+    },
+    {
+      "source": "/signup/clinic-admin",
+      "destination": "/signup/clinic-admin/index.html"
+    },
+    {
+      "source": "/verify-email-code",
+      "destination": "/verify-email-code/index.html"
+    },
+    {
+      "source": "/signup/verify",
+      "destination": "/signup/verify/index.html"
+    },
+    {
+      "source": "/pending-approval",
+      "destination": "/pending-approval/index.html"
     },
     {
       "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)",
-      "destination": "/index.html"
+      "destination": "/app-shell.html"
     },
     {
       "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)/(.*)",
-      "destination": "/index.html"
+      "destination": "/app-shell.html"
     }
   ],
   "headers": [
@@ -124,6 +124,15 @@
     },
     {
       "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/app-shell.html",
       "headers": [
         {
           "key": "X-Robots-Tag",

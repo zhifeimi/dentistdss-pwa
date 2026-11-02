@@ -12,10 +12,18 @@ import theme from './context/theme';
 
 import AppRoutes from './routes';
 
-function App(): React.JSX.Element {
-  const { logout } = useAuth();
-  const { darkMode, toggleDarkMode } = useDarkMode();
+interface AppContentProps {
+  darkMode: boolean;
+  toggleDarkMode: () => void;
+  logout: () => void;
+}
 
+/**
+ * Everything inside the router. The browser wraps it in BrowserRouter (App
+ * below); the build-time prerender wraps it in StaticRouter
+ * (src/entry-server.tsx), so both render the same tree.
+ */
+export function AppContent({ darkMode, toggleDarkMode, logout }: AppContentProps): React.JSX.Element {
   const appTheme = useMemo(() => theme(darkMode ? 'dark' : 'light'), [darkMode]);
 
   // No global auth-loading gate here: public routes must paint immediately while
@@ -25,18 +33,27 @@ function App(): React.JSX.Element {
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <NotificationProvider>
-        <Router>
-          <AppShell
-            darkMode={darkMode}
-            toggleDarkMode={toggleDarkMode}
-            logout={logout}
-          >
-            <AppRoutes />
-          </AppShell>
-          <GlobalSnackbar />
-        </Router>
+        <AppShell
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
+          logout={logout}
+        >
+          <AppRoutes />
+        </AppShell>
+        <GlobalSnackbar />
       </NotificationProvider>
     </ThemeProvider>
+  );
+}
+
+function App(): React.JSX.Element {
+  const { logout } = useAuth();
+  const { darkMode, toggleDarkMode } = useDarkMode();
+
+  return (
+    <Router>
+      <AppContent darkMode={darkMode} toggleDarkMode={toggleDarkMode} logout={logout} />
+    </Router>
   );
 }
 

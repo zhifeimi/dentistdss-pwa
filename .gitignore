@@ -17,6 +17,7 @@ debug-dashboard.png
 
 # production
 /build
+/.ssr
 /certs
 .vercel
 

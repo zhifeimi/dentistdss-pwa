@@ -1,7 +1,7 @@
 /**
  * Build-time SEO helpers, imported by vite.config.ts (not by the app bundle).
  */
-import { findStaticPage, NOT_FOUND_PAGE } from './pages.ts';
+import { findStaticPage } from './pages.ts';
 import { buildSeoTags, renderSeoTagsToHtml, type SeoTag } from './tags.ts';
 
 const isPageSpecific = (tag: SeoTag) =>
@@ -18,11 +18,6 @@ export function shellSeoHtml(siteUrl: string): string {
   const home = findStaticPage('/');
   if (!home) throw new Error('SEO registry has no entry for "/"');
   return renderSeoTagsToHtml(buildSeoTags(home, siteUrl).filter((tag) => !isPageSpecific(tag)));
-}
-
-/** Head tags for the static 404 page Vercel serves for unknown paths. */
-export function notFoundSeoHtml(siteUrl: string): string {
-  return renderSeoTagsToHtml(buildSeoTags(NOT_FOUND_PAGE, siteUrl));
 }
 
 /** Swaps the shell's default SEO tags (data-seo) for another set. */

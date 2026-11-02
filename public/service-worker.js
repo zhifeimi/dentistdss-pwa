@@ -1,8 +1,10 @@
-const CACHE_NAME = 'dentistdss-pwa-v5';
+const CACHE_NAME = 'dentistdss-pwa-v6';
 const LOADED_ASSETS_CACHE_NAME = `${CACHE_NAME}-loaded-assets`;
 const CORE_ASSETS = [
   '/',
-  '/index.html',
+  // The SPA shell vercel.json serves for signed-in app paths. Public pages are
+  // prerendered, so "/" (index.html) is the home page, not a generic shell.
+  '/app-shell.html',
   '/offline.html',
   '/manifest.webmanifest',
   '/favicon.ico',
@@ -93,18 +95,21 @@ self.addEventListener('message', (event) => {
   event.waitUntil(cacheLoadedAssets(event.data.urls));
 });
 
+// Each page is its own prerendered document, so navigations are cached per
+// path (query and hash ignored). Offline, a page never visited falls back to
+// the app shell, which renders any route client-side.
 async function networkFirst(request) {
+  const pageKey = new URL(request.url).pathname;
   try {
     const response = await fetch(request);
     if (canCache(response)) {
       const cache = await caches.open(CACHE_NAME);
-      await cache.put('/index.html', response.clone());
+      await cache.put(pageKey, response.clone());
     }
     return response;
   } catch {
-    return (await caches.match('/index.html')) ??
-      (await caches.match(request)) ??
-      (await caches.match('/')) ??
+    return (await caches.match(pageKey)) ??
+      (await caches.match('/app-shell.html')) ??
       (await caches.match('/offline.html'));
   }
 }

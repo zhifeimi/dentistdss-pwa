@@ -6,7 +6,7 @@ const vite = 'deno run --frozen --node-modules-dir=auto --allow-read --allow-wri
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: 'privacy-policy.production.ts',
+  testMatch: ['privacy-policy.production.ts', 'seo.production.ts'],
   timeout: 60_000,
   workers: 1,
   reporter: 'line',
