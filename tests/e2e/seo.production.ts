@@ -76,6 +76,12 @@ test('an article ships its full text and Article markup in the HTML', async ({ r
     datePublished: '2025-06-04',
   });
   expect(html).toContain('<meta data-seo property="og:type" content="article" />');
+  // Emergency advice comes before the invitation to book or ask Dentabot.
+  const urgent = html.indexOf('When to get urgent help');
+  expect(urgent).toBeGreaterThan(-1);
+  expect(html).toContain('Call 000 for breathing difficulty');
+  expect(urgent).toBeLessThan(html.indexOf('Need to see a dentist?'));
+  expect(html).toContain('>Sources</h2>');
 });
 
 test('the Learn hub links each guide to its own page', async ({ page }) => {

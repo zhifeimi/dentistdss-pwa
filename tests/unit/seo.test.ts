@@ -117,7 +117,7 @@ describe('content pages', () => {
     expect(article).toMatchObject({
       headline: 'Understanding Gum Disease: Early Signs and Prevention',
       datePublished: '2025-06-04',
-      dateModified: '2025-06-04',
+      dateModified: '2026-11-03',
       image: ['https://dentist.zhifei.org/images/learn/gum-disease.webp'],
       mainEntityOfPage: 'https://dentist.zhifei.org/learn/gum-disease',
     });
@@ -127,8 +127,20 @@ describe('content pages', () => {
 
   it('dates the sitemap entries of articles', () => {
     expect(buildSitemapXml(PUBLIC_PAGES, DEFAULT_SITE_URL)).toContain(
-      '<loc>https://dentist.zhifei.org/learn/gum-disease</loc><lastmod>2025-06-04</lastmod>',
+      '<loc>https://dentist.zhifei.org/learn/gum-disease</loc><lastmod>2026-11-03</lastmod>',
     );
+  });
+
+  it('lists sources for every published article without claiming a review that has not happened', () => {
+    for (const article of ARTICLES) {
+      expect(article.references.length, article.slug).toBeGreaterThanOrEqual(2);
+      for (const { url, title, publisher } of article.references) {
+        expect(url, article.slug).toMatch(/^https:\/\//);
+        expect(title && publisher, article.slug).toBeTruthy();
+      }
+      // Set only after a registered dentist has reviewed the text (docs/seo/article-review.md).
+      expect(article.reviewer, article.slug).toBeUndefined();
+    }
   });
 
   it('describes the clinic product as a SoftwareApplication without invented offers', () => {
@@ -196,6 +208,22 @@ describe('SEO tags', () => {
     const scripts = tagsFor('/').filter((tag) => tag.tag === 'script');
     const types = scripts.map((tag) => JSON.parse(tag.tag === 'script' ? tag.text : '{}')['@type']);
     expect(types).toEqual(['Organization', 'WebSite']);
+  });
+
+  it('names Zhifei.org and its official profiles as the organisation behind DentistDSS', () => {
+    const organization = tagsFor('/')
+      .flatMap((tag) => tag.tag === 'script' ? [JSON.parse(tag.text)] : [])
+      .find((node) => node['@type'] === 'Organization');
+    expect(organization).toMatchObject({
+      name: 'DentistDSS',
+      url: 'https://dentist.zhifei.org/',
+      parentOrganization: {
+        '@type': 'Organization',
+        name: 'Zhifei.org',
+        url: 'https://zhifei.org',
+        sameAs: ['https://zhifeis.tech', 'https://www.linkedin.com/in/zhifeimi/', 'https://github.com/zhifeimi'],
+      },
+    });
   });
 
   it('escapes "<" so JSON-LD cannot close its script element', () => {

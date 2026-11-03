@@ -26,6 +26,15 @@ describe('Footer', () => {
     );
   });
 
+  it('credits Zhifei.org as the maker', () => {
+    renderFooter();
+
+    const footer = screen.getByRole('contentinfo');
+    expect(footer).toHaveTextContent(/DentistDSS by Zhifei\.org\. All rights reserved\./);
+    expect(within(footer).getByRole('link', { name: 'Zhifei.org' })).toHaveAttribute('href', 'https://zhifei.org');
+    expect(footer).not.toHaveTextContent('Zhifei Mi');
+  });
+
   it.each(['Privacy Policy', /Terms (?:and|&) Conditions/i])('scrolls to the top when opening %s', (name) => {
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
     renderFooter();

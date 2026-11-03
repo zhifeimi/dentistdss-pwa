@@ -28,7 +28,7 @@ Typical sensitivity is a quick, sharp twinge that stops soon after the trigger i
 - **Use a toothpaste for sensitive teeth.** Use it twice a day. It can take a few weeks to work. Some people also find it helps to smear a little on the sensitive spot.
 - **Brush gently** with a soft toothbrush and small circular movements, not a hard back-and-forth scrub.
 - **Limit acidic food and drinks**, and have them with meals rather than sipping through the day. Drink water afterwards.
-- **Don't brush straight after something acidic.** Wait a while so softened enamel isn't brushed away.
+- **Don't brush straight after something acidic.** Wait at least an hour so softened enamel isn't brushed away.
 - **Use fluoride toothpaste** to strengthen enamel.
 - **Ask about a mouthguard** if you grind your teeth at night.
 
@@ -44,7 +44,7 @@ Your dentist will first look for a cause such as decay, a cracked tooth, a leaki
 
 ## When to see a dentist
 
-Book a check-up if sensitivity lasts more than a few weeks, is getting worse, or is limited to one tooth. See a dentist promptly if the pain lingers after hot or cold things, throbs, wakes you at night, or comes with swelling or a bad taste, as these can be signs of decay or infection.
+Book a check-up if sensitivity lasts more than a few weeks, is getting worse, or is limited to one tooth. See a dentist promptly if the pain lingers after hot or cold things, hurts when you bite, throbs, wakes you at night, or comes with swelling or a bad taste, as these can be signs of decay, a crack or infection. Contact your dentist if sensitivity after dental treatment continues or gets worse.
 
 ## Sources
 

@@ -98,7 +98,8 @@ const Footer: React.FC = () => {
           variant="body2"
           sx={{ mt: { xs: 5, md: 7 }, pt: 3, borderTop: 1, borderColor: 'divider', color: 'text.secondary' }}
         >
-          © {new Date().getFullYear()} {config.app.name} by Zhifei Mi. All rights reserved.
+          © {new Date().getFullYear()} {config.app.name} by{' '}
+          <Link href="https://zhifei.org" color="inherit">Zhifei.org</Link>. All rights reserved.
         </Typography>
       </Container>
     </Box>

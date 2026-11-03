@@ -6,11 +6,17 @@ The seven guides under `/learn/<slug>` are health content, which search engines 
 
 | File | Status |
 | --- | --- |
-| `src/content/articles/<slug>.md` | **Published.** The original short text, moved unchanged from the old Learn page. |
+| `src/content/articles/<slug>.md` | **Published.** The original short text, revised on 3 November 2026 to follow the editorial review below. |
 | `src/content/articles/drafts/<slug>.md` | **Draft, not published.** Expanded versions (about 600–850 words) in Australian English, with sources. They are never routed, prerendered or listed in the sitemap. |
 | `src/content/articles/index.ts` | Metadata for every article: titles, description, tags, image, dates, reviewer and references. |
 
 The drafts were written for review. Do not publish them until a registered dentist has checked them.
+
+## Review history
+
+| Date | Review | What changed |
+| --- | --- | --- |
+| 2026-11-03 | [Editorial review](article-review-2026-11-03.md) against Australian and international guidance. **Not a clinical sign-off by a dentist.** | All seven published texts revised with the review's wording, with its sources listed on each page and `dateModified` set to 2026-11-03. Each article page now shows a "When to get urgent help" box (000, emergency care, urgent dental care) before the clinic search and Dentabot buttons. The drafts gained the points they were missing: implant risks and alternatives, a two-week check for mouth changes, pain on biting, waiting an hour to brush after acid, and asking why removal is advised. No `reviewer` is set, because no dentist has reviewed the articles yet. |
 
 ## Review checklist (for the reviewing dentist)
 

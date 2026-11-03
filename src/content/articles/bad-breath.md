@@ -1,5 +1,11 @@
-Bad breath, medically known as halitosis, is often caused by poor dental hygiene. When food particles remain in the mouth, bacteria break them down, producing sulfur compounds responsible for unpleasant odors.
+Bad breath, medically known as halitosis, usually starts in the mouth. When food particles stay in the mouth, bacteria break them down and produce sulfur compounds that cause unpleasant odours.
 
-Other causes include dry mouth, gum disease, cavities, and infections. Smoking and certain foods (like garlic or onions) can also contribute.
+Other causes include dry mouth, gum disease, tooth decay and infections. Smoking and certain foods, such as garlic or onions, can also contribute.
 
-To combat bad breath, maintain good oral hygiene by brushing your teeth and tongue twice a day, flossing, and using mouthwash. Stay hydrated and visit your dentist regularly to identify any underlying dental issues. Persistent bad breath should not be ignored — it may indicate more serious health problems.
+## What helps
+
+Brush twice a day with fluoride toothpaste, clean between your teeth every day, and gently clean your tongue. Drink water through the day, and chew sugar-free gum if your mouth feels dry. Mouthwash is an optional aid, best chosen with your dentist's advice; it does not replace cleaning or treating the cause.
+
+## When to see a dentist
+
+If bad breath persists despite regular cleaning, book a dental appointment. Most causes are in the mouth and can be treated. If your dentist cannot find a dental cause, see your GP to check for causes such as medicine-related dry mouth, sinus or throat problems, or reflux.

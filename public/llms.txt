@@ -2,7 +2,7 @@
 
 > DentistDSS helps people in Australia find a dentist and book online, with plain-language guides to oral health and Dentabot, a dental assistant that explains symptoms and when to see a dentist. Dental clinics use it for online booking, schedules, patient records and an AI receptionist.
 
-DentistDSS gives general information, not a diagnosis. For severe pain, swelling or bleeding that won't stop, people should contact a clinic or emergency service.
+DentistDSS gives general information, not a diagnosis. In Australia, call 000 for breathing difficulty, uncontrollable bleeding, or severe mouth or neck swelling that makes breathing or swallowing difficult. Severe or worsening dental pain, facial swelling or fever needs urgent dental care. Dentabot is not for emergencies.
 
 ## Find a dentist
 

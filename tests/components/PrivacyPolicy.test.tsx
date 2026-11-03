@@ -35,7 +35,8 @@ describe('Privacy policy', () => {
     const policy = renderPolicy();
 
     expect(screen.getByRole('heading', { level: 1, name: 'DentistDSS Privacy Policy' })).toBeVisible();
-    expect(policy).toHaveTextContent('Effective date: 2 November 2026');
+    expect(policy).toHaveTextContent('Effective date: 3 November 2026');
+    expect(policy).toHaveTextContent('This policy explains how Zhifei.org and the DentistDSS team');
     expect(policy).not.toHaveTextContent(/draft/i);
 
     const navigation = screen.getByRole('navigation', { name: 'Privacy policy sections' });

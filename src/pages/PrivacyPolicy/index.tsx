@@ -63,10 +63,10 @@ const PrivacyPolicy: React.FC = () => {
           DentistDSS Privacy Policy
         </Typography>
         <Typography component="p" color="text.secondary" sx={{ mb: 3 }}>
-          Effective date: 2 November 2026
+          Effective date: 3 November 2026
         </Typography>
         <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
-          This policy explains how Zhifei Mi and the DentistDSS team (&quot;DentistDSS&quot;,
+          This policy explains how Zhifei.org and the DentistDSS team (&quot;DentistDSS&quot;,
           &quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collect, use, store, and share
           information when you use the DentistDSS website and progressive web application. It also
           explains the choices available to you. DentistDSS provides dental education, AI-assisted
@@ -573,7 +573,7 @@ const PrivacyPolicy: React.FC = () => {
         <PolicySection id="contact" title="12. Contact us">
           <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
             For privacy questions or access, correction, export, or deletion requests, contact
-            Zhifei Mi / the DentistDSS team at{' '}
+            Zhifei.org / the DentistDSS team at{' '}
             <Link href="mailto:dentistdss@gmail.com">dentistdss@gmail.com</Link>. To help us protect
             your information, use the email address associated with your account where possible and
             do not email passwords, Google tokens, or unnecessary health records.

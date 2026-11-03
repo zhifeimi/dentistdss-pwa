@@ -17,7 +17,7 @@ Implants can replace:
 
 ## Implants compared with other options
 
-Missing teeth can also be replaced with a bridge that is attached to the teeth on either side, or with a removable denture. Each option suits different situations.
+Missing teeth can also be replaced with a bridge that is attached to the teeth on either side, or with a removable denture, and sometimes leaving the gap is reasonable. Each option suits different situations.
 
 - **Implants** don't rely on the neighbouring teeth, don't move when you eat or speak, and help preserve the jawbone where the tooth was lost. They take longer, involve surgery and usually cost more.
 - **Bridges** are fixed in place without surgery, but the teeth on either side are usually prepared to hold them.
@@ -43,6 +43,10 @@ Treatment usually happens over several months:
 2. **Placing the implant**, a minor surgical procedure, usually with local anaesthetic.
 3. **Healing**, while the bone grows around the implant. This can take a few months, and you may have a temporary tooth in the meantime.
 4. **Fitting the final tooth**, once the implant is secure.
+
+## Risks to discuss
+
+Implant surgery can cause infection, nerve injury, sinus problems or damage to nearby teeth. An implant may fail to join to the bone, and the implant or the teeth attached to it may later need repair or replacement. Ask about your personal risks, the total cost, the treatment timetable and the ongoing maintenance before deciding.
 
 ## Looking after your implants
 

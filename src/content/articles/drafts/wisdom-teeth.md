@@ -33,7 +33,7 @@ Even wisdom teeth that come through fully can be hard to reach with a toothbrush
 
 No. If your wisdom teeth have come through fully, are healthy, can be cleaned well and fit with your bite, they can stay. Your dentist will usually monitor them with check-ups and X-rays.
 
-Removal is commonly recommended when a wisdom tooth is impacted, keeps getting infected, is decayed, or is damaging the tooth in front. Wisdom teeth are generally easier to remove in younger adults, when the roots are not fully formed and the bone is softer, so your dentist may suggest acting early if problems are likely.
+Removal is commonly recommended when a wisdom tooth is impacted, keeps getting infected, is decayed, or is damaging the tooth in front. Wisdom teeth are generally easier to remove in younger adults, when the roots are not fully formed and the bone is softer, so your dentist may suggest acting early if problems are likely. Ask why removal is recommended in your case, what monitoring would involve instead, and how the risks of surgery compare with keeping the tooth.
 
 ## What removal involves
 

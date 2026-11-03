@@ -64,6 +64,14 @@ const markdown: Components = {
   ),
 };
 
+// Emergency medical care versus urgent dental care, as healthdirect and the
+// NHS separate them (docs/seo/article-review-2026-11-03.md).
+const URGENT_HELP = [
+  "Call 000 for breathing difficulty, heavy bleeding you can't control, or severe mouth or neck swelling that makes breathing or swallowing difficult.",
+  'Seek emergency medical care for swelling around the eye or neck.',
+  'Seek urgent dental care for severe or worsening dental pain, facial swelling, fever, or minor bleeding that keeps going.',
+] as const;
+
 /**
  * LearnArticle — one oral health guide at /learn/<slug>, with breadcrumbs,
  * dates, related guides and a way to find a clinic. Metadata and structured
@@ -150,13 +158,32 @@ const LearnArticle: React.FC = () => {
           </Box>
         )}
 
+        {/* Emergencies first, before any booking or chatbot invitation. */}
         <Box
           component="aside"
-          sx={{ mt: 5, p: 2.5, borderRadius: 2, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+          aria-labelledby="urgent-help-heading"
+          sx={{
+            mt: 5,
+            p: 2.5,
+            borderRadius: 2,
+            border: 1,
+            borderColor: 'warning.main',
+            borderLeftWidth: 6,
+            bgcolor: 'background.paper',
+          }}
         >
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            This guide is general information, not a diagnosis or treatment plan. For severe pain, swelling or
-            bleeding that won't stop, contact a dentist or emergency service now.
+          <Typography id="urgent-help-heading" variant="h6" component="h2" sx={{ mb: 1 }}>
+            When to get urgent help
+          </Typography>
+          <Box component="ul" sx={{ pl: 3, my: 0 }}>
+            {URGENT_HELP.map((line) => (
+              <Typography key={line} component="li" sx={{ mb: 0.75, lineHeight: 1.6 }}>
+                {line}
+              </Typography>
+            ))}
+          </Box>
+          <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary' }}>
+            This guide is general information, not a diagnosis or treatment plan.
           </Typography>
         </Box>
       </Box>
@@ -166,7 +193,8 @@ const LearnArticle: React.FC = () => {
           Need to see a dentist?
         </Typography>
         <Typography sx={{ mt: 1, color: 'text.secondary', maxWidth: '52ch' }}>
-          Search clinics by suburb or treatment and book an open time online, or ask Dentabot first.
+          Search clinics by suburb or treatment and book an open time online. Dentabot can answer general
+          questions, but it can't help in an emergency.
         </Typography>
         <Box sx={{ display: 'flex', gap: 1.5, mt: 2.5, flexWrap: 'wrap' }}>
           <Button component={RouterLink} to="/find-a-clinic" variant="contained" size="large">
