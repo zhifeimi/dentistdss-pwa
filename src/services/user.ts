@@ -11,6 +11,11 @@ const userAPI = {
         return api.get(`/api/user/list/all`);
     },
 
+    /** The clinic's admins, dentists and receptionists (its own clinic admin or the system admin). */
+    async getClinicStaff(clinicId: number): Promise<User[]> {
+        return api.get(`/api/user/clinic/${clinicId}/staff`);
+    },
+
     /**
      * Get user profile
      * @param userId - The ID of the user to fetch

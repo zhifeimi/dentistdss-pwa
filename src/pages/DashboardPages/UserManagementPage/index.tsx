@@ -37,12 +37,8 @@ const UserManagementPage: React.FC<UserManagementPageProps> = ({
           // Load all system users
           data = await api.user.getAllUsers();
         } else if (userRole === 'CLINIC_ADMIN') {
-          // Load clinic staff only
-          data = await api.user.getAllUsers();
-          // Filter by clinic if needed
-          if (clinicId) {
-            data = data.filter(user => user.clinicId === Number(clinicId));
-          }
+          // The server returns only this clinic's staff; the full user list is system-admin only.
+          data = clinicId ? await api.user.getClinicStaff(Number(clinicId)) : [];
         } else {
           // Return empty array for unsupported roles
           console.warn(`Unsupported user role for user management: ${userRole}`);

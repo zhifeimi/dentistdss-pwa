@@ -46,12 +46,12 @@ export type HolidayType =
   | 'VACATION'
   | 'OTHER';
 
+/** A clinic holiday from clinic-service (HolidayResponse). */
 export interface Holiday extends BaseEntity {
   clinicId: number;
-  clinicName: string;
   name: string;
-  holidayDate: string; // YYYY-MM-DD format
-  description: string;
+  holidayDate: string; // YYYY-MM-DD; the next occurrence when recurring
+  description?: string;
   type: HolidayType;
   typeDisplayName: string;
   isFullDayClosure: boolean;
@@ -59,10 +59,8 @@ export interface Holiday extends BaseEntity {
   specialClosingTime?: string; // HH:mm format
   isRecurring: boolean;
   emergencyContact?: string;
-  displayInfo: string;
-  hasSpecialHours: boolean;
-  isUpcoming: boolean;
-  daysUntilHoliday: number;
+  isUpcoming: boolean; // within the next 30 days
+  daysUntilHoliday: number; // negative once a one-off date has passed
 }
 
 export interface CreateHolidayRequest {
@@ -86,6 +84,15 @@ export interface ClinicService extends BaseEntity {
 
   // Compatibility properties
   duration?: number; // Alias for durationMinutes
+}
+
+/** POST /api/clinic/service (clinic-service ServiceRequest). */
+export interface CreateServiceRequest {
+  clinicId: number;
+  name: string;
+  description?: string;
+  durationMinutes: number; // at least 15
+  price: number;
 }
 
 // Dentist types

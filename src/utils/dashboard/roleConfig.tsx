@@ -38,6 +38,7 @@ const CommunicationsPage = React.lazy(() => import('../../pages/DashboardPages/C
 const SchedulePage = React.lazy(() => import('../../pages/DashboardPages/Schedule/index.tsx'));
 const HolidayManagementPage = React.lazy(() => import('../../pages/DashboardPages/HolidayManagementPage/index.tsx'));
 const WorkingHoursPage = React.lazy(() => import('../../pages/DashboardPages/WorkingHoursPage/index.tsx'));
+const ServicesPage = React.lazy(() => import('../../pages/DashboardPages/ServicesPage/index.tsx'));
 
 
 // Role metadata configuration
@@ -209,6 +210,13 @@ const navigationSections: Record<UserRole, DashboardSection[]> = {
       icon: <ScheduleIcon />,
       path: '/working-hours',
       component: WorkingHoursPage
+    },
+    {
+      id: 'services',
+      label: 'Services',
+      icon: <MedicalServicesIcon />,
+      path: '/services',
+      component: ServicesPage
     },
     {
       id: 'settings',

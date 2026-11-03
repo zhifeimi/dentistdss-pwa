@@ -83,11 +83,15 @@ export const openDirections = ({ latitude, longitude, name }: NavigationParams):
   try {
     const url = generateMapsURL({ latitude, longitude, name });
     
-    // Open in new tab/window
-    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
-    
-    // Fallback if popup was blocked
-    if (!newWindow) {
+    // No 'noopener' feature here: with it, window.open always returns null,
+    // so a blocked popup can't be told apart from a successful one and the
+    // fallback below would also navigate this tab. Cut the opener link instead.
+    const newWindow = window.open(url, '_blank');
+
+    if (newWindow) {
+      newWindow.opener = null;
+    } else {
+      // Popup blocked: open the map in this tab instead.
       window.location.href = url;
     }
   } catch (error) {
