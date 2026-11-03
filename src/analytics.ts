@@ -4,7 +4,7 @@
  * in the privacy policy. Both scripts are served by Vercel from the same
  * origin (/_vercel/...) once switched on for the project.
  */
-import { inject, track } from '@vercel/analytics';
+import { inject, pageview, track } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 
 /**
@@ -24,13 +24,27 @@ export function stripQuery(url: string): string {
 const withoutQuery = <T extends { url: string }>(event: T): T => ({ ...event, url: stripQuery(event.url) });
 
 let started = false;
+let lastPagePath: string | undefined;
 
 /** Production browsers only: development and the build-time prerender send nothing. */
 export function startAnalytics(isProduction = import.meta.env.PROD): void {
   if (started || !isProduction || typeof window === 'undefined') return;
   started = true;
-  inject({ mode: 'production', framework: 'react', beforeSend: withoutQuery });
+  inject({ mode: 'production', framework: 'react', disableAutoTrack: true, beforeSend: withoutQuery });
   injectSpeedInsights({ framework: 'react', beforeSend: withoutQuery });
+}
+
+/** Router-driven views include replace navigation; consecutive repeats are ignored. */
+export function trackPageView(pathname: string): void {
+  if (!started) return;
+  const path = stripQuery(pathname);
+  if (path === lastPagePath) return;
+  try {
+    pageview({ path });
+    lastPagePath = path;
+  } catch {
+    // Analytics must never break navigation.
+  }
 }
 
 /** The conversions the SEO work is measured by. */

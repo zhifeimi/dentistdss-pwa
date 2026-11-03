@@ -77,9 +77,9 @@ export const useMapControls = (): UseMapControlsReturn => {
     // Pan to the clinic when it has coordinates. Open either way: without a
     // location, MapSection shows "Location not available" instead of the info
     // window, so the click is never silent.
-    if (clinic.latitude && clinic.longitude && map) {
+    if (clinic.latitude && clinic.longitude) {
       const newCenter = { lat: clinic.latitude, lng: clinic.longitude };
-      map.panTo(newCenter);
+      map?.panTo(newCenter);
       setMapCenter(newCenter);
       setMapZoom(15);
     }
