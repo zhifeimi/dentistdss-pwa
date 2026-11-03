@@ -52,15 +52,25 @@ describe('clinic admin API routes', () => {
 });
 
 describe('add-service form', () => {
-  it('accepts a named service of at least 15 minutes with a price', () => {
-    expect(serviceFormErrors({ name: 'Check-up', durationMinutes: '30', price: '0', description: '' })).toEqual({});
+  it.each(['15', '480'])('accepts a bookable %s-minute service with a positive price', (durationMinutes) => {
+    expect(serviceFormErrors({ name: 'Check-up', durationMinutes, price: '120', description: '' })).toEqual({});
+  });
+
+  it.each(['14', '481', '600', '15.5'])('rejects an unsupported duration of %s minutes', (durationMinutes) => {
+    expect(serviceFormErrors({ name: 'Check-up', durationMinutes, price: '120', description: '' }))
+      .toHaveProperty('durationMinutes');
+  });
+
+  it.each(['', '0', '-1', 'Infinity'])('rejects a non-positive or invalid price %j', (price) => {
+    expect(serviceFormErrors({ name: 'Check-up', durationMinutes: '30', price, description: '' }))
+      .toHaveProperty('price');
   });
 
   it('flags a missing name, short duration and missing price', () => {
     expect(serviceFormErrors({ name: ' ', durationMinutes: '10', price: '', description: '' })).toEqual({
       name: 'Enter a service name',
-      durationMinutes: 'At least 15 minutes',
-      price: 'Enter a price (0 for free)',
+      durationMinutes: 'Enter a whole number from 15 to 480 minutes',
+      price: 'Enter a price greater than 0',
     });
   });
 });

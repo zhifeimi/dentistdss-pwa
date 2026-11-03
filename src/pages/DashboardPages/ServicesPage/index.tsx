@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -30,9 +30,11 @@ export function serviceFormErrors(form: typeof EMPTY_FORM): Partial<Record<keyof
   const errors: Partial<Record<keyof typeof EMPTY_FORM, string>> = {};
   if (!form.name.trim()) errors.name = 'Enter a service name';
   const minutes = Number(form.durationMinutes);
-  if (!Number.isInteger(minutes) || minutes < 15) errors.durationMinutes = 'At least 15 minutes';
+  if (!Number.isInteger(minutes) || minutes < 15 || minutes > 480) {
+    errors.durationMinutes = 'Enter a whole number from 15 to 480 minutes';
+  }
   const price = Number(form.price);
-  if (form.price.trim() === '' || !Number.isFinite(price) || price < 0) errors.price = 'Enter a price (0 for free)';
+  if (form.price.trim() === '' || !Number.isFinite(price) || price <= 0) errors.price = 'Enter a price greater than 0';
   return errors;
 }
 
@@ -54,16 +56,21 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ clinicId }) => {
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const serviceRequest = useRef(0);
 
   const load = useCallback(async () => {
+    const request = ++serviceRequest.current;
     if (!effectiveClinicId) {
       setError('No clinic is linked to your account.');
       return;
     }
     try {
-      setServices(await api.clinic.getServices(effectiveClinicId));
+      const data = await api.clinic.getServices(effectiveClinicId);
+      if (request === serviceRequest.current) setServices(data);
     } catch {
-      setError("Services didn't load. Refresh the page to try again.");
+      if (request === serviceRequest.current) {
+        setError("Services didn't load. Refresh the page to try again.");
+      }
     }
   }, [effectiveClinicId]);
 
@@ -140,9 +147,9 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ clinicId }) => {
           sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr' } }}>
           <TextField label="Service name" required {...field('name')} />
           <TextField label="Duration (minutes)" type="number" required
-            slotProps={{ htmlInput: { min: 15, step: 5 } }} {...field('durationMinutes')} />
+            slotProps={{ htmlInput: { min: 15, max: 480, step: 5 } }} {...field('durationMinutes')} />
           <TextField label="Price (AUD)" type="number" required
-            slotProps={{ htmlInput: { min: 0, step: 0.01 } }} {...field('price')} />
+            slotProps={{ htmlInput: { min: 0.01, step: 0.01 } }} {...field('price')} />
           <TextField label="Description (optional)" multiline minRows={2} sx={{ gridColumn: '1 / -1' }}
             {...field('description')} />
           <Box sx={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
