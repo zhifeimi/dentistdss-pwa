@@ -53,10 +53,19 @@ test('Find a clinic waits to load Google Maps until the map is near the screen',
   page.on('request', (request) => {
     if (request.url().includes('maps.googleapis.com')) mapsRequests.push(request.url());
   });
-  await page.setViewportSize({ width: 390, height: 844 });
+  // A short window, so the map starts further below it than the 200px preload margin.
+  const height = 240;
+  await page.setViewportSize({ width: 390, height });
   await page.goto('/find-a-clinic');
   await expect(page.getByRole('heading', { level: 1, name: 'Find a clinic' })).toBeVisible();
+  const placeholder = page.getByTestId('map-placeholder');
+  expect(await placeholder.evaluate((element) => element.getBoundingClientRect().top)).toBeGreaterThan(height + 200);
+  await page.waitForLoadState('networkidle');
   expect(mapsRequests).toEqual([]);
+
+  const mapsRequest = page.waitForRequest(/maps\.googleapis\.com/);
+  await placeholder.scrollIntoViewIfNeeded();
+  await mapsRequest;
 });
 
 test('the home page describes the site and organisation in JSON-LD', async ({ request }) => {

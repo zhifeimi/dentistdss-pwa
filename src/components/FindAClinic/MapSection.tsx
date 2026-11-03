@@ -187,6 +187,7 @@ const MapSection = React.memo<MapSectionProps>(({
       {!mapRequested ? (
         <Box
           aria-hidden
+          data-testid="map-placeholder"
           sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover' }}
         >
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>Map</Typography>
