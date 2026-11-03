@@ -4,6 +4,7 @@ import {
   ClinicSearchResult,
   ClinicService,
   CreateHolidayRequest,
+  CreateServiceRequest,
   Dentist,
   DentistAvailability,
   Holiday,
@@ -171,6 +172,16 @@ const clinicAPI = {
     return api.get('/api/clinic/services/all');
   },
 
+  /** Add a service to the clinic's catalogue (clinic admin of that clinic). */
+  async createService(service: CreateServiceRequest): Promise<ClinicService> {
+    return api.post('/api/clinic/service', service);
+  },
+
+  /** Remove a service; the backend deactivates it so past bookings keep their record. */
+  async deleteService(serviceId: number): Promise<void> {
+    return api.delete(`/api/clinic/service/${serviceId}`);
+  },
+
   // Clinical Notes API Methods
 
   /**
@@ -191,34 +202,28 @@ const clinicAPI = {
     return api.get(`/api/clinic/clinical-note/clinic/${clinicId}`);
   },
 
-  // Holiday Management API Methods
+  // Holiday Management API Methods (clinic-service /clinic/{clinicId}/holidays)
 
-  /**
-   * Get all holidays for a clinic
-   * @param clinicId - The clinic ID
-   * @returns Array of holiday objects
-   */
+  /** All holidays for a clinic; a recurring one shows its next date. */
   async getClinicHolidays(clinicId: number): Promise<Holiday[]> {
-    return api.get(`/api/clinic-admin/clinics/${clinicId}/holidays`);
+    return api.get(`/api/clinic/${clinicId}/holidays`);
   },
 
-  /**
-   * Get upcoming holidays for a clinic
-   * @param clinicId - The clinic ID
-   * @returns Array of upcoming holiday objects
-   */
+  /** Holidays in the next 30 days, soonest first. */
   async getUpcomingHolidays(clinicId: number): Promise<Holiday[]> {
-    return api.get(`/api/clinic-admin/clinics/${clinicId}/holidays/upcoming`);
+    return api.get(`/api/clinic/${clinicId}/holidays/upcoming`);
   },
 
-  /**
-   * Create a new holiday for a clinic
-   * @param clinicId - The clinic ID
-   * @param holidayData - Holiday data object
-   * @returns Created holiday object
-   */
   async createHoliday(clinicId: number, holidayData: CreateHolidayRequest): Promise<Holiday> {
-    return api.post(`/api/clinic-admin/clinics/${clinicId}/holidays`, holidayData);
+    return api.post(`/api/clinic/${clinicId}/holidays`, holidayData);
+  },
+
+  async updateHoliday(clinicId: number, holidayId: number, holidayData: CreateHolidayRequest): Promise<Holiday> {
+    return api.put(`/api/clinic/${clinicId}/holidays/${holidayId}`, holidayData);
+  },
+
+  async deleteHoliday(clinicId: number, holidayId: number): Promise<void> {
+    return api.delete(`/api/clinic/${clinicId}/holidays/${holidayId}`);
   },
 
   // Working Hours Management API Methods

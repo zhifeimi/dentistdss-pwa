@@ -111,11 +111,11 @@
       "destination": "/pending-approval/index.html"
     },
     {
-      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)",
+      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|services|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)",
       "destination": "/app-shell.html"
     },
     {
-      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)/(.*)",
+      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|services|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)/(.*)",
       "destination": "/app-shell.html"
     }
   ],
@@ -142,7 +142,7 @@
       ]
     },
     {
-      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)",
+      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|services|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)",
       "headers": [
         {
           "key": "X-Robots-Tag",
@@ -151,7 +151,7 @@
       ]
     },
     {
-      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)/(.*)",
+      "source": "/(dashboard|overview|profile|change-password|appointments|schedule|working-hours|services|holidays|patients|patient-records|dental-records|messages|communications|approvals|staff|users|settings|ai-dentist|ai-receptionist|ai-summarize)/(.*)",
       "headers": [
         {
           "key": "X-Robots-Tag",

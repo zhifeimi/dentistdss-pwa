@@ -45,6 +45,14 @@ describe('user API contracts', () => {
     expect(mocks.put).toHaveBeenCalledWith('/api/user/42', { firstName: 'Renamed' });
   });
 
+  it('lists a clinic admin\'s staff from the clinic-scoped route', async () => {
+    mocks.get.mockResolvedValue([]);
+
+    await userAPI.getClinicStaff(7);
+
+    expect(mocks.get).toHaveBeenCalledWith('/api/user/clinic/7/staff');
+  });
+
   it('keeps the unread count on the notification service route', async () => {
     mocks.get.mockResolvedValue({ unreadCount: 3 });
 

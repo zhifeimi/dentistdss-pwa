@@ -20,7 +20,7 @@ const dictionary: Dictionary = {
     // utils/dashboard/roleConfig.tsx and DashboardLayout's standalone routes.
     // Keep in sync with vercel.json rewrites (tests/unit/seo.test.ts checks both).
     app: ['/dashboard', '/overview', '/profile', '/change-password', '/appointments', '/schedule',
-      '/working-hours', '/holidays', '/patients', '/patient-records', '/dental-records', '/messages',
+      '/working-hours', '/services', '/holidays', '/patients', '/patient-records', '/dental-records', '/messages',
       '/communications', '/approvals', '/staff', '/users', '/settings', '/ai-dentist',
       '/ai-receptionist', '/ai-summarize'],
   },
