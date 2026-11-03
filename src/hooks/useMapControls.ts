@@ -74,16 +74,16 @@ export const useMapControls = (): UseMapControlsReturn => {
   const handleClinicSelect = useCallback((clinic: Clinic): void => {
     setSelectedClinic(clinic);
 
-    // Pan to clinic location and open info window if coordinates are available
+    // Pan to the clinic when it has coordinates. Open either way: without a
+    // location, MapSection shows "Location not available" instead of the info
+    // window, so the click is never silent.
     if (clinic.latitude && clinic.longitude && map) {
       const newCenter = { lat: clinic.latitude, lng: clinic.longitude };
       map.panTo(newCenter);
       setMapCenter(newCenter);
       setMapZoom(15);
-      setInfoWindowOpen(true); // Open info window when selecting from list
-    } else {
-      setInfoWindowOpen(false); // Close info window if no coordinates
     }
+    setInfoWindowOpen(true);
   }, [map]);
 
   /**

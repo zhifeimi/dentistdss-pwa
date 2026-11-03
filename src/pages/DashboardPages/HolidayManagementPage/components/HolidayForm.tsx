@@ -23,6 +23,7 @@ import {
 import {
   Save as SaveIcon,
   Close as CloseIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -109,7 +110,7 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
       setFormData({
         name: holiday.name,
         holidayDate: dayjs(holiday.holidayDate),
-        description: holiday.description,
+        description: holiday.description ?? '',
         type: holiday.type,
         isFullDayClosure: holiday.isFullDayClosure,
         specialOpeningTime: holiday.specialOpeningTime ? dayjs(holiday.specialOpeningTime, 'HH:mm') : null,
@@ -221,11 +222,29 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
         emergencyContact: formData.emergencyContact.trim() || undefined,
       };
 
-      await api.clinic.createHoliday(clinicId, holidayData);
+      if (holiday) {
+        await api.clinic.updateHoliday(clinicId, holiday.id, holidayData);
+      } else {
+        await api.clinic.createHoliday(clinicId, holidayData);
+      }
       onSaved();
     } catch (err: any) {
       console.error('Error saving holiday:', err);
       setError(err.message || 'Failed to save holiday');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!holiday) return;
+    setLoading(true);
+    setError('');
+    try {
+      await api.clinic.deleteHoliday(clinicId, holiday.id);
+      onSaved();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete holiday');
     } finally {
       setLoading(false);
     }
@@ -410,6 +429,17 @@ const HolidayForm: React.FC<HolidayFormProps> = ({
         </DialogContent>
 
         <DialogActions sx={{ p: 2, gap: 1 }}>
+          {holiday && (
+            <Button
+              onClick={handleDelete}
+              color="error"
+              disabled={loading}
+              startIcon={<DeleteIcon />}
+              sx={{ mr: 'auto' }}
+            >
+              Delete
+            </Button>
+          )}
           <Button
             onClick={handleClose}
             disabled={loading}
