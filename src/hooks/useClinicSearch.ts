@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import api from '../services';
 import type { ClinicSearchResult } from '../types/api';
+import { trackEvent } from '../analytics';
 
 interface UseClinicSearchReturn {
   searchKeywords: string;
@@ -81,6 +82,7 @@ export const useClinicSearch = (initialKeywords = ''): UseClinicSearchReturn => 
       // Handle response - it should be an array after response interceptor processing
       if (Array.isArray(response)) {
         setClinics(response);
+        trackEvent('Clinic search', { results: response.length });
       } else if (response === null || response === undefined) {
         setClinics([]);
       } else {

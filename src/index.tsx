@@ -10,6 +10,7 @@ import './styles/index.scss';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import { AuthProvider } from './context/auth'; // Import AuthProvider
+import { startAnalytics } from './analytics';
 
 // Static SEO tags (from index.html or the prerendered page) describe the URL
 // the crawler asked for. React renders its own per-route tags from here on, so
@@ -30,3 +31,6 @@ root.render(
 
 // Register service worker for PWA functionality
 serviceWorkerRegistration.register({});
+
+// Page views, conversions and Core Web Vitals (Vercel; production only).
+startAnalytics();

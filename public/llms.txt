@@ -1,0 +1,35 @@
+# DentistDSS
+
+> DentistDSS helps people in Australia find a dentist and book online, with plain-language guides to oral health and Dentabot, a dental assistant that explains symptoms and when to see a dentist. Dental clinics use it for online booking, schedules, patient records and an AI receptionist.
+
+DentistDSS gives general information, not a diagnosis. In Australia, call 000 for breathing difficulty, uncontrollable bleeding, or severe mouth or neck swelling that makes breathing or swallowing difficult. Severe or worsening dental pain, facial swelling or fever needs urgent dental care. Dentabot is not for emergencies.
+
+## Find a dentist
+
+- [Find a clinic](https://dentist.zhifei.org/find-a-clinic): search clinics by suburb, name or treatment and book online
+- [Dentists by state and suburb](https://dentist.zhifei.org/dentists): clinic pages with address, opening hours, services and booking
+
+## Oral health guides
+
+- [All guides](https://dentist.zhifei.org/learn)
+- [Gum disease: early signs and prevention](https://dentist.zhifei.org/learn/gum-disease)
+- [Cavities and how to avoid them](https://dentist.zhifei.org/learn/cavities)
+- [Wisdom teeth](https://dentist.zhifei.org/learn/wisdom-teeth)
+- [Tooth sensitivity](https://dentist.zhifei.org/learn/tooth-sensitivity)
+- [Bad breath](https://dentist.zhifei.org/learn/bad-breath)
+- [Dental implants](https://dentist.zhifei.org/learn/dental-implants)
+- [Oral cancer: early detection](https://dentist.zhifei.org/learn/oral-cancer)
+- [Oral health quiz](https://dentist.zhifei.org/quiz)
+
+## For dental clinics
+
+- [DentistDSS for clinics](https://dentist.zhifei.org/for-clinics)
+- [Online booking](https://dentist.zhifei.org/for-clinics/online-booking)
+- [AI receptionist](https://dentist.zhifei.org/for-clinics/ai-receptionist)
+- [Patient records](https://dentist.zhifei.org/for-clinics/patient-records)
+- [Staff roles and approvals](https://dentist.zhifei.org/for-clinics/staff-roles)
+
+## Optional
+
+- [Privacy policy](https://dentist.zhifei.org/privacy)
+- [Terms and conditions](https://dentist.zhifei.org/terms)

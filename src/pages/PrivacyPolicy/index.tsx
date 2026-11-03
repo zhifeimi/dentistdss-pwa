@@ -63,10 +63,10 @@ const PrivacyPolicy: React.FC = () => {
           DentistDSS Privacy Policy
         </Typography>
         <Typography component="p" color="text.secondary" sx={{ mb: 3 }}>
-          Effective date: 27 October 2026
+          Effective date: 3 November 2026
         </Typography>
         <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
-          This policy explains how Zhifei Mi and the DentistDSS team (&quot;DentistDSS&quot;,
+          This policy explains how Zhifei.org and the DentistDSS team (&quot;DentistDSS&quot;,
           &quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collect, use, store, and share
           information when you use the DentistDSS website and progressive web application. It also
           explains the choices available to you. DentistDSS provides dental education, AI-assisted
@@ -328,6 +328,16 @@ const PrivacyPolicy: React.FC = () => {
               and processes network and request information when you visit it.
             </li>
             <li>
+              <strong>Vercel Web Analytics and Speed Insights (usage and performance
+              measurement):</strong> receive the page address without its query string or fragment,
+              the referring page, browser, operating system, device type and approximate country,
+              and page-speed measurements. They also receive a few events (a clinic search with its
+              number of results, a clinic registration started or submitted, a booking started or
+              requested) that carry no names, contact details, search text or health information.
+              They are used only in aggregate to understand which pages help people and how fast
+              they load.
+            </li>
+            <li>
               <strong>Cloudflare (network and security infrastructure):</strong> routes traffic to
               the backend and processes connection, request, and security information.
             </li>
@@ -522,15 +532,20 @@ const PrivacyPolicy: React.FC = () => {
               authentication, OAuth, generative-AI, or authorized responses.
             </li>
             <li>
+              <strong>Usage analytics:</strong> Vercel Web Analytics and Speed Insights do not set
+              cookies or use browser storage. Vercel counts visits with a short-lived anonymous hash
+              that is discarded within 24 hours.
+            </li>
+            <li>
               <strong>Third-party services:</strong> Google Sign-In and Google Maps may set or read
               their own cookies and use similar technologies under Google&apos;s privacy policy.
               External sites you visit have their own practices.
             </li>
           </PolicyList>
           <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
-            DentistDSS does not currently use first-party analytics, advertising, or session-replay
-            cookies. You can control cookies and site data through your browser, but essential
-            authentication features may not work if you block them.
+            DentistDSS does not use analytics, advertising, or session-replay cookies. You can
+            control cookies and site data through your browser, but essential authentication
+            features may not work if you block them.
           </Typography>
         </PolicySection>
 
@@ -558,7 +573,7 @@ const PrivacyPolicy: React.FC = () => {
         <PolicySection id="contact" title="12. Contact us">
           <Typography component="p" sx={{ mb: 2, lineHeight: 1.7 }}>
             For privacy questions or access, correction, export, or deletion requests, contact
-            Zhifei Mi / the DentistDSS team at{' '}
+            Zhifei.org / the DentistDSS team at{' '}
             <Link href="mailto:dentistdss@gmail.com">dentistdss@gmail.com</Link>. To help us protect
             your information, use the email address associated with your account where possible and
             do not email passwords, Google tokens, or unnecessary health records.

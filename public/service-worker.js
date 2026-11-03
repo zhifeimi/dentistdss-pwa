@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dentistdss-pwa-v6';
+const CACHE_NAME = 'dentistdss-pwa-v7';
 const LOADED_ASSETS_CACHE_NAME = `${CACHE_NAME}-loaded-assets`;
 const CORE_ASSETS = [
   '/',
@@ -14,7 +14,9 @@ const CORE_ASSETS = [
   '/images/logo.png',
   '/images/fallback.png',
 ];
-const PRIVATE_PATH_PREFIXES = ['/api/', '/auth/', '/oauth/', '/oauth2/', '/genai/'];
+// /_vercel/ serves the unhashed analytics and Speed Insights scripts and
+// receives their beacons: always straight from the network, never cached.
+const PRIVATE_PATH_PREFIXES = ['/api/', '/auth/', '/oauth/', '/oauth2/', '/genai/', '/_vercel/'];
 const CACHEABLE_DESTINATIONS = new Set(['font', 'image', 'manifest', 'script', 'style', 'worker']);
 
 function isPrivateRequest(request, url) {

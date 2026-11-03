@@ -16,6 +16,8 @@ import {
 import { DEFAULT_SITE_URL, normalizePath, normalizeSiteUrl, SITE_URL } from '../../src/seo/site';
 import { buildSitemapXml } from '../../src/seo/sitemap';
 import { buildSeoTags, renderSeoTagsToHtml } from '../../src/seo/tags';
+import { OG_CARDS, ogCardPath } from '../../src/seo/ogCards';
+import { existsSync } from 'node:fs';
 import dictionary, { isAppPath } from '../../src/utils/dictionary';
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -115,7 +117,7 @@ describe('content pages', () => {
     expect(article).toMatchObject({
       headline: 'Understanding Gum Disease: Early Signs and Prevention',
       datePublished: '2025-06-04',
-      dateModified: '2025-06-04',
+      dateModified: '2026-11-03',
       image: ['https://dentist.zhifei.org/images/learn/gum-disease.webp'],
       mainEntityOfPage: 'https://dentist.zhifei.org/learn/gum-disease',
     });
@@ -125,8 +127,20 @@ describe('content pages', () => {
 
   it('dates the sitemap entries of articles', () => {
     expect(buildSitemapXml(PUBLIC_PAGES, DEFAULT_SITE_URL)).toContain(
-      '<loc>https://dentist.zhifei.org/learn/gum-disease</loc><lastmod>2025-06-04</lastmod>',
+      '<loc>https://dentist.zhifei.org/learn/gum-disease</loc><lastmod>2026-11-03</lastmod>',
     );
+  });
+
+  it('lists sources for every published article without claiming a review that has not happened', () => {
+    for (const article of ARTICLES) {
+      expect(article.references.length, article.slug).toBeGreaterThanOrEqual(2);
+      for (const { url, title, publisher } of article.references) {
+        expect(url, article.slug).toMatch(/^https:\/\//);
+        expect(title && publisher, article.slug).toBeTruthy();
+      }
+      // Set only after a registered dentist has reviewed the text (docs/seo/article-review.md).
+      expect(article.reviewer, article.slug).toBeUndefined();
+    }
   });
 
   it('describes the clinic product as a SoftwareApplication without invented offers', () => {
@@ -136,6 +150,25 @@ describe('content pages', () => {
     expect(app).toMatchObject({ name: 'DentistDSS', applicationCategory: 'BusinessApplication' });
     expect(app).not.toHaveProperty('offers');
     expect(app).not.toHaveProperty('aggregateRating');
+  });
+});
+
+describe('share cards', () => {
+  it('has an image file for every card and every page that names one', () => {
+    for (const card of OG_CARDS) {
+      expect(existsSync(resolve(process.cwd(), `public${ogCardPath(card)}`)), card.key).toBe(true);
+    }
+    for (const page of PUBLIC_PAGES) {
+      if (!page.ogImage) continue;
+      expect(existsSync(resolve(process.cwd(), `public${page.ogImage}`)), page.path).toBe(true);
+    }
+  });
+
+  it('gives the main pages their own card and keeps article photos', () => {
+    expect(findPage('/learn')).toMatchObject({ ogImage: '/og/learn.png', ogImageAlt: 'Dental health guides' });
+    expect(findPage('/for-clinics/online-booking')?.ogImage).toBe('/og/for-clinics-online-booking.png');
+    expect(findPage('/learn/gum-disease')?.ogImage).toBe('/images/learn/gum-disease.webp');
+    expect(findPage('/')?.ogImage).toBeUndefined();
   });
 });
 
@@ -160,7 +193,8 @@ describe('SEO tags', () => {
   });
 
   it('includes social card tags with an absolute image URL', () => {
-    expect(tagsFor('/learn')).toContainEqual({
+    // The home page uses the default card; pages with their own card are covered below.
+    expect(tagsFor('/')).toContainEqual({
       tag: 'meta',
       attrs: { property: 'og:image', content: 'https://dentist.zhifei.org/og/default.png' },
     });
@@ -174,6 +208,22 @@ describe('SEO tags', () => {
     const scripts = tagsFor('/').filter((tag) => tag.tag === 'script');
     const types = scripts.map((tag) => JSON.parse(tag.tag === 'script' ? tag.text : '{}')['@type']);
     expect(types).toEqual(['Organization', 'WebSite']);
+  });
+
+  it('names Zhifei.org and its official profiles as the organisation behind DentistDSS', () => {
+    const organization = tagsFor('/')
+      .flatMap((tag) => tag.tag === 'script' ? [JSON.parse(tag.text)] : [])
+      .find((node) => node['@type'] === 'Organization');
+    expect(organization).toMatchObject({
+      name: 'DentistDSS',
+      url: 'https://dentist.zhifei.org/',
+      parentOrganization: {
+        '@type': 'Organization',
+        name: 'Zhifei.org',
+        url: 'https://zhifei.org',
+        sameAs: ['https://zhifeis.tech', 'https://www.linkedin.com/in/zhifeimi/', 'https://github.com/zhifeimi'],
+      },
+    });
   });
 
   it('escapes "<" so JSON-LD cannot close its script element', () => {

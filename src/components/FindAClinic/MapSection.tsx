@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Paper,
   Box,
@@ -61,6 +61,31 @@ const MapSection = React.memo<MapSectionProps>(({
   // State for Google Maps API readiness
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
 
+  // Google Maps is a large script. Load it only when the map is about to be
+  // seen (on phones it sits below the results) or a clinic is chosen, so it
+  // never competes with the page's first paint.
+  const mapAreaRef = useRef<HTMLDivElement | null>(null);
+  const [mapRequested, setMapRequested] = useState(false);
+  useEffect(() => {
+    if (mapRequested) return;
+    if (selectedClinic) {
+      setMapRequested(true);
+      return;
+    }
+    const area = mapAreaRef.current;
+    let observer: IntersectionObserver | undefined;
+    try {
+      observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setMapRequested(true);
+      }, { rootMargin: '200px' });
+      if (area) observer.observe(area);
+    } catch {
+      // No IntersectionObserver: load straight away.
+      setMapRequested(true);
+    }
+    return () => observer?.disconnect();
+  }, [mapRequested, selectedClinic]);
+
   // Use geocoding hook for clinic coordinates
   const { clinicsWithCoords, geocoding } = useGeocoding(clinics);
 
@@ -120,6 +145,7 @@ const MapSection = React.memo<MapSectionProps>(({
 
   return (
     <Paper
+      ref={mapAreaRef}
       elevation={3}
       sx={{
         height: getMapHeight(),
@@ -158,6 +184,15 @@ const MapSection = React.memo<MapSectionProps>(({
         </Box>
       )}
 
+      {!mapRequested ? (
+        <Box
+          aria-hidden
+          data-testid="map-placeholder"
+          sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover' }}
+        >
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>Map</Typography>
+        </Box>
+      ) : (
       <LoadScript
         googleMapsApiKey={config.api.google.mapsApiKey}
         onLoad={(): void => {
@@ -262,6 +297,7 @@ const MapSection = React.memo<MapSectionProps>(({
             )}
         </GoogleMap>
       </LoadScript>
+      )}
     </Paper>
   );
 });

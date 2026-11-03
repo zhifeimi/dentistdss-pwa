@@ -26,6 +26,7 @@
     "test:e2e": "deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts playwright test tests/e2e",
     "test:e2e:ui": "deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts playwright test tests/e2e --ui",
     "test:e2e:install": "deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts playwright install",
+    "og-images": "OG_OUT_DIR=$INIT_CWD/public/og deno run --allow-read --allow-write --allow-run scripts/deno-tool.ts playwright test --config tests/playwright.og.config.ts",
     "typecheck": "deno check src/index.tsx src/entry-server.tsx vite.config.ts playwright.config.ts scripts/deno-tool.ts",
     "lint": "deno lint src/ tests/ scripts/ vite.config.ts playwright.config.ts",
     "fmt": "deno fmt deno.json package.json scripts/deno-tool.ts vite.config.ts playwright.config.ts src/serviceWorkerRegistration.ts public/service-worker.js public/manifest.webmanifest",

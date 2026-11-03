@@ -11,6 +11,13 @@ export interface BreadcrumbItem {
 const organizationId = () => `${SITE_URL}/#organization`;
 const websiteId = () => `${SITE_URL}/#website`;
 
+/** Who makes DentistDSS, and that organisation's official profiles. */
+export const PUBLISHER = {
+  name: 'Zhifei.org',
+  url: 'https://zhifei.org',
+  sameAs: ['https://zhifeis.tech', 'https://www.linkedin.com/in/zhifeimi/', 'https://github.com/zhifeimi'],
+} as const;
+
 export function organizationJsonLd(): JsonLd {
   return {
     '@context': 'https://schema.org',
@@ -26,6 +33,12 @@ export function organizationJsonLd(): JsonLd {
     },
     email: CONTACT_EMAIL,
     areaServed: { '@type': 'Country', name: 'Australia' },
+    parentOrganization: {
+      '@type': 'Organization',
+      name: PUBLISHER.name,
+      url: PUBLISHER.url,
+      sameAs: [...PUBLISHER.sameAs],
+    },
   };
 }
 

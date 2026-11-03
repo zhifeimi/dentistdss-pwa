@@ -13,6 +13,7 @@ import {
   softwareApplicationJsonLd,
   websiteJsonLd,
 } from './jsonld.ts';
+import { findOgCard, ogCardPath } from './ogCards.ts';
 import { normalizePath } from './site.ts';
 
 /**
@@ -200,8 +201,17 @@ export const ARTICLE_PAGES: readonly PageSeo[] = ARTICLES.map((article): PageSeo
   };
 });
 
+/** Gives a page its own share card (src/seo/ogCards.ts) when it has one. */
+const withShareCard = (page: PageSeo): PageSeo => {
+  const card = page.ogImage ? undefined : findOgCard(page.path);
+  return card ? { ...page, ogImage: ogCardPath(card), ogImageAlt: card.heading } : page;
+};
+
 /** Every public page: what the prerender writes and the sitemap lists (if indexable). */
-export const PUBLIC_PAGES: readonly PageSeo[] = [...STATIC_PAGES, ...FOR_CLINICS_PAGES, ...ARTICLE_PAGES];
+export const PUBLIC_PAGES: readonly PageSeo[] = [
+  ...[...STATIC_PAGES, ...FOR_CLINICS_PAGES].map(withShareCard),
+  ...ARTICLE_PAGES,
+];
 
 const pagesByPath = new Map(PUBLIC_PAGES.map((page) => [page.path, page]));
 

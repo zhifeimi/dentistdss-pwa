@@ -3,7 +3,7 @@ DRAFT, not published. Needs review by an AHPRA-registered dentist before it
 replaces ../oral-cancer.md. See docs/seo/article-review.md.
 -->
 
-Oral (mouth) cancer can affect the lips, tongue, gums, cheeks, floor or roof of the mouth, and the throat. Early signs include a sore or ulcer that doesn't heal, a lump, or a red or white patch. Many mouth cancers are first spotted during a dental check-up. Australia has no national screening program for mouth cancer, so any change in your mouth that lasts more than a few weeks should be checked by a dentist or doctor.
+Oral (mouth) cancer can affect the lips, tongue, gums, cheeks, floor or roof of the mouth, and the throat. Early signs include a sore or ulcer that doesn't heal, a lump, or a red or white patch. Many mouth cancers are first spotted during a dental check-up. Australia has no national screening program for mouth cancer, so any unexplained change in your mouth that has not healed after two weeks should be checked by a dentist or doctor.
 
 ## Who is at risk?
 
@@ -20,7 +20,7 @@ Anyone can develop mouth cancer, but some things increase the risk:
 
 ## Signs and symptoms
 
-Mouth cancer can look like everyday problems, which is why changes that don't go away matter. See a dentist or doctor if you notice any of these for more than two or three weeks:
+Mouth cancer can look like everyday problems, which is why changes that don't go away matter. See a dentist or doctor if you notice any of these for more than two weeks, or sooner if you are worried:
 
 - a mouth ulcer or sore that won't heal, including on the lip
 - a lump or thickening in the mouth, lip or neck
@@ -53,7 +53,7 @@ Like most cancers, mouth cancer is easier to treat when it is found early. Small
 
 ## When to see a dentist or doctor
 
-Book an appointment if you have a sore, lump, or red or white patch in your mouth that has not healed after two to three weeks, or any of the other signs above. Don't wait for it to hurt: early mouth cancer is often painless.
+Book an appointment if you have a sore, lump, or red or white patch in your mouth that has not healed after two weeks, or any of the other signs above. Don't wait for it to hurt, because early mouth cancer is often painless, and don't wait for two weeks to pass if you are concerned.
 
 ## Sources
 

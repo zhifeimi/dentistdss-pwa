@@ -2,6 +2,9 @@ import { breadcrumbJsonLd, type BreadcrumbItem, type JsonLd } from '../seo/jsonl
 import type { PageSeo } from '../seo/pages.ts';
 import { absoluteUrl } from '../seo/site.ts';
 import { DIRECTORY_PATH, stateName } from './paths.ts';
+
+/** Directory hub pages share one card (src/seo/ogCards.ts, key "dentists"). */
+const HUB_CARD = { ogImage: '/og/dentists.png', ogImageAlt: 'Find a dentist by state and suburb' };
 import type { PublicClinic } from './types.ts';
 
 const BRAND = ' | DentistDSS';
@@ -144,6 +147,7 @@ export function suburbSeo(
       'See addresses, opening hours and services, and book online with DentistDSS.',
     ),
     index,
+    ...HUB_CARD,
     lastModified,
     jsonLd: [breadcrumbJsonLd([home, directoryCrumb, { name: stateName(state), path: statePath }, { name: suburb, path }])],
   };
@@ -164,6 +168,7 @@ export function stateSeo(
       'See opening hours and services, and book online.',
     ),
     index,
+    ...HUB_CARD,
     lastModified,
     jsonLd: [breadcrumbJsonLd([home, directoryCrumb, { name, path }])],
   };
@@ -176,6 +181,7 @@ export function countrySeo(index: boolean, lastModified?: string): PageSeo {
     description:
       'Browse dental clinics across Australia by state and suburb. See addresses, opening hours and services, and book an appointment online.',
     index,
+    ...HUB_CARD,
     lastModified,
     jsonLd: [breadcrumbJsonLd([home, directoryCrumb])],
   };

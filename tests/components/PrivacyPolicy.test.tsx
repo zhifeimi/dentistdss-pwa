@@ -35,7 +35,8 @@ describe('Privacy policy', () => {
     const policy = renderPolicy();
 
     expect(screen.getByRole('heading', { level: 1, name: 'DentistDSS Privacy Policy' })).toBeVisible();
-    expect(policy).toHaveTextContent('Effective date: 27 October 2026');
+    expect(policy).toHaveTextContent('Effective date: 3 November 2026');
+    expect(policy).toHaveTextContent('This policy explains how Zhifei.org and the DentistDSS team');
     expect(policy).not.toHaveTextContent(/draft/i);
 
     const navigation = screen.getByRole('navigation', { name: 'Privacy policy sections' });
@@ -81,6 +82,16 @@ describe('Privacy policy', () => {
     expect(screen.getAllByRole('link', { name: 'dentistdss@gmail.com' })[0])
       .toHaveAttribute('href', 'mailto:dentistdss@gmail.com');
     expect(policy).not.toHaveTextContent('HIPAA- and GDPR-compliant');
+  });
+
+  it('discloses Vercel analytics: what it receives, and that it sets no cookies', () => {
+    const policy = renderPolicy();
+
+    expect(policy).toHaveTextContent(/Vercel Web Analytics and Speed Insights \(usage and performance\s+measurement\)/);
+    expect(policy).toHaveTextContent(/page address without its query string or fragment/);
+    expect(policy).toHaveTextContent(/carry no names, contact details, search text or health information/);
+    expect(policy).toHaveTextContent(/do not set\s+cookies or use browser storage/);
+    expect(policy).toHaveTextContent('DentistDSS does not use analytics, advertising, or session-replay cookies.');
   });
 
   it('describes the self-hosted AI endpoint and OpenAI as its upstream provider', () => {

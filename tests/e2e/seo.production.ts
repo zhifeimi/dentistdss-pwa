@@ -29,6 +29,8 @@ for (const { path, h1, indexable } of pages) {
     expect(html).toContain(`>${h1.replaceAll("'", '&#x27;')}</h1>`);
     // Content is inline: no hidden segments waiting for a script to reveal them.
     expect(html).not.toMatch(/<div hidden id="S:|<template id="B:/);
+    // The body font is preloaded so text renders in it straight away.
+    expect(html).toMatch(/<link rel="preload" href="\/assets\/atkinson-hyperlegible-next-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/);
     if (indexable) {
       expect(html).toContain(`<link data-seo rel="canonical" href="${SITE}${path}" />`);
     } else {
@@ -37,6 +39,36 @@ for (const { path, h1, indexable } of pages) {
     }
   });
 }
+
+test('main pages share their own card, and the card image is served', async ({ request }) => {
+  const html = await (await request.get('/for-clinics')).text();
+  expect(html).toContain(`<meta data-seo property="og:image" content="${SITE}/og/for-clinics.png" />`);
+  const image = await request.get('/og/for-clinics.png');
+  expect(image.status()).toBe(200);
+  expect(image.headers()['content-type']).toBe('image/png');
+});
+
+const isGoogleMaps = (url: string) => new URL(url).hostname === 'maps.googleapis.com';
+
+test('Find a clinic waits to load Google Maps until the map is near the screen', async ({ page }) => {
+  const mapsRequests: string[] = [];
+  page.on('request', (request) => {
+    if (isGoogleMaps(request.url())) mapsRequests.push(request.url());
+  });
+  // A short window, so the map starts further below it than the 200px preload margin.
+  const height = 240;
+  await page.setViewportSize({ width: 390, height });
+  await page.goto('/find-a-clinic');
+  await expect(page.getByRole('heading', { level: 1, name: 'Find a clinic' })).toBeVisible();
+  const placeholder = page.getByTestId('map-placeholder');
+  expect(await placeholder.evaluate((element) => element.getBoundingClientRect().top)).toBeGreaterThan(height + 200);
+  await page.waitForLoadState('networkidle');
+  expect(mapsRequests).toEqual([]);
+
+  const mapsRequest = page.waitForRequest((request) => isGoogleMaps(request.url()));
+  await placeholder.scrollIntoViewIfNeeded();
+  await mapsRequest;
+});
 
 test('the home page describes the site and organisation in JSON-LD', async ({ request }) => {
   const html = await (await request.get('/')).text();
@@ -55,6 +87,12 @@ test('an article ships its full text and Article markup in the HTML', async ({ r
     datePublished: '2025-06-04',
   });
   expect(html).toContain('<meta data-seo property="og:type" content="article" />');
+  // Emergency advice comes before the invitation to book or ask Dentabot.
+  const urgent = html.indexOf('When to get urgent help');
+  expect(urgent).toBeGreaterThan(-1);
+  expect(html).toContain('Call 000 for breathing difficulty');
+  expect(urgent).toBeLessThan(html.indexOf('Need to see a dentist?'));
+  expect(html).toContain('>Sources</h2>');
 });
 
 test('the Learn hub links each guide to its own page', async ({ page }) => {
