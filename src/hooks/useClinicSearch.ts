@@ -125,9 +125,14 @@ export const useClinicSearch = (initialKeywords = ''): UseClinicSearchReturn => 
       return;
     }
 
-    // Trigger immediate search
-    performSearch(searchKeywords);
-  }, [searchKeywords, performSearch]);
+    // Consume changed queries through the auto-search effect, so the pending
+    // debounce cannot repeat them. Unchanged queries remain explicit retries.
+    if (searchKeywords !== debouncedSearchKeywords) {
+      setDebouncedSearchKeywords(searchKeywords);
+    } else {
+      performSearch(searchKeywords);
+    }
+  }, [searchKeywords, debouncedSearchKeywords, performSearch]);
 
   /**
    * Handle keyboard events for search input

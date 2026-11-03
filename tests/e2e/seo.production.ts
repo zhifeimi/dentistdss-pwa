@@ -70,6 +70,29 @@ test('Find a clinic waits to load Google Maps until the map is near the screen',
   await mapsRequest;
 });
 
+test('analytics records replacement, push and Back navigation once per pathname', async ({ page }) => {
+  // Keep the real SDK queue inspectable without sending production telemetry.
+  await page.route('**/_vercel/insights/script.js', (route) => route.abort());
+  const pageviews = () => page.evaluate(() =>
+    (window.vaq ?? []).filter(([event]) => event === 'pageview')
+      .map(([, properties]) => (properties as { path: string }).path)
+  );
+
+  await page.goto('/terms?token=secret#contact-heading');
+  await expect(page).toHaveURL(/\/privacy\?token=secret#contact-heading$/);
+  await expect.poll(pageviews).toContain('/privacy');
+  await expect(page.locator('script[src="/_vercel/insights/script.js"]'))
+    .toHaveAttribute('data-disable-auto-track', '1');
+
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Learn' }).click();
+  await expect.poll(pageviews).toContain('/learn');
+  await page.goBack();
+  await expect(page).toHaveURL(/\/privacy\?token=secret#contact-heading$/);
+  await expect.poll(async () => (await pageviews()).filter((path) => path === '/privacy').length).toBe(2);
+  expect((await pageviews()).filter((path) => path === '/learn')).toHaveLength(1);
+  expect((await pageviews()).every((path) => !/[?#]/.test(path))).toBe(true);
+});
+
 test('the home page describes the site and organisation in JSON-LD', async ({ request }) => {
   const html = await (await request.get('/')).text();
   const types = [...html.matchAll(/<script data-seo type="application\/ld\+json">([\s\S]*?)<\/script>/g)]

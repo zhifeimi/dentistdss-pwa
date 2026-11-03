@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { BrowserRouter as Router } from 'react-router';
+import { useLayoutEffect, useMemo } from 'react';
+import { BrowserRouter as Router, useLocation } from 'react-router';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { useAuth } from './context/auth';
@@ -9,6 +9,7 @@ import GlobalSnackbar from './components/GlobalSnackbar';
 import AppShell from './components/AppShell';
 import { NotificationProvider } from './components/NotificationSystem';
 import theme from './context/theme';
+import { trackPageView } from './analytics';
 
 import AppRoutes from './routes';
 
@@ -25,6 +26,9 @@ interface AppContentProps {
  */
 export function AppContent({ darkMode, toggleDarkMode, logout }: AppContentProps): React.JSX.Element {
   const appTheme = useMemo(() => theme(darkMode ? 'dark' : 'light'), [darkMode]);
+  const { pathname } = useLocation();
+  // Update the SDK path before descendant mount effects record conversions.
+  useLayoutEffect(() => trackPageView(pathname), [pathname]);
 
   // No global auth-loading gate here: public routes must paint immediately while
   // the background auth restore runs. Protected routes handle `loading` locally
