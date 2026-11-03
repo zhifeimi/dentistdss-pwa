@@ -48,10 +48,12 @@ test('main pages share their own card, and the card image is served', async ({ r
   expect(image.headers()['content-type']).toBe('image/png');
 });
 
+const isGoogleMaps = (url: string) => new URL(url).hostname === 'maps.googleapis.com';
+
 test('Find a clinic waits to load Google Maps until the map is near the screen', async ({ page }) => {
   const mapsRequests: string[] = [];
   page.on('request', (request) => {
-    if (request.url().includes('maps.googleapis.com')) mapsRequests.push(request.url());
+    if (isGoogleMaps(request.url())) mapsRequests.push(request.url());
   });
   // A short window, so the map starts further below it than the 200px preload margin.
   const height = 240;
@@ -63,7 +65,7 @@ test('Find a clinic waits to load Google Maps until the map is near the screen',
   await page.waitForLoadState('networkidle');
   expect(mapsRequests).toEqual([]);
 
-  const mapsRequest = page.waitForRequest(/maps\.googleapis\.com/);
+  const mapsRequest = page.waitForRequest((request) => isGoogleMaps(request.url()));
   await placeholder.scrollIntoViewIfNeeded();
   await mapsRequest;
 });
